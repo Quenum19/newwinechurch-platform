@@ -1,0 +1,767 @@
+/**
+ * ==============================================================
+ *  NEW WINE CHURCH — Feuille de styles globale
+ *  - Imports Google Fonts (Cormorant Garamond + Outfit + Great Vibes)
+ *  - Directives Tailwind (base, components, utilities)
+ *  - Classes utilitaires personnalisées NWC
+ * ==============================================================
+ */
+
+/* === 1. Polices Google Fonts (chargées en priorité) ===
+   - Cormorant Garamond / Great Vibes : public (Magazine Drop / hero)
+   - Outfit : interfaces générales
+   - Inter : SCOPE ADMIN UNIQUEMENT (refonte 2026 — Linear/Stripe/Vercel style) */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* === 2. Directives Tailwind === */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === 3. Couches Tailwind personnalisées === */
+
+@layer base {
+  /* Reset léger : box-sizing universel + héritage typo. */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* ============================================================
+     SCOPE ADMIN — Refonte 2026 (hybrid Notion/Linear/Supabase)
+     Sidebar foncée + content clair, mobile-first, Inter.
+     Tout sélecteur préfixé .admin-scope écrase les défauts NWC.
+     ============================================================ */
+
+  /* Variables CSS scope admin */
+  .admin-scope {
+    --adm-bg:           #FAFAFA;          /* fond content (neutre clair) */
+    --adm-card:         #FFFFFF;          /* surface cards/inputs */
+    --adm-card-hover:   #F7F7F8;          /* hover ligne table */
+    --adm-border:       #E4E4E7;          /* bordures fines (zinc-200) */
+    --adm-border-strong:#D4D4D8;          /* bordures hover/focus */
+    --adm-text:         #18181B;          /* texte principal (zinc-900) */
+    --adm-text-muted:   #71717A;          /* texte secondaire (zinc-500) */
+    --adm-text-faint:   #A1A1AA;          /* labels, timestamps */
+    --adm-accent:       #8B1A2F;          /* bordeaux NWC — primary uniquement */
+    --adm-accent-hover: #6E1424;
+    --adm-accent-soft:  #FCE7EB;          /* badge / hover light */
+    --adm-success:      #16A34A;
+    --adm-warning:      #D97706;
+    --adm-danger:       #DC2626;
+    --adm-info:         #2563EB;
+
+    /* Sidebar foncée (zinc-950 + textes clairs) */
+    --adm-side-bg:      #09090B;
+    --adm-side-border:  #27272A;
+    --adm-side-text:    #D4D4D8;
+    --adm-side-text-muted: #71717A;
+    --adm-side-active-bg: #18181B;
+    --adm-side-active-fg: #FFFFFF;
+
+    background: var(--adm-bg);
+    color: var(--adm-text);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Override absolu typographie scope admin (kill Cormorant + Great Vibes) */
+  .admin-scope,
+  .admin-scope * {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  /* Pages auth (connexion/inscription) — typo Inter, refonte v3 premium. */
+  .auth-modern,
+  .auth-modern * {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .auth-modern h1 {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: #18181B;
+  }
+
+  /* Stagger d'entrée du formulaire auth (motion gère le timing).
+     Chaque enfant direct passe par une animation slide-up + fade. */
+  .auth-stagger > * {
+    animation: authStagger 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .auth-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .auth-stagger > *:nth-child(2) { animation-delay: 0.10s; }
+  .auth-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .auth-stagger > *:nth-child(4) { animation-delay: 0.20s; }
+  .auth-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .auth-stagger > *:nth-child(6) { animation-delay: 0.30s; }
+  .auth-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+  .auth-stagger > *:nth-child(8) { animation-delay: 0.40s; }
+  .auth-stagger > *:nth-child(n+9) { animation-delay: 0.45s; }
+
+  @keyframes authStagger {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .admin-scope h1,
+  .admin-scope h2,
+  .admin-scope h3,
+  .admin-scope h4,
+  .admin-scope h5,
+  .admin-scope h6 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--adm-text);
+  }
+  .admin-scope h1 { font-size: 1.5rem;  line-height: 1.2; }
+  .admin-scope h2 { font-size: 1.25rem; line-height: 1.25; }
+  .admin-scope h3 { font-size: 1rem;    line-height: 1.3; }
+  /* Neutralise les classes "exotiques" de l'ancien thème dans le scope admin */
+  .admin-scope .font-serif,
+  .admin-scope .font-script,
+  .admin-scope .text-script { font-family: Inter, system-ui, sans-serif !important; font-style: normal !important; }
+  /* Pas de couleur or "vitrine" en admin */
+  .admin-scope .text-gold-300,
+  .admin-scope .text-gold-400,
+  .admin-scope .text-gold-500 { color: var(--adm-accent) !important; }
+
+  /* === Composants admin v2 — utilitaires === */
+  .admin-scope .adm-card {
+    background: var(--adm-card);
+    border: 1px solid var(--adm-border);
+    border-radius: 10px;
+  }
+  .admin-scope .adm-input,
+  .admin-scope .adm-select,
+  .admin-scope .adm-textarea {
+    background: var(--adm-card);
+    border: 1px solid var(--adm-border);
+    color: var(--adm-text);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color .15s, box-shadow .15s;
+    width: 100%;
+  }
+  .admin-scope .adm-input:focus,
+  .admin-scope .adm-select:focus,
+  .admin-scope .adm-textarea:focus {
+    outline: none;
+    border-color: var(--adm-accent);
+    box-shadow: 0 0 0 3px rgba(139, 26, 47, 0.12);
+  }
+  .admin-scope .adm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0.875rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: background .15s, border-color .15s;
+    cursor: pointer;
+  }
+  .admin-scope .adm-btn-primary {
+    background: var(--adm-accent);
+    color: #fff;
+  }
+  .admin-scope .adm-btn-primary:hover { background: var(--adm-accent-hover); }
+  .admin-scope .adm-btn-secondary {
+    background: var(--adm-card);
+    color: var(--adm-text);
+    border-color: var(--adm-border);
+  }
+  .admin-scope .adm-btn-secondary:hover { border-color: var(--adm-border-strong); background: var(--adm-card-hover); }
+  .admin-scope .adm-btn-ghost {
+    background: transparent;
+    color: var(--adm-text-muted);
+  }
+  .admin-scope .adm-btn-ghost:hover { background: var(--adm-card-hover); color: var(--adm-text); }
+  .admin-scope .adm-btn-danger {
+    background: var(--adm-danger);
+    color: #fff;
+  }
+  .admin-scope .adm-btn-danger:hover { background: #B91C1C; }
+  .admin-scope .adm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Tables responsive : largeurs naturelles + hover row */
+  .admin-scope .adm-table {
+    width: 100%;
+    font-size: 0.875rem;
+    border-collapse: collapse;
+  }
+  .admin-scope .adm-table thead th {
+    text-align: left;
+    color: var(--adm-text-muted);
+    font-weight: 500;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--adm-border);
+    background: var(--adm-bg);
+  }
+  .admin-scope .adm-table tbody td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--adm-border);
+    color: var(--adm-text);
+    vertical-align: middle;
+  }
+  .admin-scope .adm-table tbody tr:hover { background: var(--adm-card-hover); }
+  .admin-scope .adm-table tbody tr:last-child td { border-bottom: 0; }
+
+  /* Badges */
+  .admin-scope .adm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    background: var(--adm-card-hover);
+    color: var(--adm-text-muted);
+    border: 1px solid var(--adm-border);
+  }
+  .admin-scope .adm-badge-success { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
+  .admin-scope .adm-badge-warning { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
+  .admin-scope .adm-badge-danger  { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
+  .admin-scope .adm-badge-info    { background: #DBEAFE; color: #1D4ED8; border-color: #BFDBFE; }
+  .admin-scope .adm-badge-accent  { background: var(--adm-accent-soft); color: var(--adm-accent); border-color: var(--adm-accent-soft); }
+
+  /* ============================================================
+     COMPAT LAYER — remappe l'ancien styling sombre vers la palette
+     light dans le scope admin. Évite de patcher chaque page une par
+     une pendant la transition vers admin-v2.
+     ============================================================ */
+
+  /* Texte : white-on-dark → dark-on-light */
+  .admin-scope .text-white      { color: var(--adm-text) !important; }
+  .admin-scope .text-white\/90  { color: var(--adm-text) !important; }
+  .admin-scope .text-white\/80  { color: var(--adm-text) !important; }
+  .admin-scope .text-white\/70  { color: var(--adm-text-muted) !important; }
+  .admin-scope .text-white\/65  { color: var(--adm-text-muted) !important; }
+  .admin-scope .text-white\/60  { color: var(--adm-text-muted) !important; }
+  .admin-scope .text-white\/50  { color: var(--adm-text-muted) !important; }
+  .admin-scope .text-white\/40  { color: var(--adm-text-faint) !important; }
+  .admin-scope .text-white\/35  { color: var(--adm-text-faint) !important; }
+  .admin-scope .text-white\/30  { color: var(--adm-text-faint) !important; }
+  .admin-scope .text-white\/20  { color: var(--adm-text-faint) !important; }
+
+  /* Backgrounds sombres legacy → light/transparent */
+  .admin-scope .bg-ink-950,
+  .admin-scope .bg-ink-900,
+  .admin-scope .bg-ink-800 { background-color: transparent !important; }
+  .admin-scope .bg-white\/5,
+  .admin-scope .bg-white\/10,
+  .admin-scope .bg-white\/15 { background-color: var(--adm-card-hover) !important; }
+
+  /* Bordures dark → light */
+  .admin-scope .border-white\/5,
+  .admin-scope .border-white\/10,
+  .admin-scope .border-white\/15,
+  .admin-scope .border-white\/20 { border-color: var(--adm-border) !important; }
+
+  /* Wine / Gold legacy → accent NWC discret en badge soft */
+  .admin-scope .bg-wine-700,
+  .admin-scope .bg-wine-800 { background-color: var(--adm-accent) !important; color: #fff !important; }
+  .admin-scope .bg-wine-700\/30,
+  .admin-scope .bg-wine-700\/20,
+  .admin-scope .bg-wine-800\/20 { background-color: var(--adm-accent-soft) !important; color: var(--adm-accent) !important; }
+  .admin-scope .bg-gold-500\/20,
+  .admin-scope .bg-gold-500\/10,
+  .admin-scope .bg-gold-500\/5 { background-color: #FEF3C7 !important; color: #B45309 !important; }
+  .admin-scope .border-gold-500\/30,
+  .admin-scope .border-gold-500\/40 { border-color: var(--adm-accent) !important; }
+
+  /* Composants legacy (.card-nwc / .btn-primary / .input-nwc) remappés */
+  .admin-scope .card-nwc {
+    background: var(--adm-card) !important;
+    border: 1px solid var(--adm-border) !important;
+    border-radius: 10px !important;
+    color: var(--adm-text) !important;
+    box-shadow: none !important;
+  }
+  .admin-scope .btn-primary {
+    background: var(--adm-accent) !important;
+    color: #fff !important;
+    border: 1px solid var(--adm-accent) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.875rem !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+  }
+  .admin-scope .btn-primary:hover { background: var(--adm-accent-hover) !important; border-color: var(--adm-accent-hover) !important; }
+  .admin-scope .btn-secondary {
+    background: var(--adm-card) !important;
+    color: var(--adm-text) !important;
+    border: 1px solid var(--adm-border) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.875rem !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+  }
+  .admin-scope .btn-secondary:hover { background: var(--adm-card-hover) !important; border-color: var(--adm-border-strong) !important; }
+  .admin-scope .btn-ghost {
+    background: transparent !important;
+    color: var(--adm-text-muted) !important;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  .admin-scope .btn-ghost:hover { background: var(--adm-card-hover) !important; color: var(--adm-text) !important; }
+  .admin-scope .input-nwc {
+    background: var(--adm-card) !important;
+    border: 1px solid var(--adm-border) !important;
+    color: var(--adm-text) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    width: 100% !important;
+  }
+  .admin-scope .input-nwc:focus {
+    outline: none !important;
+    border-color: var(--adm-accent) !important;
+    box-shadow: 0 0 0 3px rgba(139, 26, 47, 0.12) !important;
+  }
+  .admin-scope .skeleton { background: #F4F4F5 !important; }
+
+  /* Liens admin par défaut : couleur texte, hover accent */
+  .admin-scope a:not(.btn-primary):not(.btn-secondary):not(.btn-ghost):not(.adm-btn) {
+    color: inherit;
+  }
+  .admin-scope a:not(.btn-primary):not(.btn-secondary):not(.btn-ghost):not(.adm-btn):hover {
+    color: var(--adm-accent);
+  }
+  .admin-scope .adm-badge-accent  { background: var(--adm-accent-soft); color: var(--adm-accent); border-color: var(--adm-accent-soft); }
+
+  html {
+    /* Empêche le zoom auto sur input mobile iOS. */
+    -webkit-text-size-adjust: 100%;
+    /* Scroll fluide pour les ancres internes. */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink-950 text-white font-sans antialiased;
+    /* Couleur par défaut du texte secondaire. */
+    color: #FFFFFF;
+    /* Empêche le scroll horizontal accidentel. */
+    overflow-x: hidden;
+    /* Texte rendu net sur fonds sombres. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Titres en serif élégant par défaut. */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Liens : couleur or par défaut, accent au survol. */
+  a {
+    @apply transition-colors duration-200;
+  }
+
+  /* Sélection de texte branding NWC. */
+  ::selection {
+    background-color: theme('colors.wine.700');
+    color: theme('colors.gold.300');
+  }
+
+  /* Scrollbar custom (WebKit) sombre + accent or. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-ink-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-wine-800 rounded;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-wine-700;
+  }
+
+  /* Focus ring accessibilité (WCAG AA) sur tous éléments interactifs. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-gold-500 ring-offset-2 ring-offset-ink-950;
+  }
+}
+
+@layer components {
+  /* === Bouton primaire bordeaux === */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-wine-700 hover:bg-wine-600 active:bg-wine-800
+           text-white font-medium rounded-lg
+           transition-all duration-200 shadow-lg hover:shadow-wine-glow
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* === Bouton secondaire or === */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-gold-500 hover:bg-gold-400 active:bg-gold-600
+           text-ink-950 font-medium rounded-lg
+           transition-all duration-200 shadow-lg hover:shadow-gold-glow
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* === Bouton ghost (transparent avec bordure) === */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           border border-white/20 hover:border-gold-500
+           text-white hover:text-gold-300
+           rounded-lg transition-all duration-200
+           bg-transparent hover:bg-white/5;
+  }
+
+  /* === Conteneur largeur max contenu === */
+  .container-nwc {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* === Section sombre standard avec espacement vertical généreux === */
+  .section-dark {
+    @apply bg-ink-950 py-16 md:py-24 lg:py-32;
+  }
+
+  /* === Card sombre premium === */
+  .card-nwc {
+    @apply bg-ink-800 border border-white/5 rounded-2xl overflow-hidden
+           transition-all duration-300 hover:border-gold-500/30 hover:shadow-card-hover;
+  }
+
+  /* === Badge "EN DIRECT" pulsant === */
+  .badge-live {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full
+           bg-accent text-white text-xs font-bold uppercase tracking-wider
+           animate-live-pulse;
+  }
+  .badge-live::before {
+    content: '';
+    @apply w-2 h-2 rounded-full bg-white;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  /* === Champ de formulaire stylisé === */
+  .input-nwc {
+    @apply form-input w-full px-4 py-3
+           bg-ink-900 border border-white/10
+           text-white placeholder-white/40
+           rounded-lg
+           focus:border-gold-500 focus:ring-1 focus:ring-gold-500
+           transition-colors;
+  }
+  .textarea-nwc {
+    @apply form-textarea w-full px-4 py-3
+           bg-ink-900 border border-white/10
+           text-white placeholder-white/40
+           rounded-lg
+           focus:border-gold-500 focus:ring-1 focus:ring-gold-500
+           transition-colors resize-y min-h-[120px];
+  }
+  .select-nwc {
+    @apply form-select w-full px-4 py-3
+           bg-ink-900 border border-white/10
+           text-white rounded-lg
+           focus:border-gold-500 focus:ring-1 focus:ring-gold-500
+           transition-colors;
+  }
+
+  /* === Skeleton loader (effet shimmer) === */
+  .skeleton {
+    @apply bg-shimmer-bg bg-[length:200%_100%] animate-shimmer rounded;
+  }
+
+  /* === Texte "script" (slogan, citations) === */
+  .text-script {
+    @apply font-script text-gold-400;
+  }
+
+  /* === Heading hero ultra-large === */
+  .heading-hero {
+    @apply font-serif text-5xl md:text-7xl lg:text-8xl font-semibold
+           leading-[1.05] tracking-tight;
+  }
+
+  /* ============================================================ */
+  /* === DIRECTION "Magazine Drop" — utilitaires home publique ===*/
+  /* ============================================================ */
+
+  /* Headline impact Anton — utilisé sur le hero "SAUVÉ. POUR SAUVER." */
+  .heading-anton {
+    @apply font-display uppercase tracking-tight leading-[0.92];
+    font-feature-settings: 'ss01', 'ss02';
+  }
+
+  /* Pull-quote / scripture en Fraunces italic */
+  .editorial-quote {
+    @apply font-editorial italic leading-tight;
+    font-variation-settings: 'opsz' 144, 'wght' 500;
+  }
+
+  /* === Boutons publics === */
+
+  /* Bouton primaire Flame — accent unique fort */
+  .btn-flame {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3.5
+           bg-public-flame hover:bg-public-flame-deep
+           text-public-bone font-semibold uppercase tracking-wider text-sm
+           rounded-none border-2 border-public-flame
+           transition-all duration-200
+           hover:-translate-y-0.5
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-public-flame focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Bouton outline Ink (sur fond clair) */
+  .btn-outline-ink {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3.5
+           bg-transparent text-public-ink font-semibold uppercase tracking-wider text-sm
+           rounded-none border-2 border-public-ink
+           transition-all duration-200
+           hover:bg-public-ink hover:text-public-bone hover:-translate-y-0.5;
+  }
+
+  /* === Champs de formulaire publics ===
+   * input-public-light : sur fond bone (page claire)
+   * input-public-dark  : sur fond coffee/ink (carte sombre)
+   */
+  .input-public-light {
+    @apply w-full bg-transparent border-2 border-public-ink/20
+           px-4 py-2.5 text-public-ink placeholder-public-ink/40
+           focus:border-public-ink focus:outline-none focus:ring-0
+           transition-colors font-mono text-sm rounded-none;
+  }
+  .input-public-dark {
+    @apply w-full bg-public-ink/30 border-2 border-public-bone/15
+           px-4 py-2.5 text-public-bone placeholder-public-bone/40
+           focus:border-public-flame focus:outline-none focus:ring-0
+           transition-colors font-mono text-sm rounded-none;
+  }
+
+  /* Utilisé sur la page Donner (refonte 2026) : input clair arrondi.
+     Plus permissif que input-public-light (rounded + ring focus). */
+  .input-light {
+    @apply w-full bg-white border-2 border-public-ink/15 rounded-md
+           px-3 py-2.5 text-public-ink placeholder-public-ink/40 text-sm
+           focus:border-public-flame focus:outline-none focus:ring-2 focus:ring-public-flame/20
+           transition-all;
+  }
+
+  /* Bouton outline Bone (sur fond sombre) */
+  .btn-outline-bone {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3.5
+           bg-transparent text-public-bone font-semibold uppercase tracking-wider text-sm
+           rounded-none border-2 border-public-bone
+           transition-all duration-200
+           hover:bg-public-bone hover:text-public-ink hover:-translate-y-0.5;
+  }
+
+  /* === Marquee — bande typo défilante en boucle === */
+  /* Le wrapper doit avoir overflow-hidden, le track contient 2× le contenu pour boucle seamless. */
+  .marquee-track {
+    @apply flex gap-12 whitespace-nowrap animate-marquee;
+    width: max-content;
+  }
+  .marquee-track > * {
+    @apply shrink-0;
+  }
+
+  /* === Surlignage Flame qui s'anime === */
+  /* Effet "marker fluo" qui se trace de gauche à droite à la 1re vue */
+  .highlight-flame {
+    background-image: linear-gradient(120deg, theme('colors.public.flame') 0%, theme('colors.public.flame') 100%);
+    background-repeat: no-repeat;
+    background-position: 0 88%;
+    background-size: 0% 22%;
+    transition: background-size 0.7s ease-out;
+    padding: 0 0.05em;
+  }
+  .highlight-flame.is-visible {
+    background-size: 100% 22%;
+  }
+
+  /* === Sticker rotatif === */
+  .sticker-rotate {
+    @apply animate-sticker-rotate;
+    transform-origin: 50% 50%;
+  }
+
+  /* === Tag mono small caps (référence biblique, durée, location) === */
+  .tag-mono {
+    @apply font-mono text-xs uppercase tracking-[0.2em] text-public-stone;
+  }
+
+  /* === Texture grain (subtile, ajoute tactilité) === */
+  .grain-bg {
+    background-image:
+      linear-gradient(transparent, transparent),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E");
+    background-blend-mode: multiply;
+  }
+}
+
+@layer utilities {
+  /* Masque dégradé bas vers fond noir (souvent utilisé sur images héros). */
+  .mask-fade-bottom {
+    mask-image: linear-gradient(180deg, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, black 60%, transparent 100%);
+  }
+
+  /* Truncate à n lignes (line-clamp natif Tailwind 3.3+). */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Désactive le tap-highlight bleu sur mobile. */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* === 4. Keyframe utilisée par le badge live (point blanc clignotant) === */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================================
+   MODAL & FORM "Ivoire Chaud" — uniformisation 2026.
+   Palette : #FAF6EE (background), #1F1A14 (texte), gold accent.
+   Toutes les modals de l'app utilisent .nwc-modal pour assurer
+   une cohérence visuelle (cf. components/ui/Modal.jsx).
+   ============================================================ */
+.nwc-modal {
+  background: #FAF6EE;
+  color: #1F1A14;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.nwc-modal h1,
+.nwc-modal h2,
+.nwc-modal h3 {
+  color: #1F1A14;
+  font-family: Inter, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+.nwc-modal label,
+.nwc-modal .nwc-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B5F4E;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.nwc-modal input[type="text"],
+.nwc-modal input[type="email"],
+.nwc-modal input[type="password"],
+.nwc-modal input[type="number"],
+.nwc-modal input[type="date"],
+.nwc-modal input[type="search"],
+.nwc-modal input[type="tel"],
+.nwc-modal input[type="url"],
+.nwc-modal select,
+.nwc-modal textarea,
+.nwc-modal .nwc-input {
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid #E0D5BB;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1F1A14;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.nwc-modal input:focus,
+.nwc-modal select:focus,
+.nwc-modal textarea:focus,
+.nwc-modal .nwc-input:focus {
+  outline: none;
+  border-color: #B79358;
+  box-shadow: 0 0 0 3px rgba(183, 147, 88, 0.18);
+  background: #FFFFFF;
+}
+.nwc-modal input::placeholder,
+.nwc-modal textarea::placeholder {
+  color: #A89A82;
+}
+.nwc-modal input:disabled,
+.nwc-modal select:disabled,
+.nwc-modal textarea:disabled {
+  background: #F0E7D1;
+  color: #8C7E68;
+  cursor: not-allowed;
+}
+
+/* Boutons à utiliser DANS les modals (override discret) :
+   - .nwc-btn-primary : action principale (bordeaux/wine)
+   - .nwc-btn-ghost   : annuler/secondaire (transparent sur ivoire) */
+.nwc-modal .nwc-btn-primary,
+.nwc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #8B1A2F;
+  color: #FFFFFF;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.15s, transform 0.05s;
+}
+.nwc-modal .nwc-btn-primary:hover,
+.nwc-btn-primary:hover {
+  background: #6E1424;
+}
+.nwc-modal .nwc-btn-primary:disabled,
+.nwc-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.nwc-modal .nwc-btn-ghost,
+.nwc-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: #6B5F4E;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #E0D5BB;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.nwc-modal .nwc-btn-ghost:hover,
+.nwc-btn-ghost:hover {
+  background: #F0E7D1;
+  color: #1F1A14;
+  border-color: #B79358;
+}
+
+/* Aide / hint sous un champ */
+.nwc-modal .nwc-hint {
+  font-size: 12px;
+  color: #6B5F4E;
+  margin-top: 4px;
+}
+.nwc-modal .nwc-error {
+  font-size: 12px;
+  color: #B0273A;
+  margin-top: 4px;
+}

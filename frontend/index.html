@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Logo NWC en favicon (PNG haute résolution) -->
+    <link rel="icon" type="image/png" href="/logos/logo_newwine.png" />
+    <link rel="apple-touch-icon" href="/logos/logo_newwine.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#080808" />
+
+    <!-- Référencement et partage social -->
+    <title>New Wine Church — Sauvé pour Sauver</title>
+    <meta name="description" content="New Wine Church (NWC) — Église de jeunes adultes à Abidjan, Côte d'Ivoire. Une armée de Christ levée pour transformer cette génération. Sauvé pour Sauver." />
+    <meta name="keywords" content="New Wine Church, NWC, église, jeunes, Abidjan, Cocody, Bonoumin, Côte d'Ivoire, Christ, sauvé, évangélisation, Pasteur Georges Amoako-Prempeh" />
+    <meta name="author" content="New Wine Church" />
+
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+    <meta property="og:title" content="New Wine Church — Sauvé pour Sauver" />
+    <meta property="og:description" content="Église de jeunes adultes à Abidjan. Rejoins l'armée de Christ." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/logos/logo_newwine.png" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="New Wine Church — Sauvé pour Sauver" />
+    <meta name="twitter:description" content="Église de jeunes adultes à Abidjan. Rejoins l'armée de Christ." />
+    <meta name="twitter:image" content="/logos/logo_newwine.png" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Préconnexion + DNS-prefetch pour Google Fonts (gain TTFB ~100ms) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+
+    <!-- === Polices home publique (refonte "Magazine Drop") === -->
+    <!-- Anton : display impact (headlines XXL "SAUVÉ. POUR SAUVER.") -->
+    <!-- Fraunces : serif éditorial expressif (pull-quotes, scripture) — axes optiques -->
+    <!-- Geist Mono : tags + numéros Mobile Money — typo Vercel/Linear très contemporaine -->
+    <!-- display=swap → pas de FOIT, font invisible jusqu'au load (UX safe) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Preload du logo NWC (LCP du hero quand pas d'image bg) -->
+    <link rel="preload" as="image" href="/logos/logo_newwine.png" fetchpriority="high" />
+  </head>
+  <body class="bg-ink-950 text-white">
+    <noscript>
+      <div style="padding:2rem;text-align:center;font-family:sans-serif">
+        Cette application nécessite JavaScript pour fonctionner.
+        Veuillez activer JavaScript dans votre navigateur.
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

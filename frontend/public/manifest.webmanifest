@@ -1,0 +1,26 @@
+{
+  "name": "New Wine Church",
+  "short_name": "NWC",
+  "description": "New Wine Church — Sauvé pour Sauver. Église de jeunes adultes à Abidjan.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logos/logo_newwine.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logos/logo_newwine.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["religion", "lifestyle", "education"],
+  "lang": "fr"
+}
