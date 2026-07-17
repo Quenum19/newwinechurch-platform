@@ -123,7 +123,7 @@ jobs:
     needs: [changes, deploy-backend]
     if: |
       always() &&
-      needs.changes.outputs.frontend == 'true' &&
+      (needs.changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch') &&
       (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
     runs-on: ubuntu-latest
 
