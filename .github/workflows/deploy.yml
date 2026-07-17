@@ -115,11 +115,16 @@ jobs:
 
   # ================================================================
   # Job 3 — DÉPLOIEMENT FRONTEND React (build + upload dist/)
+  # NB: attend que le backend soit fini pour éviter que Hostinger nous
+  # rate-limit avec 2 connexions SSH simultanées (fail2ban-like).
   # ================================================================
   deploy-frontend:
     name: Frontend React
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    needs: [changes, deploy-backend]
+    if: |
+      always() &&
+      needs.changes.outputs.frontend == 'true' &&
+      (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
     runs-on: ubuntu-latest
 
     steps:
