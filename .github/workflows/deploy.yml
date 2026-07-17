@@ -67,6 +67,8 @@ jobs:
             --exclude='node_modules/'
             --exclude='storage/'
             --exclude='bootstrap/cache/'
+            --exclude='public/storage'
+            --exclude='public/build/'
             --exclude='*.log'
             --exclude='.git*'
             --exclude='.DS_Store'
@@ -99,6 +101,9 @@ jobs:
 
             echo "→ Migration BDD"
             php artisan migrate --force
+
+            echo "→ Recréation du lien symbolique storage (idempotent)"
+            php artisan storage:link --force || true
 
             echo "→ Vidage caches"
             php artisan cache:clear
