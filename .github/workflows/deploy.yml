@@ -169,6 +169,7 @@ jobs:
 
   # ================================================================
   # Job 4 — Notification finale (succès ou échec)
+  # Log dans les Actions + envoi Discord (si secret configuré).
   # ================================================================
   notify:
     name: Notification
@@ -177,12 +178,101 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Résumé
+        id: summary
         run: |
-          echo "Backend : ${{ needs.deploy-backend.result }}"
-          echo "Frontend : ${{ needs.deploy-frontend.result }}"
-          if [ "${{ needs.deploy-backend.result }}" = "failure" ] || \
-             [ "${{ needs.deploy-frontend.result }}" = "failure" ]; then
-            echo "❌ Déploiement échoué"
+          BE="${{ needs.deploy-backend.result }}"
+          FE="${{ needs.deploy-frontend.result }}"
+          echo "Backend  : $BE"
+          echo "Frontend : $FE"
+
+          # Détermine le statut global
+          if [ "$BE" = "failure" ] || [ "$FE" = "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=15158332" >> $GITHUB_OUTPUT   # rouge Discord
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          elif [ "$BE" = "success" ] || [ "$FE" = "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=3066993" >> $GITHUB_OUTPUT    # vert Discord
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          else
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            echo "color=10197915" >> $GITHUB_OUTPUT   # gris
+            echo "emoji=⏭️" >> $GITHUB_OUTPUT
+          fi
+
+          # Sort en erreur si un des jobs a échoué (empêche le badge vert menteur)
+          if [ "$BE" = "failure" ] || [ "$FE" = "failure" ]; then
             exit 1
           fi
-          echo "✅ Déploiement terminé"
+
+      # === Discord webhook ===
+      # Ne s'exécute que si le secret DISCORD_WEBHOOK est configuré.
+      # On force un `if: always()` sur le job global mais on saute
+      # l'appel Discord si le webhook n'est pas dispo (dev, forks…).
+      - name: Notification Discord
+        if: always() && env.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          # Extrait auteur + message du commit (première ligne uniquement)
+          COMMIT_MSG=$(git log -1 --pretty=%s || echo "N/A")
+          COMMIT_AUTHOR="${{ github.actor }}"
+          COMMIT_SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          STATUS="${{ steps.summary.outputs.status }}"
+          COLOR="${{ steps.summary.outputs.color }}"
+          EMOJI="${{ steps.summary.outputs.emoji }}"
+
+          # Statut en français friendly
+          case "$STATUS" in
+            success) TITLE="$EMOJI Déploiement réussi — NWC";;
+            failure) TITLE="$EMOJI Déploiement ÉCHOUÉ — NWC";;
+            *)       TITLE="$EMOJI Déploiement ignoré — NWC";;
+          esac
+
+          # Backend/Frontend en emoji
+          case "${{ needs.deploy-backend.result }}" in
+            success) BE_ICON="✅";; failure) BE_ICON="❌";; skipped) BE_ICON="⏭️";;
+            *) BE_ICON="⚫";;
+          esac
+          case "${{ needs.deploy-frontend.result }}" in
+            success) FE_ICON="✅";; failure) FE_ICON="❌";; skipped) FE_ICON="⏭️";;
+            *) FE_ICON="⚫";;
+          esac
+
+          # Payload Discord Rich Embed (JSON)
+          PAYLOAD=$(cat <<JSON
+          {
+            "username": "NWC Deploy Bot",
+            "avatar_url": "https://newwinechurch.ci/logos/logo_newwine.png",
+            "embeds": [{
+              "title": "$TITLE",
+              "url": "$RUN_URL",
+              "color": $COLOR,
+              "fields": [
+                { "name": "📝 Commit", "value": "[\`$COMMIT_SHA_SHORT\`]($COMMIT_URL) $COMMIT_MSG", "inline": false },
+                { "name": "👤 Auteur", "value": "$COMMIT_AUTHOR", "inline": true },
+                { "name": "🌿 Branche", "value": "\`${{ github.ref_name }}\`", "inline": true },
+                { "name": "⚙️ Trigger", "value": "\`${{ github.event_name }}\`", "inline": true },
+                { "name": "🔧 Backend", "value": "$BE_ICON ${{ needs.deploy-backend.result }}", "inline": true },
+                { "name": "🎨 Frontend", "value": "$FE_ICON ${{ needs.deploy-frontend.result }}", "inline": true },
+                { "name": "🔗 Détails", "value": "[Voir le run]($RUN_URL)", "inline": true }
+              ],
+              "footer": {
+                "text": "New Wine Church · Auto-deploy CI/CD",
+                "icon_url": "https://newwinechurch.ci/logos/logo_newwine.png"
+              },
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }]
+          }
+          JSON
+          )
+
+          # Envoi webhook — silencieux, on log seulement l'échec.
+          curl -sS -H "Content-Type: application/json" \
+               -X POST \
+               -d "$PAYLOAD" \
+               "$DISCORD_WEBHOOK" \
+            || echo "⚠️  Notif Discord échouée (webhook invalide ?)"
