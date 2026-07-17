@@ -138,10 +138,11 @@ class AdminGovernorsController extends Controller
             if (! $user->hasRole('gouverneur')) {
                 $user->assignRole('gouverneur');
             }
-            $user->update([
+            // forceFill : is_governor hors $fillable (protection mass assignment)
+            $user->forceFill([
                 'is_governor'   => true,
                 'department_id' => $dept->id,
-            ]);
+            ])->save();
 
             // Profil enrichi initialisé (vide si pas encore créé).
             GovernorProfile::firstOrCreate(['user_id' => $user->id]);
@@ -202,7 +203,7 @@ class AdminGovernorsController extends Controller
                 ->whereNull('ended_at')
                 ->exists();
             if (! $hasOther) {
-                $user->update(['is_governor' => false]);
+                $user->forceFill(['is_governor' => false])->save();
                 if ($user->hasRole('gouverneur')) {
                     $user->removeRole('gouverneur');
                 }

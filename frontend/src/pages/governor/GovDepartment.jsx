@@ -269,26 +269,80 @@ function Textarea({ label, value, onChange, max, rows = 4, error }) {
 }
 
 function FileField({ label, accept, onFile, preview, aspect }) {
+  const [hovering, setHovering] = useState(false)
   return (
     <div>
-      <label className="block text-sm text-white/80 mb-1.5">{label}</label>
-      <label className={cn(
-        'relative cursor-pointer rounded-lg border-2 border-dashed border-white/10 hover:border-gold-500/50 bg-ink-950 transition flex items-center justify-center overflow-hidden',
-        aspect,
-      )}>
+      <label
+        className="block text-sm mb-2 font-medium"
+        style={{ color: 'var(--adm-text)' }}
+      >
+        {label}
+      </label>
+
+      <label
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
+        className={cn(
+          'relative cursor-pointer rounded-lg border-2 border-dashed transition flex items-center justify-center overflow-hidden group',
+          aspect,
+        )}
+        style={{
+          background: hovering ? 'var(--adm-card-hover)' : 'var(--adm-card)',
+          borderColor: hovering ? 'var(--adm-accent)' : 'var(--adm-border-strong)',
+        }}
+      >
         {preview ? (
-          <img src={preview} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <>
+            <img src={preview} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            {/* Overlay au survol : indique qu'on peut changer la photo */}
+            <div
+              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+              style={{ background: 'rgba(0,0,0,0.45)' }}
+            >
+              <div className="text-center text-white">
+                <Upload className="mx-auto" size={22} />
+                <p className="text-xs font-medium mt-1">Changer</p>
+              </div>
+            </div>
+          </>
         ) : (
-          <div className="text-center px-4">
-            <Upload className="mx-auto text-white/40" size={24} />
-            <p className="text-xs text-white/40 mt-1">Cliquer pour téléverser</p>
+          <div className="text-center px-4 py-3">
+            <Upload
+              className="mx-auto"
+              size={26}
+              style={{ color: hovering ? 'var(--adm-accent)' : 'var(--adm-text-muted)' }}
+            />
+            <p
+              className="text-xs mt-2 font-medium"
+              style={{ color: hovering ? 'var(--adm-accent)' : 'var(--adm-text-muted)' }}
+            >
+              Cliquer pour téléverser
+            </p>
+            <p
+              className="text-[10px] mt-1"
+              style={{ color: 'var(--adm-text-faint)' }}
+            >
+              JPG · PNG · WebP (max 5 Mo)
+            </p>
           </div>
         )}
         <input
           type="file"
           accept={accept}
           className="absolute inset-0 opacity-0 cursor-pointer"
-          onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null
+            if (file) {
+              if (file.size > 5 * 1024 * 1024) {
+                toast.error('Fichier trop lourd (max 5 Mo).')
+                e.target.value = ''
+                return
+              }
+              toast.success(`${file.name} sélectionnée. Clique sur Enregistrer pour valider.`, { duration: 3000 })
+            }
+            onFile(file)
+            e.target.value = '' // permet de re-sélectionner le même fichier
+          }}
         />
       </label>
     </div>

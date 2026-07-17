@@ -1,13 +1,16 @@
 /** Articles blog — Refonte 2026 admin-v2 native. */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Plus, Eye, EyeOff, Star, Trash2, BookOpen, ChevronRight } from 'lucide-react'
+import { Plus, Eye, EyeOff, Star, Trash2, BookOpen, ChevronRight, Check, Square, CheckSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import DataTable from '@/components/admin/DataTable.jsx'
+import BulkActionBar from '@/components/admin/BulkActionBar.jsx'
+import ResetFiltersButton from '@/components/admin/ResetFiltersButton.jsx'
+import useMultiSelect from '@/hooks/useMultiSelect'
 import { posts } from '@/api/admin'
 
 const STATUS_META = {
@@ -20,6 +23,25 @@ export default function PostsList() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState({ page: 1, per_page: 20 })
+  const sel = useMultiSelect()
+
+  const { data: pageData } = useQuery({
+    queryKey: ['admin', 'posts', filters],
+    queryFn: () => posts.list(filters),
+    keepPreviousData: true,
+  })
+  const visibleIds = (pageData?.data ?? []).map((p) => p.id)
+  const allVisibleSelected = sel.allSelected(visibleIds)
+
+  const bulk = useMutation({
+    mutationFn: ({ action, ids }) => posts.bulk(action, ids),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Action effectuée.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'posts'] })
+      sel.clear()
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Action impossible.'),
+  })
 
   const togglePublish = useMutation({
     mutationFn: (id) => posts.togglePublish(id),
@@ -37,6 +59,20 @@ export default function PostsList() {
   })
 
   const columns = [
+    {
+      key: '_select', label: '', cellClassName: 'w-10',
+      render: (p) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); sel.toggle(p.id, e, visibleIds) }}
+          className={`h-5 w-5 rounded flex items-center justify-center transition ${
+            sel.isSelected(p.id) ? 'bg-[var(--adm-accent)] text-white' : 'border-2 hover:bg-zinc-100'
+          }`}
+          style={{ borderColor: sel.isSelected(p.id) ? 'transparent' : 'var(--adm-border)' }}
+          aria-label="Sélectionner"
+        >{sel.isSelected(p.id) && <Check size={12} strokeWidth={3} />}</button>
+      ),
+    },
     {
       key: 'cover_image', label: '',
       render: (p) => (
@@ -166,17 +202,49 @@ export default function PostsList() {
         onRowClick={(p) => navigate(`/admin/blog/${p.id}`)}
         mobileRow={(p) => <PostMobileRow p={p} />}
         filtersSlot={
-          <select
-            className="adm-select w-auto text-sm h-9"
-            value={filters.status || ''}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined, page: 1 })}
-          >
-            <option value="">Tous statuts</option>
-            <option value="published">Publiés</option>
-            <option value="draft">Brouillons</option>
-            <option value="archived">Archivés</option>
-          </select>
+          <>
+            <select
+              className="adm-select w-auto text-sm h-9"
+              value={filters.status || ''}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined, page: 1 })}
+            >
+              <option value="">Tous statuts</option>
+              <option value="published">Publiés</option>
+              <option value="draft">Brouillons</option>
+              <option value="archived">Archivés</option>
+            </select>
+            {visibleIds.length > 0 && (
+              <button
+                onClick={() => sel.toggleAll(visibleIds)}
+                className="adm-btn adm-btn-secondary text-xs h-9"
+              >
+                {allVisibleSelected ? <CheckSquare size={13}/> : <Square size={13}/>}
+                {allVisibleSelected ? 'Désélectionner' : `Tout (${visibleIds.length})`}
+              </button>
+            )}
+            <ResetFiltersButton
+              filters={filters}
+              onReset={() => setFilters({ page: 1, per_page: 20 })}
+            />
+          </>
         }
+      />
+
+      <BulkActionBar
+        count={sel.count}
+        onClear={sel.clear}
+        label="article"
+        actions={[
+          { key: 'publish',   label: 'Publier',   icon: Eye,    onClick: () => bulk.mutate({ action: 'publish',   ids: sel.ids }) },
+          { key: 'unpublish', label: 'Brouillon', icon: EyeOff, onClick: () => bulk.mutate({ action: 'unpublish', ids: sel.ids }) },
+          {
+            key: 'delete', label: 'Archiver', icon: Trash2, variant: 'danger', confirm: true,
+            confirmTitle: 'Archiver ces articles ?',
+            confirmText: `${sel.count} article(s) seront archivés.`,
+            confirmCta: 'Archiver',
+            onClick: () => bulk.mutate({ action: 'delete', ids: sel.ids }),
+          },
+        ]}
       />
     </div>
   )

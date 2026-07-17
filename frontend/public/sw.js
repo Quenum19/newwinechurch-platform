@@ -1,17 +1,19 @@
 /**
- * Service Worker minimaliste NWC.
+ * Service Worker NWC v2 — défensif pour ne pas casser l'admin.
  *
  * Stratégies :
- *  - Pages HTML : network-first → fallback cache (offline-friendly)
+ *  - SKIP /admin/* (gestion via React Router pur, pas d'interception)
+ *  - SKIP requêtes cross-origin (api.newinechurch.org est géré par axios)
+ *  - SKIP non-GET (POST/PUT/DELETE : passe direct au browser)
+ *  - Pages publiques HTML : network-first → fallback cache
  *  - Static assets (JS/CSS/images) : cache-first
- *  - API calls : pas de cache (toujours réseau)
  *
  * Évite vite-plugin-pwa (incompatible Vite 8) — implémentation manuelle.
  */
 
-const CACHE_VERSION = 'nwc-v1'
-const STATIC_CACHE = `static-${CACHE_VERSION}`
-const PAGES_CACHE  = `pages-${CACHE_VERSION}`
+const CACHE_VERSION = 'nwc-v2-2026-05-24'
+const STATIC_CACHE  = `static-${CACHE_VERSION}`
+const PAGES_CACHE   = `pages-${CACHE_VERSION}`
 
 // Pré-cache des assets critiques au moment de l'install.
 const PRECACHE_URLS = [
@@ -24,11 +26,13 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
+      .catch(() => {}) // silently OK si certains assets manquent
   )
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
+  // Purge TOUS les anciens caches (v1, v2 précédents) — bump CACHE_VERSION pour forcer.
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
@@ -45,22 +49,39 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Ignorer les requêtes non-GET et non-http (chrome-extension etc.)
+  // 1. Ignorer tout sauf GET (les POST/PUT/DELETE des forms admin doivent passer
+  //    directement au browser sans interception).
   if (request.method !== 'GET') return
+
+  // 2. Ignorer les schémes non-http (chrome-extension, data:, etc.)
   if (! url.protocol.startsWith('http')) return
 
-  // 1. API : toujours réseau (pas de cache).
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/sanctum/')) {
-    return // laisse le browser gérer
-  }
+  // 3. Ignorer cross-origin (api.newinechurch.org, fonts, etc.) — laisse axios/browser gérer.
+  if (url.origin !== self.location.origin) return
 
-  // 2. Pages HTML : network-first avec fallback cache.
+  // 4. Ignorer l'admin ENTIÈREMENT — fetch direct, pas de cache, pas d'interception.
+  //    Permet aux fetch internes des forms (Tiptap, MediaLibrary uploads, etc.) de
+  //    passer sans risque de bloquage par le SW.
+  if (url.pathname.startsWith('/admin')) return
+  if (url.pathname.startsWith('/mon-espace')) return
+  if (url.pathname.startsWith('/gouverneur')) return
+  if (url.pathname.startsWith('/leader')) return
+
+  // 5. Ignorer les routes API / sanctum si quelqu'un tape via le racine.
+  if (url.pathname.startsWith('/api/'))     return
+  if (url.pathname.startsWith('/sanctum/')) return
+  if (url.pathname.startsWith('/storage/')) return
+
+  // 6. Pages HTML publiques : network-first avec fallback cache (offline-friendly).
   if (request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone()
-          caches.open(PAGES_CACHE).then((c) => c.put(request, copy))
+          // Ne cache que les réponses 2xx
+          if (res.ok) {
+            const copy = res.clone()
+            caches.open(PAGES_CACHE).then((c) => c.put(request, copy)).catch(() => {})
+          }
           return res
         })
         .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
@@ -68,17 +89,19 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // 3. Static assets (JS/CSS/images/fonts) : cache-first.
+  // 7. Static assets (JS/CSS/images/fonts) : cache-first avec fallback réseau.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached
-      return fetch(request).then((res) => {
-        if (res.ok && (url.origin === self.location.origin)) {
-          const copy = res.clone()
-          caches.open(STATIC_CACHE).then((c) => c.put(request, copy))
-        }
-        return res
-      })
+      return fetch(request)
+        .then((res) => {
+          if (res.ok && url.origin === self.location.origin) {
+            const copy = res.clone()
+            caches.open(STATIC_CACHE).then((c) => c.put(request, copy)).catch(() => {})
+          }
+          return res
+        })
+        .catch(() => cached || new Response('', { status: 504, statusText: 'Offline' }))
     })
   )
 })

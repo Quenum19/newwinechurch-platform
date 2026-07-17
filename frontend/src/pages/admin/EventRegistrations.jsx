@@ -2,10 +2,11 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft, CheckCircle2, Users, Calendar } from 'lucide-react'
+import { CheckCircle2, Users, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
+import BackButton from '@/components/admin/BackButton.jsx'
 import { events } from '@/api/admin'
 
 export default function EventRegistrations() {
@@ -39,13 +40,7 @@ export default function EventRegistrations() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <Link
-        to="/admin/evenements"
-        className="inline-flex items-center gap-1 text-sm transition hover:underline"
-        style={{ color: 'var(--adm-text-muted)' }}
-      >
-        <ArrowLeft size={14} /> Retour aux événements
-      </Link>
+      <BackButton to="/admin/evenements" label="Retour aux événements" />
 
       <header>
         <h1>{event?.title}</h1>

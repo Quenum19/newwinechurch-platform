@@ -57,9 +57,9 @@ class CellReportSubmittedWithPdfMail extends Mailable implements ShouldQueue
                 'cell'           => $this->report->cell,
                 'leader'         => $this->report->leader,
                 'attendanceRate' => $this->report->attendanceRate(),
-                'adminUrl'       => rtrim(config('app.url'), '/').'/admin/cellules/'.$this->report->cell_id,
-                'leaderUrl'      => rtrim(config('app.url'), '/').'/leader/rapports/'.$this->report->id,
-                'governorUrl'    => rtrim(config('app.url'), '/').'/gouverneur/cellules/'.$this->report->cell_id,
+                'adminUrl'       => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/admin/cellules/'.$this->report->cell_id,
+                'leaderUrl'      => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/leader/rapports/'.$this->report->id,
+                'governorUrl'    => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/gouverneur/cellules/'.$this->report->cell_id,
             ],
         );
     }

@@ -7,6 +7,9 @@
     'governor' => 'Un de vos leaders a soumis son rapport',
     'leader'   => 'Votre rapport a bien été soumis',
   ];
+  // ⚠️ SÉCURITÉ : ces intros contiennent du HTML (`<strong>`), utilisé plus bas
+  // avec `{!! !!}` (échappement DÉSACTIVÉ). Toute donnée user-fournie (nom,
+  // email…) DOIT être passée à `e()` sinon XSS stocké possible. Voir audit #M4.
   $intros = [
     'pasteur'  => 'La cellule <strong style="color:#C9A84C;">' . e($cell->name) . '</strong> vient de soumettre son rapport hebdomadaire. Le PDF officiel est joint à ce mail.',
     'governor' => 'Le leader <strong style="color:#C9A84C;">' . e($leader->full_name ?? '—') . '</strong> a soumis le rapport de la cellule <strong>' . e($cell->name) . '</strong>. PDF en pièce jointe.',

@@ -24,6 +24,7 @@ import { useLogout } from '@/hooks/useAuth'
 import { useNotificationBootstrap } from '@/hooks/useNotifications'
 import NotificationCenter from '@/components/shared/NotificationCenter'
 import LanguageSwitcher from '@/components/public/LanguageSwitcher.jsx'
+import SafeBoundary from '@/components/SafeBoundary.jsx'
 import { cn } from '@/utils/cn'
 
 function buildMemberNav(t) {
@@ -305,7 +306,27 @@ export default function MemberLayout() {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          <Outlet />
+          {/* SafeBoundary : si UNE page enfant crash pendant le render (ex. lors
+              d'un switch d'espace), on affiche un fallback lisible au lieu de
+              laisser l'écran devenir noir. La sidebar + topbar restent visibles. */}
+          <SafeBoundary
+            fallback={
+              <div className="py-16 text-center">
+                <p className="text-sm mb-3" style={{ color: 'var(--adm-text-muted)' }}>
+                  Une erreur est survenue lors du chargement de cette page.
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md transition"
+                  style={{ background: 'var(--adm-accent)', color: '#fff' }}
+                >
+                  Recharger la page
+                </button>
+              </div>
+            }
+          >
+            <Outlet />
+          </SafeBoundary>
         </main>
       </div>
     </div>

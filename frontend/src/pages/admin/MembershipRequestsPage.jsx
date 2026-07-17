@@ -11,11 +11,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   CheckCircle2, XCircle, Mail, Phone, Calendar, MapPin,
-  Loader2, X, AlertCircle, UserCheck,
+  Loader2, X, AlertCircle, UserCheck, Check, Square, CheckSquare, Trash2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
+import BulkActionBar from '@/components/admin/BulkActionBar.jsx'
+import ResetFiltersButton from '@/components/admin/ResetFiltersButton.jsx'
+import useMultiSelect from '@/hooks/useMultiSelect'
 import { membershipRequests } from '@/api/admin'
 
 const STATUS_META = {
@@ -30,12 +33,15 @@ export default function MembershipRequestsPage() {
   const [search, setSearch] = useState('')
   const [approving, setApproving] = useState(null)
   const [rejecting, setRejecting] = useState(null)
+  const sel = useMultiSelect()
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'membership-requests', status, search],
     queryFn: () => membershipRequests.list({ status: status || undefined, search: search || undefined }),
   })
   const items = data?.data?.data ?? data?.data ?? []
+  const pendingIds = items.filter((r) => r.status === 'pending').map((r) => r.id)
+  const allPendingSelected = sel.allSelected(pendingIds)
 
   const reject = useMutation({
     mutationFn: ({ id, reason }) => membershipRequests.reject(id, reason),
@@ -45,6 +51,16 @@ export default function MembershipRequestsPage() {
       setRejecting(null)
     },
     onError: (err) => toast.error(err?.response?.data?.message ?? 'Erreur.'),
+  })
+
+  const bulk = useMutation({
+    mutationFn: ({ action, ids, reason }) => membershipRequests.bulk(action, ids, reason),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Action effectuée.')
+      qc.invalidateQueries({ queryKey: ['admin', 'membership-requests'] })
+      sel.clear()
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Action impossible.'),
   })
 
   return (
@@ -70,6 +86,21 @@ export default function MembershipRequestsPage() {
                onChange={(e) => setSearch(e.target.value)}
                placeholder="Rechercher (nom, email, téléphone)…"
                className="adm-input flex-1 max-w-md" />
+        {pendingIds.length > 0 && (
+          <button
+            onClick={() => sel.toggleAll(pendingIds)}
+            className="adm-btn adm-btn-secondary text-xs h-9"
+            title={allPendingSelected ? 'Tout désélectionner' : 'Tout sélectionner les demandes en attente'}
+          >
+            {allPendingSelected ? <CheckSquare size={13}/> : <Square size={13}/>}
+            {allPendingSelected ? 'Désélectionner' : `En attente (${pendingIds.length})`}
+          </button>
+        )}
+        <ResetFiltersButton
+          filters={{ status, search }}
+          defaults={{ status: 'pending' }}
+          onReset={() => { setStatus('pending'); setSearch('') }}
+        />
       </div>
 
       {isLoading ? (
@@ -87,12 +118,29 @@ export default function MembershipRequestsPage() {
             <RequestCard
               key={req.id}
               req={req}
+              isSelected={sel.isSelected(req.id)}
+              onToggleSelect={(e) => sel.toggle(req.id, e, pendingIds)}
               onApprove={() => setApproving(req)}
               onReject={() => setRejecting(req)}
             />
           ))}
         </div>
       )}
+
+      <BulkActionBar
+        count={sel.count}
+        onClear={sel.clear}
+        label="demande"
+        actions={[
+          {
+            key: 'reject', label: 'Rejeter en lot', icon: Trash2, variant: 'danger', confirm: true,
+            confirmTitle: 'Rejeter ces demandes ?',
+            confirmText: `${sel.count} demande(s) seront marquées rejetées. Pas d'email automatique.`,
+            confirmCta: 'Rejeter',
+            onClick: () => bulk.mutate({ action: 'reject', ids: sel.ids }),
+          },
+        ]}
+      />
 
       {approving && (
         <ApproveModal
@@ -117,21 +165,35 @@ export default function MembershipRequestsPage() {
   )
 }
 
-function RequestCard({ req, onApprove, onReject }) {
+function RequestCard({ req, isSelected, onToggleSelect, onApprove, onReject }) {
   const meta = STATUS_META[req.status] ?? STATUS_META.pending
   const isPending = req.status === 'pending'
   const fullName = `${req.first_name ?? ''} ${req.name ?? ''}`.trim()
 
   return (
-    <article className="adm-card p-4 sm:p-5">
+    <article className={`adm-card p-4 sm:p-5 transition ${isSelected ? 'ring-2' : ''}`}
+             style={{ '--tw-ring-color': isSelected ? 'var(--adm-accent)' : undefined }}>
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <h3 className="font-semibold text-[15px] truncate" style={{ color: 'var(--adm-text)' }}>
-            {fullName || '(Sans nom)'}
-          </h3>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--adm-text-muted)' }}>
-            Reçue {format(new Date(req.created_at), 'd MMM yyyy', { locale: fr })}
-          </p>
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          {isPending && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleSelect?.(e) }}
+              className={`h-5 w-5 rounded flex items-center justify-center transition shrink-0 mt-0.5 ${
+                isSelected ? 'bg-[var(--adm-accent)] text-white' : 'border-2 hover:bg-zinc-100'
+              }`}
+              style={{ borderColor: isSelected ? 'transparent' : 'var(--adm-border)' }}
+              aria-label="Sélectionner"
+            >{isSelected && <Check size={12} strokeWidth={3}/>}</button>
+          )}
+          <div className="min-w-0">
+            <h3 className="font-semibold text-[15px] truncate" style={{ color: 'var(--adm-text)' }}>
+              {fullName || '(Sans nom)'}
+            </h3>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--adm-text-muted)' }}>
+              Reçue {format(new Date(req.created_at), 'd MMM yyyy', { locale: fr })}
+            </p>
+          </div>
         </div>
         <span className={`adm-badge ${meta.cls}`}>{meta.label}</span>
       </div>

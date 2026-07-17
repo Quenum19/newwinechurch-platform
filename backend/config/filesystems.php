@@ -40,7 +40,11 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Permet d'override la racine du disque public via env, indispensable
+            // sur hébergement mutualisé (Hostinger) où symlink() est bloqué par
+            // CageFS : on pointe directement vers public_html/api/storage/
+            // pour qu'Apache serve les images sans passer par PHP (~50× plus rapide).
+            'root' => env('FILESYSTEM_PUBLIC_ROOT') ?: storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,

@@ -36,7 +36,9 @@ class AccountCredentialsMail extends Mailable implements ShouldQueue
             with: [
                 'user'            => $this->user,
                 'initialPassword' => $this->initialPassword,
-                'loginUrl'        => rtrim(config('app.url'), '/').'/connexion',
+                // Le lien pointe vers le FRONTEND (newinechurch.org), pas l'API
+                // (api.newinechurch.org qui n'a pas de route /connexion).
+                'loginUrl'        => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/connexion',
             ],
         );
     }

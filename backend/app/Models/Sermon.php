@@ -15,11 +15,14 @@ use Spatie\Sluggable\SlugOptions;
  */
 class Sermon extends Model
 {
-    use HasFactory, HasSlug, SoftDeletes;
+    use HasFactory, HasSlug, SoftDeletes, \App\Models\Concerns\HasBilingualFields;
+
+    protected array $bilingualFields = ['title', 'description'];
 
     protected $fillable = [
-        'title', 'slug', 'description', 'speaker_id', 'series_id',
-        'scripture_reference', 'sermon_date', 'type',
+        'title', 'title_en', 'slug', 'description', 'description_en',
+        'speaker_id', 'external_speaker_name',
+        'series_id', 'scripture_reference', 'sermon_date', 'type',
         'video_url', 'audio_url', 'youtube_url', 'thumbnail',
         'duration_seconds', 'views_count',
         'is_featured', 'is_published', 'published_at',
@@ -49,6 +52,16 @@ class Sermon extends Model
     public function series(): BelongsTo
     {
         return $this->belongsTo(SermonSeries::class, 'series_id');
+    }
+
+    public function themes(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            SermonTheme::class,
+            'sermon_theme_sermon',
+            'sermon_id',
+            'theme_id',
+        )->orderBy('sort_order')->withTimestamps();
     }
 
     /** Sermons effectivement visibles publiquement. */

@@ -29,6 +29,9 @@ export default function CommunityPage() {
     staleTime: 5 * 60 * 1000,
   })
   const all = data?.data ?? []
+  // Total exact (actifs + inactifs), exposé par le backend dans meta.total_count.
+  // Si le backend ne le renvoie pas encore, fallback sur all.length.
+  const totalDepartments = data?.meta?.total_count ?? all.length
   // Normalise une chaîne : minuscules + sans accents (NFD + suppression diacritiques).
   // → "média" et "media" matchent ; "Évangélisation" trouvable via "evangelisation".
   const norm = (s) => (s ?? '')
@@ -45,7 +48,6 @@ export default function CommunityPage() {
     )
   }, [all, q])
 
-  const totalMembers = all.reduce((sum, d) => sum + (d.members_count ?? 0), 0)
   const staffed = all.filter((d) => d.captain).length
 
   return (
@@ -58,11 +60,10 @@ export default function CommunityPage() {
           desc={<>{t('community.heroDesc', "« Comme dans un seul corps, nous avons plusieurs membres » — Romains 12:4. Chaque département est une porte d'entrée vers le service.")}</>}
         />
 
-        {all.length > 0 && (
-          <div className="mt-10 grid grid-cols-3 gap-4 max-w-2xl border-t-2 border-public-ink/15 pt-6">
-            <Stat value={all.length} label={t('community.departmentsLabel', 'Départements')}/>
+        {totalDepartments > 0 && (
+          <div className="mt-10 grid grid-cols-2 gap-4 max-w-xl border-t-2 border-public-ink/15 pt-6">
+            <Stat value={totalDepartments} label={t('community.departmentsLabel', 'Départements')}/>
             <Stat value={staffed} label={t('community.governorsLabel', 'Gouverneurs actifs')}/>
-            <Stat value={totalMembers} label={t('community.membersLabel', 'Membres servants')}/>
           </div>
         )}
 

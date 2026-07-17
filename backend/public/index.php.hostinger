@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * ==============================================================
+ *  NEW WINE CHURCH — Entrée Laravel pour Hostinger Premium
+ *
+ *  Variant du index.php standard adapté à l'architecture Hostinger :
+ *
+ *    /home/u781799599/
+ *    ├── nwc_backend/                       ← Code Laravel (hors web)
+ *    │   ├── vendor/  bootstrap/  storage/  app/  ...
+ *    │   └── .env
+ *    └── domains/newinechurch.org/public_html/api/
+ *        ├── index.php       ← CE FICHIER
+ *        └── .htaccess
+ *
+ *  Le standard Laravel suppose `vendor/` et `bootstrap/app.php` un seul
+ *  niveau au-dessus (../). Ici on doit remonter 4 niveaux jusqu'à la
+ *  racine FTP puis descendre dans nwc_backend/.
+ *
+ *  Sécurité : aucun fichier sensible (.env, vendor, app) n'est accessible
+ *  via Apache puisque tout est hors du document root.
+ * ==============================================================
+ */
+
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+
+define('LARAVEL_START', microtime(true));
+
+/**
+ * Localisation du backend Laravel par rapport à ce fichier.
+ *  - __DIR__ = /home/u781799599/domains/newinechurch.org/public_html/api
+ *  - 4 cd .. ramènent à /home/u781799599
+ *  - puis on plonge dans nwc_backend/
+ *
+ * Si Hostinger te donne un autre layout, ajuste cette constante uniquement.
+ */
+$backend = realpath(__DIR__ . '/../../../../nwc_backend');
+
+if ($backend === false || ! is_dir($backend)) {
+    http_response_code(500);
+    exit(
+        "Erreur de déploiement : impossible de localiser nwc_backend/. "
+        . "Vérifie que le dossier est bien à la racine de ton compte FTP "
+        . "(/home/u781799599/nwc_backend/)."
+    );
+}
+
+// --- Mode maintenance (php artisan down) ---
+if (file_exists($maintenance = $backend . '/storage/framework/maintenance.php')) {
+    require $maintenance;
+}
+
+// --- Autoload Composer ---
+require $backend . '/vendor/autoload.php';
+
+// --- Boot Laravel et handle de la requête HTTP ---
+/** @var Application $app */
+$app = require_once $backend . '/bootstrap/app.php';
+
+$app->handleRequest(Request::capture());

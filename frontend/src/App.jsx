@@ -20,6 +20,7 @@ import { Toaster } from 'react-hot-toast'
 import PublicLayout from './layouts/PublicLayout.jsx'
 import Home from './pages/public/Home.jsx'
 import SermonsPage from './pages/public/SermonsPage.jsx'
+const PublicSeriesPage = lazy(() => import('./pages/public/SermonSeriesDetail.jsx'))
 import SermonDetail from './pages/public/SermonDetail.jsx'
 import EventsPage from './pages/public/EventsPage.jsx'
 import EventDetail from './pages/public/EventDetail.jsx'
@@ -87,6 +88,12 @@ const MembershipRequestsPage = lazy(() => import('./pages/admin/MembershipReques
 const SettingsPage      = lazy(() => import('./pages/admin/SettingsPage.jsx'))
 const SermonsList       = lazy(() => import('./pages/admin/SermonsList.jsx'))
 const SermonForm        = lazy(() => import('./pages/admin/SermonForm.jsx'))
+const SermonSeriesList   = lazy(() => import('./pages/admin/SermonSeriesList.jsx'))
+const SermonSeriesForm   = lazy(() => import('./pages/admin/SermonSeriesForm.jsx'))
+const SermonSeriesDetail = lazy(() => import('./pages/admin/SermonSeriesDetail.jsx'))
+const SermonThemesPage   = lazy(() => import('./pages/admin/SermonThemesPage.jsx'))
+const TestimonialsList   = lazy(() => import('./pages/admin/TestimonialsList.jsx'))
+const TestimonialForm    = lazy(() => import('./pages/admin/TestimonialForm.jsx'))
 const EventsList        = lazy(() => import('./pages/admin/EventsList.jsx'))
 const EventForm         = lazy(() => import('./pages/admin/EventForm.jsx'))
 const EventRegistrations = lazy(() => import('./pages/admin/EventRegistrations.jsx'))
@@ -99,6 +106,22 @@ const ActivityLogPage   = lazy(() => import('./pages/admin/ActivityLogPage.jsx')
 const AdminReportsList  = lazy(() => import('./pages/admin/AdminReportsList.jsx'))
 const AdminReportDetail = lazy(() => import('./pages/admin/AdminReportDetail.jsx'))
 const ReportTemplateBuilder = lazy(() => import('./pages/admin/ReportTemplateBuilder.jsx'))
+
+// === Billetterie publique (lazy, peu visitée hors campagne) ===
+const TicketsListPage    = lazy(() => import('./pages/public/TicketsListPage.jsx'))
+const TicketEventPage    = lazy(() => import('./pages/public/TicketEventPage.jsx'))
+const MyTicketPage       = lazy(() => import('./pages/public/MyTicketPage.jsx'))
+const MyOrderPage        = lazy(() => import('./pages/public/MyOrderPage.jsx'))
+const TicketsScannerPage = lazy(() => import('./pages/admin/TicketsScannerPage.jsx'))
+const EventTicketsDashboard = lazy(() => import('./pages/admin/EventTicketsDashboard.jsx'))
+const EventAttendancePage   = lazy(() => import('./pages/admin/EventAttendancePage.jsx'))
+const EventAttendanceKioskPage = lazy(() => import('./pages/admin/EventAttendanceKioskPage.jsx'))
+const TicketingAnalytics = lazy(() => import('./pages/admin/TicketingAnalytics.jsx'))
+const TicketSeriesPage = lazy(() => import('./pages/public/TicketSeriesPage.jsx'))
+const ScannerInvitePage = lazy(() => import('./pages/public/ScannerInvitePage.jsx'))
+const MissionEventPage = lazy(() => import('./pages/mission/MissionEventPage.jsx'))
+const SeriesList = lazy(() => import('./pages/admin/SeriesList.jsx'))
+const SeriesForm = lazy(() => import('./pages/admin/SeriesForm.jsx'))
 
 import { AuthGuard, FullPageSpinner } from './components/AuthGuard.jsx'
 import { useLiveBootstrap } from './hooks/useLive.js'
@@ -127,6 +150,8 @@ function SmartAreaRedirect() {
   if (roles.includes('leader'))     return <Navigate to="/leader" replace />
   if (['superadmin', 'admin', 'admin-site', 'pasteur', 'rh'].some((r) => roles.includes(r)))
     return <Navigate to="/admin" replace />
+  // Contrôleur billetterie : pas d'espace membre, accès direct au scanner.
+  if (roles.includes('controleur')) return <Navigate to="/scan" replace />
   return <Navigate to="/mon-espace" replace />
 }
 
@@ -148,8 +173,9 @@ export default function App() {
         {/* === PUBLIC === */}
         <Route element={<PublicLayout />}>
           <Route path="/"                    element={<Home />} />
-          <Route path="/messages"            element={<SermonsPage />} />
-          <Route path="/messages/:slug"      element={<SermonDetail />} />
+          <Route path="/messages"                  element={<SermonsPage />} />
+          <Route path="/messages/series/:slug"     element={<PublicSeriesPage />} />
+          <Route path="/messages/:slug"            element={<SermonDetail />} />
           <Route path="/evenements"          element={<EventsPage />} />
           <Route path="/evenements/:slug"    element={<EventDetail />} />
           <Route path="/blog"                element={<BlogPage />} />
@@ -160,7 +186,32 @@ export default function App() {
           <Route path="/donner"              element={<DonatePage />} />
           <Route path="/contact"             element={<ContactPage />} />
           <Route path="/live"                element={<LivePage />} />
+          {/* === Billetterie publique === */}
+          <Route path="/billetterie"            element={<Suspense fallback={<FullPageSpinner />}><TicketsListPage /></Suspense>} />
+          <Route path="/billetterie/:slug"      element={<Suspense fallback={<FullPageSpinner />}><TicketEventPage /></Suspense>} />
+          <Route path="/mon-ticket/:token"      element={<Suspense fallback={<FullPageSpinner />}><MyTicketPage /></Suspense>} />
+          <Route path="/ma-commande/:orderCode" element={<Suspense fallback={<FullPageSpinner />}><MyOrderPage /></Suspense>} />
+          <Route path="/billetterie/serie/:slug" element={<Suspense fallback={<FullPageSpinner />}><TicketSeriesPage /></Suspense>} />
         </Route>
+
+        {/* === Étape C — Landing magic-link scanner invité (hors PublicLayout, sans nav) === */}
+        <Route
+          path="/scanner-invite/:token"
+          element={<Suspense fallback={<FullPageSpinner />}><ScannerInvitePage /></Suspense>}
+        />
+
+        {/* === Étape F — Mission scopée à 1 event (grant event_staff) ===
+            Route DÉLIBÉRÉMENT hors AdminLayout : un gouverneur/leader avec un
+            grant manager n'a accès QU'à cet event précis, pas à /admin/membres,
+            /admin/departements, etc. Backend policy enforce l'autorisation. */}
+        <Route
+          path="/mission/evenement/:id"
+          element={
+            <AuthGuard>
+              <Suspense fallback={<FullPageSpinner />}><MissionEventPage /></Suspense>
+            </AuthGuard>
+          }
+        />
 
         {/* === AUTH === */}
         <Route element={<AuthLayout />}>
@@ -240,6 +291,22 @@ export default function App() {
           <Route path="/leader/rapports/:id"     element={<LeaderReportForm />} />
         </Route>
 
+        {/* === SCAN BILLETTERIE (controleur + admins) === */}
+        {/* Plein écran, sans AdminLayout — pour usage caméra mobile. */}
+        {/* /scan : accessible à TOUT user authentifié. Le contrôle fin est
+            fait côté backend (EventPolicy::scan) et dans TicketsScannerPage
+            qui vérifie la présence d'un grant scoped avant d'activer la caméra. */}
+        <Route
+          path="/scan"
+          element={
+            <Suspense fallback={<FullPageSpinner />}>
+              <AuthGuard>
+                <TicketsScannerPage />
+              </AuthGuard>
+            </Suspense>
+          }
+        />
+
         {/* === ADMIN === */}
         <Route
           element={
@@ -271,11 +338,26 @@ export default function App() {
           <Route path="/admin/parametres"                 element={<SettingsPage />} />
           <Route path="/admin/sermons"                    element={<SermonsList />} />
           <Route path="/admin/sermons/nouveau"            element={<SermonForm />} />
+          <Route path="/admin/sermons/series"             element={<SermonSeriesList />} />
+          <Route path="/admin/sermons/series/nouveau"     element={<SermonSeriesForm />} />
+          <Route path="/admin/sermons/series/:id"         element={<SermonSeriesDetail />} />
+          <Route path="/admin/sermons/series/:id/edit"    element={<SermonSeriesForm />} />
+          <Route path="/admin/sermons/themes"             element={<SermonThemesPage />} />
+          <Route path="/admin/temoignages"                element={<TestimonialsList />} />
+          <Route path="/admin/temoignages/nouveau"        element={<TestimonialForm />} />
+          <Route path="/admin/temoignages/:id"            element={<TestimonialForm />} />
           <Route path="/admin/sermons/:id"                element={<SermonForm />} />
           <Route path="/admin/evenements"                 element={<EventsList />} />
           <Route path="/admin/evenements/nouveau"         element={<EventForm />} />
           <Route path="/admin/evenements/:id"             element={<EventForm />} />
           <Route path="/admin/evenements/:id/inscrits"    element={<EventRegistrations />} />
+          <Route path="/admin/evenements/:id/billetterie" element={<EventTicketsDashboard />} />
+          <Route path="/admin/evenements/:id/presence"    element={<EventAttendancePage />} />
+          <Route path="/admin/evenements/:id/presence/kiosque" element={<EventAttendanceKioskPage />} />
+          <Route path="/admin/billetterie"                element={<TicketingAnalytics />} />
+          <Route path="/admin/series"                     element={<SeriesList />} />
+          <Route path="/admin/series/nouveau"             element={<SeriesForm />} />
+          <Route path="/admin/series/:id"                 element={<SeriesForm />} />
           <Route path="/admin/blog"                       element={<PostsList />} />
           <Route path="/admin/blog/nouveau"               element={<PostForm />} />
           <Route path="/admin/blog/:id"                   element={<PostForm />} />

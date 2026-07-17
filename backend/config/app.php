@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // URL du frontend (React SPA). Les mails, PDF et QR pointent ici pour les
+    // ressources statiques (logo, images) et les liens type /mon-ticket/xxx.
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

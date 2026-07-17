@@ -128,6 +128,29 @@ class PostsController extends Controller
         return response()->json(['message' => 'Article restauré.']);
     }
 
+    public function bulk(Request $request): JsonResponse
+    {
+        $request->validate([
+            'action' => ['required', 'in:publish,unpublish,delete'],
+            'ids'    => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*'  => ['integer'],
+        ]);
+        $user = $request->user();
+        $perm = $request->action === 'delete' ? 'delete posts' : 'publish posts';
+        abort_unless($user?->can($perm), 403);
+
+        $ids = $request->input('ids');
+        $a = $request->input('action');
+
+        $count = match ($a) {
+            'publish'   => Post::whereIn('id', $ids)->update(['status' => 'published', 'published_at' => now()]),
+            'unpublish' => Post::whereIn('id', $ids)->update(['status' => 'draft']),
+            'delete'    => Post::whereIn('id', $ids)->delete(),
+        };
+        $labels = ['publish' => 'publié(s)', 'unpublish' => 'remis en brouillon', 'delete' => 'archivé(s)'];
+        return response()->json(['message' => "$count article(s) " . $labels[$a] . '.', 'count' => $count]);
+    }
+
     public function togglePublish(Request $request, int $id): JsonResponse
     {
         if (! $request->user()->can('publish posts')) abort(403);

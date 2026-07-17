@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MediaGalleryResource;
 use App\Models\MediaGallery;
 use App\Rules\SafeUploadedFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Encoders\WebpEncoder;
@@ -34,7 +34,11 @@ class MediaGalleryController extends Controller
         $perPage = min((int) $request->query('per_page', 36), 200);
 
         $query = MediaGallery::query()
-            ->with(['event:id,title,slug', 'uploader:id,name,first_name'])
+            ->with([
+                'event:id,title,slug',
+                'department:id,name,slug',
+                'uploader:id,name,first_name',
+            ])
             ->latest();
 
         if ($type = $request->query('file_type')) {
@@ -50,7 +54,7 @@ class MediaGalleryController extends Controller
             $query->where('is_published', $request->boolean('published'));
         }
 
-        return JsonResource::collection($query->paginate($perPage));
+        return MediaGalleryResource::collection($query->paginate($perPage));
     }
 
     /**
@@ -198,5 +202,89 @@ class MediaGalleryController extends Controller
         return response()->json([
             'message' => $media->is_published ? 'Publié.' : 'Dépublié.',
         ]);
+    }
+
+    /**
+     * Actions en lot sur plusieurs médias.
+     *
+     * Body : { action, ids: [int], payload?: object }
+     * Actions :
+     *   - delete       → suppression définitive + fichiers physiques
+     *   - publish      → is_published = true
+     *   - unpublish    → is_published = false
+     *   - attach_event → met event_id (payload.event_id, null pour détacher)
+     *   - attach_dept  → met department_id (payload.department_id, null pour détacher)
+     *
+     * Limité à 200 IDs par appel pour borner le coût de fichiers à supprimer.
+     */
+    public function bulk(Request $request): JsonResponse
+    {
+        $request->validate([
+            'action'                 => ['required', 'string', 'in:delete,publish,unpublish,attach_event,attach_dept'],
+            'ids'                    => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*'                  => ['integer', 'exists:media_gallery,id'],
+            'payload'                => ['nullable', 'array'],
+            'payload.event_id'       => ['nullable', 'integer', 'exists:events,id'],
+            'payload.department_id'  => ['nullable', 'integer', 'exists:departments,id'],
+        ]);
+
+        $user   = $request->user();
+        $action = $request->input('action');
+        $ids    = $request->input('ids');
+
+        // Vérif permissions selon l'action (granulaire).
+        $permission = match ($action) {
+            'delete'                              => 'delete media',
+            'publish', 'unpublish', 'attach_event', 'attach_dept' => 'upload media',
+        };
+        abort_unless($user?->can($permission), 403);
+
+        $query = MediaGallery::whereIn('id', $ids);
+        $count = 0;
+
+        switch ($action) {
+            case 'delete':
+                $disk = Storage::disk(config('filesystems.default'));
+                foreach ($query->get() as $media) {
+                    if ($media->file_path && ! str_starts_with($media->file_path, 'http')) {
+                        $disk->delete($media->file_path);
+                    }
+                    if ($media->thumbnail) {
+                        $disk->delete($media->thumbnail);
+                    }
+                    $media->delete();
+                    $count++;
+                }
+                return response()->json([
+                    'message' => "$count média(s) supprimé(s).",
+                    'count'   => $count,
+                ]);
+
+            case 'publish':
+                $count = $query->update(['is_published' => true]);
+                return response()->json(['message' => "$count média(s) publié(s).", 'count' => $count]);
+
+            case 'unpublish':
+                $count = $query->update(['is_published' => false]);
+                return response()->json(['message' => "$count média(s) dépublié(s).", 'count' => $count]);
+
+            case 'attach_event':
+                $eventId = $request->input('payload.event_id'); // null = détacher
+                $count = $query->update(['event_id' => $eventId]);
+                $msg = $eventId
+                    ? "$count média(s) rattaché(s) à l'événement."
+                    : "$count média(s) détaché(s) de leur événement.";
+                return response()->json(['message' => $msg, 'count' => $count]);
+
+            case 'attach_dept':
+                $deptId = $request->input('payload.department_id');
+                $count = $query->update(['department_id' => $deptId]);
+                $msg = $deptId
+                    ? "$count média(s) rattaché(s) au département."
+                    : "$count média(s) détaché(s) de leur département.";
+                return response()->json(['message' => $msg, 'count' => $count]);
+        }
+
+        return response()->json(['message' => 'Action inconnue.'], 400);
     }
 }

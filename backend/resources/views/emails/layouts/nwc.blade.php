@@ -19,9 +19,9 @@
 
       {{-- Header --}}
       <tr><td align="center" style="padding:36px 24px 28px;background:linear-gradient(135deg,#8B1A2F 0%,#530F1B 100%);">
-        {{-- Logo NWC : URL absolue (chargée par le client mail, fallback texte si bloqué). --}}
+        {{-- Logo NWC : URL absolue vers le frontend (les fichiers statiques sont sur newinechurch.org, pas sur api.newinechurch.org). --}}
         <img
-          src="{{ config('app.url') }}/logos/logo_newwine.png"
+          src="{{ rtrim(config('app.frontend_url', config('app.url')), '/') }}/logos/logo_newwine.png"
           alt="New Wine Church"
           width="64"
           height="64"

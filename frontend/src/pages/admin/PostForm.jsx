@@ -3,10 +3,13 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
+import { useState } from 'react'
 import ImageUploader from '@/components/admin/ImageUploader.jsx'
 import TiptapEditor from '@/components/admin/TiptapEditor.jsx'
+import BackButton from '@/components/admin/BackButton.jsx'
+import BilingualField from '@/components/admin/BilingualField.jsx'
 import api from '@/api/axios'
 import { posts } from '@/api/admin'
 
@@ -32,8 +35,11 @@ export default function PostForm() {
   const { register, handleSubmit, control, formState: { errors } } = useForm({
     values: post ? {
       title: post.title ?? '',
+      title_en: post.title_en ?? '',
       excerpt: post.excerpt ?? '',
+      excerpt_en: post.excerpt_en ?? '',
       content: post.content ?? '',
+      content_en: post.content_en ?? '',
       category_id: post.category?.id ?? '',
       status: post.status ?? 'draft',
       is_featured: post.is_featured ?? false,
@@ -72,13 +78,7 @@ export default function PostForm() {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-6xl">
-      <Link
-        to="/admin/blog"
-        className="inline-flex items-center gap-1 text-sm transition hover:underline"
-        style={{ color: 'var(--adm-text-muted)' }}
-      >
-        <ArrowLeft size={14} /> Retour aux articles
-      </Link>
+      <BackButton to="/admin/blog" label="Retour aux articles" />
 
       <header>
         <h1>{isEdit ? (post?.title || 'Modifier l\'article') : 'Nouvel article'}</h1>
@@ -87,38 +87,47 @@ export default function PostForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="adm-card p-4 sm:p-6 space-y-4">
-            <Field label="Titre" required error={errors.title && 'Requis'}>
-              <input {...register('title', { required: true })} className="adm-input" />
-            </Field>
-            <Field
-              label="Extrait"
-              helper="Résumé court pour les cartes du blog (1-2 phrases d'accroche)."
-            >
-              <textarea
-                rows={2}
-                {...register('excerpt')}
-                placeholder="Une phrase d'accroche…"
-                className="adm-textarea"
-              />
-            </Field>
-            <Field
-              label="Contenu"
-              required
-              error={errors.content && (errors.content.message || 'Requis')}
-            >
-              <Controller
-                name="content"
-                control={control}
-                rules={{ required: true, minLength: { value: 20, message: 'Au moins 20 caractères' } }}
-                render={({ field }) => (
-                  <TiptapEditor
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Écris ton article…"
-                  />
-                )}
-              />
-            </Field>
+            <Controller
+              control={control}
+              name="title"
+              rules={{ required: true }}
+              render={({ field: fr }) => (
+                <Controller
+                  control={control}
+                  name="title_en"
+                  render={({ field: en }) => (
+                    <BilingualField
+                      label="Titre" required
+                      valueFr={fr.value} onChangeFr={fr.onChange}
+                      valueEn={en.value} onChangeEn={en.onChange}
+                      errorFr={errors.title && 'Requis'}
+                    />
+                  )}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="excerpt"
+              render={({ field: fr }) => (
+                <Controller
+                  control={control}
+                  name="excerpt_en"
+                  render={({ field: en }) => (
+                    <BilingualField
+                      label="Extrait" type="textarea" rows={2}
+                      valueFr={fr.value} onChangeFr={fr.onChange}
+                      valueEn={en.value} onChangeEn={en.onChange}
+                      helper="Résumé court pour les cartes du blog (1-2 phrases d'accroche)."
+                      placeholder="Une phrase d'accroche…"
+                      placeholderEn="A hook sentence…"
+                    />
+                  )}
+                />
+              )}
+            />
+            {/* Contenu Tiptap — 2 éditeurs séparés (FR + EN toggle) */}
+            <PostContentBilingual control={control} errors={errors}/>
           </div>
         </div>
 
@@ -175,6 +184,52 @@ export default function PostForm() {
           </div>
         </div>
       </form>
+    </div>
+  )
+}
+
+/**
+ * PostContentBilingual — 2 éditeurs Tiptap (FR + EN) avec toggle onglet.
+ * Le FR est requis, l'EN optionnel avec fallback.
+ */
+function PostContentBilingual({ control, errors }) {
+  const [tab, setTab] = useState(() => localStorage.getItem('nwc_bilingual_last_tab') || 'fr')
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-1.5">
+        <label className="block text-sm font-medium" style={{ color: 'var(--adm-text)' }}>
+          Contenu <span className="text-red-500">*</span>
+        </label>
+        <div className="inline-flex rounded-md overflow-hidden border" style={{ borderColor: 'var(--adm-border)' }}>
+          <button type="button" onClick={() => { setTab('fr'); localStorage.setItem('nwc_bilingual_last_tab', 'fr') }}
+            className="px-3 py-1 text-[11px] font-mono uppercase tracking-wider transition"
+            style={{ background: tab === 'fr' ? 'var(--adm-accent)' : 'var(--adm-card)', color: tab === 'fr' ? '#fff' : 'var(--adm-text-muted)' }}>
+            🇫🇷 FR
+          </button>
+          <button type="button" onClick={() => { setTab('en'); localStorage.setItem('nwc_bilingual_last_tab', 'en') }}
+            className="px-3 py-1 text-[11px] font-mono uppercase tracking-wider transition border-l"
+            style={{ background: tab === 'en' ? 'var(--adm-accent)' : 'var(--adm-card)', color: tab === 'en' ? '#fff' : 'var(--adm-text-muted)', borderColor: 'var(--adm-border)' }}>
+            🇬🇧 EN
+          </button>
+        </div>
+      </div>
+      {/* On monte les 2 éditeurs et bascule via display CSS pour préserver l'état. */}
+      <div style={{ display: tab === 'fr' ? 'block' : 'none' }}>
+        <Controller name="content" control={control}
+          rules={{ required: true, minLength: { value: 20, message: 'Au moins 20 caractères' } }}
+          render={({ field }) => (
+            <TiptapEditor value={field.value} onChange={field.onChange} placeholder="Écris ton article…"/>
+          )}/>
+        {errors.content && (
+          <p className="text-xs mt-1 text-red-600">{errors.content.message || 'Requis'}</p>
+        )}
+      </div>
+      <div style={{ display: tab === 'en' ? 'block' : 'none' }}>
+        <Controller name="content_en" control={control}
+          render={({ field }) => (
+            <TiptapEditor value={field.value || ''} onChange={field.onChange} placeholder="Write your article…"/>
+          )}/>
+      </div>
     </div>
   )
 }

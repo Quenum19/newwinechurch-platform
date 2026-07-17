@@ -4,10 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
-import { ArrowLeft, CheckCircle2, FileText, Home, MapPin, Users, Loader2, Download, XCircle, Eye, RefreshCw } from 'lucide-react'
+import { CheckCircle2, FileText, Home, MapPin, Users, Loader2, Download, XCircle, Eye, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
+import BackButton from '@/components/admin/BackButton.jsx'
 import { cells } from '@/api/admin'
 
 const REPORT_STATUS_META = {
@@ -93,13 +94,7 @@ export default function CellDetail() {
   if (isError || !cell) {
     return (
       <div className="space-y-4">
-        <Link
-          to="/admin/cellules"
-          className="inline-flex items-center gap-1 text-sm hover:underline"
-          style={{ color: 'var(--adm-text-muted)' }}
-        >
-          <ArrowLeft size={14} /> Retour à la liste
-        </Link>
+        <BackButton to="/admin/cellules" label="Retour à la liste" />
         <div className="adm-card p-8 text-center" style={{ color: 'var(--adm-text-muted)' }}>
           Cellule introuvable.
         </div>
@@ -109,13 +104,7 @@ export default function CellDetail() {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-5xl">
-      <Link
-        to="/admin/cellules"
-        className="inline-flex items-center gap-1 text-sm transition hover:underline"
-        style={{ color: 'var(--adm-text-muted)' }}
-      >
-        <ArrowLeft size={14} /> Retour à la liste
-      </Link>
+      <BackButton to="/admin/cellules" label="Retour à la liste" />
 
       <header>
         <div className="flex items-center gap-4 min-w-0">

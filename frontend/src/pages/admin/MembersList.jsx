@@ -7,12 +7,16 @@
  */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, ShieldCheck, Trash2, Download, ChevronRight } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus, ShieldCheck, Trash2, Download, ChevronRight, Check, Square, CheckSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import DataTable from '@/components/admin/DataTable.jsx'
+import BulkActionBar from '@/components/admin/BulkActionBar.jsx'
+import ResetFiltersButton from '@/components/admin/ResetFiltersButton.jsx'
+import useMultiSelect from '@/hooks/useMultiSelect'
 import { members } from '@/api/admin'
 
 const STATUS_LABELS = {
@@ -34,10 +38,52 @@ const ROLE_OPTIONS = [
 
 export default function MembersList() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [filters, setFilters] = useState({ page: 1, per_page: 25 })
+  const sel = useMultiSelect()
+
+  // On lit la liste courante pour la sélection "tout sur la page".
+  // Le hook utilise déjà le cache de DataTable (même queryKey).
+  const { data } = useQuery({
+    queryKey: ['admin', 'members', filters],
+    queryFn: () => members.list(filters),
+    keepPreviousData: true,
+  })
+  const visibleIds = (data?.data ?? []).map((m) => m.id)
+  const allVisibleSelected = sel.allSelected(visibleIds)
+
+  const bulkDelete = useMutation({
+    mutationFn: ({ ids, action = 'delete' }) => members.bulkDelete(ids, action),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Action effectuée.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'members'] })
+      sel.clear()
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Suppression impossible.'),
+  })
 
   // === Colonnes desktop ===
   const columns = [
+    {
+      key: '_select',
+      label: '',
+      cellClassName: 'w-10',
+      render: (m) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); sel.toggle(m.id, e, visibleIds) }}
+          className={`h-5 w-5 rounded flex items-center justify-center transition ${
+            sel.isSelected(m.id)
+              ? 'bg-[var(--adm-accent)] text-white'
+              : 'border-2 hover:bg-zinc-100'
+          }`}
+          style={{ borderColor: sel.isSelected(m.id) ? 'transparent' : 'var(--adm-border)' }}
+          aria-label="Sélectionner"
+        >
+          {sel.isSelected(m.id) && <Check size={12} strokeWidth={3}/>}
+        </button>
+      ),
+    },
     {
       key: 'full_name',
       label: 'Membre',
@@ -108,13 +154,26 @@ export default function MembersList() {
           <button
             onClick={async () => {
               try {
-                await members.export(filters)
-                toast.success('Export téléchargé.')
+                // Si on a une sélection, on exporte UNIQUEMENT les sélectionnés.
+                // Sinon on respecte les filtres actifs (status, role, search, trashed).
+                const params = sel.count > 0
+                  ? { ids: sel.ids }
+                  : filters
+                await members.export(params)
+                toast.success(sel.count > 0
+                  ? `Export téléchargé (${sel.count} sélectionnés).`
+                  : 'Export téléchargé (filtres actifs).')
               } catch { toast.error('Export impossible.') }
             }}
             className="adm-btn adm-btn-secondary flex-1 sm:flex-initial justify-center"
+            title={sel.count > 0
+              ? `Exporter les ${sel.count} membres sélectionnés`
+              : 'Exporter selon les filtres actifs'}
           >
-            <Download size={14}/> <span className="hidden xs:inline">Excel</span>
+            <Download size={14}/>
+            <span className="hidden xs:inline">
+              Excel{sel.count > 0 && ` (${sel.count})`}
+            </span>
           </button>
           <Link
             to="/admin/membres/nouveau"
@@ -169,8 +228,65 @@ export default function MembersList() {
               />
               <Trash2 size={12} /> Corbeille
             </label>
+            {visibleIds.length > 0 && (
+              <button
+                onClick={() => sel.toggleAll(visibleIds)}
+                className="adm-btn adm-btn-secondary text-xs h-9"
+                title={allVisibleSelected ? 'Tout désélectionner sur cette page' : 'Tout sélectionner sur cette page'}
+              >
+                {allVisibleSelected ? <CheckSquare size={13}/> : <Square size={13}/>}
+                {allVisibleSelected ? 'Désélectionner' : `Tout (${visibleIds.length})`}
+              </button>
+            )}
+            <ResetFiltersButton
+              filters={filters}
+              onReset={() => setFilters({ page: 1, per_page: 25 })}
+            />
           </>
         }
+      />
+
+      <BulkActionBar
+        count={sel.count}
+        onClear={sel.clear}
+        label="membre"
+        actions={[
+          {
+            key: 'export',
+            label: 'Exporter Excel',
+            icon: Download,
+            onClick: async () => {
+              try {
+                await members.export({ ids: sel.ids })
+                toast.success(`Export téléchargé (${sel.count} membres).`)
+              } catch { toast.error('Export impossible.') }
+            },
+          },
+          // En corbeille → on propose Suppression définitive ; sinon Archiver.
+          filters.trashed
+            ? {
+                key: 'force_delete',
+                label: 'Supprimer définitivement',
+                icon: Trash2,
+                variant: 'danger',
+                confirm: true,
+                confirmTitle: 'Supprimer ces membres définitivement ?',
+                confirmText: `${sel.count} membre(s) seront effacés DÉFINITIVEMENT de la base. Action irréversible.`,
+                confirmCta: 'Supprimer définitivement',
+                onClick: () => bulkDelete.mutate({ ids: sel.ids, action: 'force_delete' }),
+              }
+            : {
+                key: 'delete',
+                label: 'Archiver',
+                icon: Trash2,
+                variant: 'danger',
+                confirm: true,
+                confirmTitle: 'Archiver ces membres ?',
+                confirmText: `${sel.count} membre(s) seront archivés (corbeille). Tu pourras les restaurer plus tard.`,
+                confirmCta: 'Archiver',
+                onClick: () => bulkDelete.mutate({ ids: sel.ids, action: 'delete' }),
+              },
+        ]}
       />
     </div>
   )

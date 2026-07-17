@@ -58,8 +58,8 @@ class DepartmentReportSubmittedWithPdfMail extends Mailable implements ShouldQue
                 'audience'   => $this->audience,
                 'department' => $this->report->department,
                 'governor'   => $this->report->governor,
-                'adminUrl'   => rtrim(config('app.url'), '/').'/admin/rapports-departement/'.$this->report->id,
-                'govUrl'     => rtrim(config('app.url'), '/').'/gouverneur/rapports/'.$this->report->id,
+                'adminUrl'   => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/admin/rapports-departement/'.$this->report->id,
+                'govUrl'     => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/gouverneur/rapports/'.$this->report->id,
             ],
         );
     }

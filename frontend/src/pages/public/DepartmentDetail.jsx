@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 
 import { publicDepartments } from '@/api/public'
 import { useSeoMeta } from '@/hooks/useSeoMeta'
+import { useAutoplayVideo, videoMimeFromPath } from '@/hooks/useAutoplayVideo'
 import Spinner from '@/components/ui/Spinner.jsx'
 import DepartmentIcon, { getDepartmentIcon } from '@/utils/departmentIcons.jsx'
 
@@ -47,6 +48,7 @@ export default function DepartmentDetail() {
   const cells = bundle?.cells ?? []
   const recentMedia = bundle?.recent_media ?? []
   const upcomingEvents = bundle?.upcoming_events ?? []
+  const pastEvents     = bundle?.past_events     ?? []
   const others = useMemo(
     () => (allList?.data ?? []).filter((d) => d.slug !== slug).slice(0, 4),
     [allList, slug]
@@ -156,14 +158,11 @@ export default function DepartmentDetail() {
           </div>
         </div>
 
-        {/* Badges stats */}
+        {/* Badges stats — épurés : Membres + Statut (Cellules et Depuis retirés
+            sur demande car pas pertinents pour le visiteur public). */}
         <div className="container-nwc -mt-6 relative z-10">
           <div className="flex gap-2 sm:gap-3 flex-wrap">
             <StatBadge icon={Users} label={t('department.members', 'Membres')} value={dept.member_count_cache ?? dept.members_count ?? 0} />
-            <StatBadge icon={Home} label={t('department.cells', 'Cellules')} value={cells.length} />
-            {dept.founded_at && (
-              <StatBadge icon={Calendar} label={t('department.since', 'Depuis')} value={new Date(dept.founded_at).getFullYear()} />
-            )}
             <StatBadge icon={Crown} label={t('department.status', 'Statut')} value={dept.status === 'active' ? t('department.statusActive', 'Actif') : t('department.statusPreparing', 'En préparation')} />
           </div>
         </div>
@@ -284,6 +283,8 @@ export default function DepartmentDetail() {
             </div>
           ) : (
             <>
+              {/* Grid : aspect-square forcé sur la tuile (wrapper Link)
+                  pour éviter que la vidéo casse le ratio en s'étirant. */}
               <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-4">
                 {recentMedia.map((m, i) => (
                   <motion.div
@@ -292,31 +293,33 @@ export default function DepartmentDetail() {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className={i === 0 ? 'col-span-2 row-span-2 aspect-square' : 'aspect-square'}
+                    className={i === 0 ? 'col-span-2 row-span-2' : ''}
                   >
-                    {m.file_type === 'video' ? (
-                      <div className="relative h-full w-full bg-public-ink overflow-hidden group">
+                    {/* Clic → ouvre la galerie publique avec deep link lightbox sur ce média.
+                        Une lightbox locale serait plus rapide mais on garde l'UX cohérente
+                        avec la page galerie (pagination, navigation entre tous les médias du dépt). */}
+                    <Link
+                      to={`${galleryUrl}&lightbox=${m.id}`}
+                      style={{ aspectRatio: '1 / 1' }}
+                      className="block w-full relative overflow-hidden bg-public-coffee group cursor-pointer"
+                      aria-label={m.title || (m.file_type === 'video' ? 'Vidéo' : 'Photo')}
+                    >
+                      {m.file_type === 'video' ? (
+                        <DeptVideoTile
+                          src={m.file_path}
+                          thumbnail={m.thumbnail}
+                          title={m.title}
+                        />
+                      ) : (
                         <img
-                          src={m.thumbnail ? STORAGE(m.thumbnail) : STORAGE(m.file_path)}
+                          src={STORAGE(m.file_path)}
                           alt={m.title || ''}
                           loading="lazy"
-                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <div className="h-12 w-12 rounded-full bg-public-flame flex items-center justify-center">
-                            <span className="text-public-bone font-bold">▶</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <img
-                        src={STORAGE(m.file_path)}
-                        alt={m.title || ''}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover hover:scale-[1.02] transition-transform duration-500"
-                      />
-                    )}
+                      )}
+                    </Link>
                   </motion.div>
                 ))}
               </div>
@@ -355,13 +358,57 @@ export default function DepartmentDetail() {
                     )}
                     <div className="min-w-0">
                       <h3 className="font-display uppercase text-base text-public-ink line-clamp-2 group-hover:text-public-flame transition-colors">
-                        {e.title}
+                        {e.display_title || e.title}
                       </h3>
-                      {e.location && (
-                        <p className="mt-1 text-xs text-public-ink/60 truncate">{e.location}</p>
+                      {(e.display_location || e.location) && (
+                        <p className="mt-1 text-xs text-public-ink/60 truncate">{e.display_location || e.location}</p>
                       )}
-                      {e.description && (
-                        <p className="mt-2 text-sm text-public-ink/70 line-clamp-2">{e.description}</p>
+                      {(e.display_description || e.description) && (
+                        <p className="mt-2 text-sm text-public-ink/70 line-clamp-2">{e.display_description || e.description}</p>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ============= ÉVÉNEMENTS PASSÉS — historique des actions ============= */}
+        {pastEvents.length > 0 && (
+          <section>
+            <SectionHeader
+              tag={t('department.pastEventsTag', 'Historique')}
+              title={t('department.pastEvents', 'Événements organisés')}
+            />
+            <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pastEvents.map((e) => {
+                const date = e.starts_at ? new Date(e.starts_at) : null
+                return (
+                  <Link
+                    key={e.id}
+                    to={`/evenements/${e.slug}`}
+                    className="group border-2 border-public-ink/10 p-5 hover:border-public-ink/50 transition-colors flex gap-4 bg-public-bone/60"
+                  >
+                    {date && (
+                      <div className="shrink-0 w-16 text-center opacity-70">
+                        <p className="font-display text-3xl text-public-ink/80 leading-none">
+                          {date.getDate()}
+                        </p>
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-public-ink/50 mt-1">
+                          {date.toLocaleString(localeTag, { month: 'short' })} {date.getFullYear() !== new Date().getFullYear() && date.getFullYear()}
+                        </p>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-display uppercase text-base text-public-ink/85 line-clamp-2 group-hover:text-public-ink transition-colors">
+                        {e.display_title || e.title}
+                      </h3>
+                      {(e.display_location || e.location) && (
+                        <p className="mt-1 text-xs text-public-ink/50 truncate">{e.display_location || e.location}</p>
+                      )}
+                      {(e.display_description || e.description) && (
+                        <p className="mt-2 text-sm text-public-ink/60 line-clamp-2">{e.display_description || e.description}</p>
                       )}
                     </div>
                   </Link>
@@ -436,6 +483,49 @@ export default function DepartmentDetail() {
         )}
       </article>
     </div>
+  )
+}
+
+/**
+ * Tuile vidéo département — destinée à être insérée DANS un parent
+ * `position: relative` + aspect-ratio. Tout est absolu inset-0 pour rester
+ * dans le cadre carré du parent.
+ */
+function DeptVideoTile({ src, thumbnail, title }) {
+  const ref = useAutoplayVideo({ threshold: 0.3 })
+  return (
+    <>
+      {/* Fallback gradient + Play icon, visible si la vidéo n'arrive pas. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-public-coffee via-public-ink to-public-coffee"
+      >
+        <span className="text-public-flame/70 text-5xl">▶</span>
+      </div>
+      <video
+        ref={ref}
+        poster={thumbnail || undefined}
+        preload="auto"
+        playsInline
+        muted
+        loop
+        className="absolute inset-0 h-full w-full object-cover"
+      >
+        <source src={src} type={videoMimeFromPath(src)} />
+        {src?.endsWith('.mov') && <source src={src} type="video/mp4" />}
+      </video>
+      {/* Bouton Play par-dessus (cliquable via le Link parent) */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="h-14 w-14 rounded-full bg-public-flame/85 group-hover:bg-public-flame group-hover:scale-110 transition flex items-center justify-center shadow-xl">
+          <span className="text-public-bone font-bold ml-0.5 text-xl">▶</span>
+        </div>
+      </div>
+      {title && (
+        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-public-ink/90 to-transparent opacity-0 group-hover:opacity-100 transition">
+          <p className="text-public-bone font-display uppercase text-xs truncate">{title}</p>
+        </div>
+      )}
+    </>
   )
 }
 

@@ -3,8 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
+import BackButton from '@/components/admin/BackButton.jsx'
 import { members } from '@/api/admin'
 
 export default function MemberCreate() {
@@ -32,13 +33,7 @@ export default function MemberCreate() {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-3xl">
-      <Link
-        to="/admin/membres"
-        className="inline-flex items-center gap-1 text-sm transition hover:underline"
-        style={{ color: 'var(--adm-text-muted)' }}
-      >
-        <ArrowLeft size={14} /> Retour à la liste
-      </Link>
+      <BackButton to="/admin/membres" label="Retour à la liste" />
 
       <header>
         <h1>Nouveau membre</h1>
@@ -101,9 +96,9 @@ export default function MemberCreate() {
           <input {...register('address')} className="adm-input" />
         </Field>
 
-        {/* Mot de passe */}
+        {/* Mot de passe + envoi accès */}
         <div className="pt-4 border-t" style={{ borderColor: 'var(--adm-border)' }}>
-          <h3 className="mb-3">Sécurité</h3>
+          <h3 className="mb-3">Sécurité & accès</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Field label="Mot de passe (optionnel)" helper="8 chars min, mixed case, chiffre, symbole. Vide = généré.">
               <input type="password" autoComplete="new-password" {...register('password')} className="adm-input" />
@@ -112,6 +107,25 @@ export default function MemberCreate() {
               <input type="password" autoComplete="new-password" {...register('password_confirmation')} className="adm-input" />
             </Field>
           </div>
+          <label
+            className="mt-3 flex items-start gap-2 text-sm cursor-pointer p-3 rounded border"
+            style={{ borderColor: '#FDE68A', background: '#FFFBEB', color: 'var(--adm-text)' }}
+          >
+            <input
+              type="checkbox"
+              defaultChecked
+              {...register('send_credentials')}
+              className="h-4 w-4 rounded border-zinc-300 mt-0.5"
+              style={{ accentColor: 'var(--adm-accent)' }}
+            />
+            <div>
+              <strong>Envoyer les identifiants par email à la création</strong>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--adm-text-muted)' }}>
+                Le membre reçoit son email + mot de passe initial avec un lien vers la page de connexion.
+                Décoche si tu veux lui transmettre toi-même.
+              </p>
+            </div>
+          </label>
         </div>
 
         <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--adm-text)' }}>

@@ -1,0 +1,32 @@
+; ==============================================================
+;  NEW WINE CHURCH — overrides PHP pour le backend API
+;
+;  Placement : /domains/newinechurch.org/public_html/api/.user.ini
+;  Renomme en .user.ini une fois uploadé (le .nwc évite d'écraser
+;  l'existant .user.ini d'Hostinger si présent — vérifie le contenu
+;  avant écrasement).
+;
+;  Effet : limites PHP plus larges pour les uploads admin (images
+;  événements/sermons, vidéos, PDF). Pris en compte ~5 min après
+;  écriture (Hostinger recharge .user.ini de cache toutes les 5 min).
+; ==============================================================
+
+; Upload : taille max d'un fichier individuel (cover events/sermons jusqu'à 30 Mo)
+upload_max_filesize = 32M
+
+; Upload : taille max totale du POST (FormData multipart avec image + champs)
+post_max_size = 64M
+
+; Mémoire allouée à chaque process (Spatie MediaLibrary + Intervention Image
+; peuvent monter à 100+ Mo lors du resize d'une grosse photo)
+memory_limit = 256M
+
+; Temps max d'exécution d'un script (suffisant pour upload + thumbnail + DB)
+max_execution_time = 120
+
+; Temps max pour parser le request body (utile pour les uploads lents en 3G)
+max_input_time = 60
+
+; Affichage des erreurs : OFF en prod (mais loguées via Laravel)
+display_errors = Off
+log_errors = On

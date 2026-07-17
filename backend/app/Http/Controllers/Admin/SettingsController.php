@@ -56,30 +56,38 @@ class SettingsController extends Controller
     }
 
     /**
-     * Upload d'un asset de branding (logo NWC, logo Maison Destinée, hero image accueil).
+     * Upload d'un asset de branding (logo NWC, logo parent, hero image/video).
      *
-     * 3 cibles autorisées :
-     *  - logo.nwc          : logo principal (≤ 2 Mo, max 1200x1200)
-     *  - logo.parent       : logo Maison de la Destinée (idem)
-     *  - branding.hero_image : photo de fond du hero accueil (≤ 8 Mo, photo paysage HD)
+     * 4 cibles autorisées :
+     *  - logo.nwc            : logo principal (≤ 2 Mo)
+     *  - logo.parent         : logo Maison de la Destinée (≤ 2 Mo)
+     *  - branding.hero_image : photo de fond du hero (≤ 8 Mo)
+     *  - branding.hero_video : vidéo de fond du hero, autoplay muet (≤ 30 Mo, mp4/webm)
      *
-     * Pour le hero, on autorise jusqu'à 8 Mo car c'est une photo HD paysage.
-     * Pas de SVG pour le hero (ça n'a pas de sens pour une photographie).
+     * Pour la vidéo hero : recommandé 1080p loop court (10-20s) pour rester
+     * léger. Le frontend l'utilise en priorité si présente, sinon fallback image.
      */
     public function uploadLogo(Request $request): JsonResponse
     {
         if (! $request->user()->can('manage logos')) abort(403);
 
-        $isHero = $request->input('target') === 'branding.hero_image';
+        $target = $request->input('target');
+        $isHero      = $target === 'branding.hero_image';
+        $isHeroVideo = $target === 'branding.hero_video';
 
         $request->validate([
-            // Durcissement strict via SafeUploadedFile (magic bytes + signatures interdites).
-            'logo' => $isHero
+            'logo' => $isHeroVideo
+                ? [
+                    'required', 'file',
+                    'mimes:mp4,webm,mov',
+                    'max:30720', // 30 Mo
+                ]
+                : ($isHero
                 ? [
                     'required', 'file',
                     'mimes:jpg,jpeg,png,webp',
                     'mimetypes:image/jpeg,image/png,image/webp',
-                    'max:8192', // 8 Mo pour photo HD paysage
+                    'max:8192', // 8 Mo
                     new SafeUploadedFile(['jpg', 'jpeg', 'png', 'webp']),
                 ]
                 : [
@@ -88,36 +96,45 @@ class SettingsController extends Controller
                     'mimetypes:image/png,image/jpeg,image/webp,image/svg+xml',
                     'max:2048',
                     new SafeUploadedFile(['png', 'jpg', 'jpeg', 'webp', 'svg']),
-                ],
-            'target' => ['required', 'in:logo.nwc,logo.parent,branding.hero_image'],
+                ]),
+            'target' => ['required', 'in:logo.nwc,logo.parent,branding.hero_image,branding.hero_video'],
         ]);
 
         $file = $request->file('logo');
         $disk = Storage::disk(config('filesystems.default'));
 
         // Stockage avec nom unique pour éviter les conflits CDN cache.
-        // Sous-dossier différent pour le hero vs les logos.
-        $ext  = $file->getClientOriginalExtension() ?: 'png';
-        $folder = $isHero ? 'branding/hero' : 'logos';
+        $ext  = $file->getClientOriginalExtension() ?: ($isHeroVideo ? 'mp4' : 'png');
+        $folder = $isHeroVideo ? 'branding/hero-video' : ($isHero ? 'branding/hero' : 'logos');
         $path = sprintf('%s/%s.%s', $folder, bin2hex(random_bytes(8)), $ext);
         $disk->put($path, file_get_contents($file->getRealPath()), ['visibility' => 'public']);
 
         // Si un ancien logo existe (et n'est pas une URL externe), on le supprime.
         $key = $request->input('target');
         $old = SiteSetting::get($key);
-        if ($old && ! str_starts_with($old, 'http') && ! str_starts_with($old, '/logos/logo_')) {
+        if ($old && ! str_starts_with($old, '/logos/logo_')) {
             // /logos/logo_newwine.png et /logos/logo_md.png sont les fichiers livrés
             // avec l'app, on les protège — sinon on supprime l'ancien path uploadé.
-            $oldPath = ltrim(str_replace('/storage/', '', $old), '/');
+            // On extrait la partie après "/storage/" qu'elle soit dans une URL
+            // absolue (https://api.../storage/xxx) ou relative (/storage/xxx).
+            $oldPath = $old;
+            if (($p = strpos($old, '/storage/')) !== false) {
+                $oldPath = substr($old, $p + strlen('/storage/'));
+            }
             if ($disk->exists($oldPath)) $disk->delete($oldPath);
         }
 
+        // URL ABSOLUE — indispensable quand le frontend et l'API sont sur des
+        // sous-domaines différents (newinechurch.org vs api.newinechurch.org).
+        // Avant on stockait "/storage/..." (relative) qui résolvait vers le frontend.
+        $publicUrl = $disk->url($path);
+
         // Mise à jour de la setting.
-        SiteSetting::set($key, '/storage/'.$path, 'image', 'branding');
+        SiteSetting::set($key, $publicUrl, 'image', 'branding');
 
         return response()->json([
             'message' => 'Logo mis à jour.',
-            'url'     => '/storage/'.$path,
+            'url'     => $publicUrl,
         ]);
     }
 }

@@ -52,9 +52,21 @@ export default function ForceChangePasswordPage() {
       navigate('/espace-perso', { replace: true })
     },
     onError: (err) => {
-      const errs = err?.response?.data?.errors
-      const first = errs ? Object.values(errs).flat()[0] : err?.response?.data?.message
-      toast.error(first || t('common.error'))
+      const status = err?.response?.status
+      const errs   = err?.response?.data?.errors
+      const first  = errs ? Object.values(errs).flat()[0] : null
+      const msg    = err?.response?.data?.message
+
+      // 500 avec message générique "Server Error" (défaut Laravel prod) →
+      // remplace par un message français utilisable pour l'utilisateur.
+      if (status >= 500 || msg === 'Server Error') {
+        toast.error('Erreur temporaire du serveur. Réessaie dans quelques secondes.')
+        return
+      }
+
+      // 422 validation → premier message d'erreur ciblé (champ password ou
+      // current_password), sinon le message général de Laravel.
+      toast.error(first || msg || t('common.error'))
     },
   })
 

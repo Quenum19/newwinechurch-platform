@@ -63,6 +63,9 @@ class Department extends Model
         'member_count_cache' => 'integer',
     ];
 
+    // Les accessors getBannerImageUrlAttribute / getProfilePhotoUrlAttribute
+    // sont définis plus bas (ligne ~164) via le helper absoluteUrl().
+
     /** Génération automatique du slug à partir du nom. */
     public function getSlugOptions(): SlugOptions
     {

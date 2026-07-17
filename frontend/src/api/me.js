@@ -59,3 +59,9 @@ export async function getMyEvents(params = {}) {
   const { data } = await api.get('/me/events', { params })
   return data
 }
+
+/** Étape F — Missions billetterie actives (grants event_staff non révoqués). */
+export async function getMyStaffAssignments() {
+  const { data } = await api.get('/me/staff-assignments')
+  return data?.assignments ?? []
+}

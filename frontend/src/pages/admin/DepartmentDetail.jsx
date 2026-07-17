@@ -1,17 +1,21 @@
 /** Fiche département — Refonte 2026 admin-v2 native. */
+import { useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Trash2, Users, Loader2 } from 'lucide-react'
+import { Crown, Download, History, Loader2, Trash2, Users } from 'lucide-react'
 
 import DepartmentMemberManager from '@/components/admin/DepartmentMemberManager.jsx'
+import Modal from '@/components/ui/Modal.jsx'
+import BackButton from '@/components/admin/BackButton.jsx'
 import { departments } from '@/api/admin'
 
 export default function DepartmentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin', 'departments', id],
@@ -21,20 +25,44 @@ export default function DepartmentDetail() {
   })
 
   const dept = data?.data
-  const members = data?.members?.data ?? []
+  // L'API embarque la liste des membres SANS wrapping {data, meta}
+  // quand un Resource::collection est inclus dans une autre réponse JSON
+  // (sérialisation JsonSerializable → tableau d'items direct).
+  const members = Array.isArray(data?.members) ? data.members
+                : Array.isArray(data?.members?.data) ? data.members.data
+                : []
 
   const update = useMutation({
     mutationFn: (payload) => departments.update(id, payload),
     onSuccess: () => {
       toast.success('Département mis à jour.')
       queryClient.invalidateQueries({ queryKey: ['admin', 'departments'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'departments', id] })
     },
+  })
+
+  // Upload bannière séparé — envoyé en multipart à la même route update.
+  const uploadBanner = useMutation({
+    mutationFn: (file) => {
+      const fd = new FormData()
+      fd.append('banner_image', file)
+      return departments.update(id, fd)
+    },
+    onSuccess: () => {
+      toast.success('Bannière mise à jour.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'departments'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'departments', id] })
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Upload impossible.'),
   })
 
   const destroy = useMutation({
     mutationFn: () => departments.delete(id),
     onSuccess: () => {
       toast.success('Département supprimé.')
+      // Vide aussi le détail cache pour éviter un redirect bloqué sur 404.
+      queryClient.removeQueries({ queryKey: ['admin', 'departments', id] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'departments'] })
       navigate('/admin/departements')
     },
   })
@@ -66,13 +94,7 @@ export default function DepartmentDetail() {
   if (isError || !dept) {
     return (
       <div className="space-y-4">
-        <Link
-          to="/admin/departements"
-          className="inline-flex items-center gap-1 text-sm transition hover:underline"
-          style={{ color: 'var(--adm-text-muted)' }}
-        >
-          <ArrowLeft size={14} /> Retour à la liste
-        </Link>
+        <BackButton to="/admin/departements" label="Retour à la liste" />
         <div className="adm-card p-8 text-center" style={{ color: 'var(--adm-text-muted)' }}>
           Département introuvable.
         </div>
@@ -84,13 +106,7 @@ export default function DepartmentDetail() {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-5xl">
-      <Link
-        to="/admin/departements"
-        className="inline-flex items-center gap-1 text-sm transition hover:underline"
-        style={{ color: 'var(--adm-text-muted)' }}
-      >
-        <ArrowLeft size={14} /> Retour à la liste
-      </Link>
+      <BackButton to="/admin/departements" label="Retour à la liste" />
 
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-4 min-w-0">
@@ -113,7 +129,14 @@ export default function DepartmentDetail() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="adm-btn adm-btn-secondary"
+            title="Voir l'historique des gouverneurs"
+          >
+            <History size={14} /> Historique gouverneurs
+          </button>
           <button
             onClick={() => navigate(`/admin/departements/${id}/template`)}
             className="adm-btn adm-btn-secondary"
@@ -130,12 +153,65 @@ export default function DepartmentDetail() {
         </div>
       </header>
 
-      {/* Gestion gouverneur + équipe */}
+      <GovernorsHistoryModal
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        deptId={id}
+        deptName={dept.name}
+      />
+
+      {/* Gestion gouverneur + équipe.
+          Invalide la clé parent ['admin','departments'] pour rafraîchir AUSSI
+          la liste des départements (le compteur de membres et le nom du
+          gouverneur changent). Sinon retour à la liste = vue stale. */}
       <DepartmentMemberManager
         dept={dept}
         members={members}
-        onChange={() => queryClient.invalidateQueries({ queryKey: ['admin', 'departments', id] })}
+        onChange={() => queryClient.invalidateQueries({ queryKey: ['admin', 'departments'] })}
       />
+
+      {/* Bannière département */}
+      <div className="adm-card p-4 sm:p-6">
+        <h2 className="mb-2">Bannière</h2>
+        <p className="text-xs mb-3" style={{ color: 'var(--adm-text-muted)' }}>
+          Image de fond du hero public de ce département.
+          <strong> Si vide, la couleur thème est utilisée à la place.</strong> Paysage 16:9, max 8 Mo.
+        </p>
+        <div
+          className="aspect-[21/9] rounded-lg overflow-hidden flex items-center justify-center border relative"
+          style={{
+            background: dept.banner_image_url ? 'transparent' : (currentColor || dept.color || '#71717A'),
+            borderColor: 'var(--adm-border)',
+          }}
+        >
+          {dept.banner_image_url ? (
+            <img src={dept.banner_image_url} alt="Bannière" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white/70 text-xs uppercase tracking-widest">
+              Aucune bannière — couleur thème utilisée
+            </span>
+          )}
+          {uploadBanner.isPending && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <Loader2 size={24} className="animate-spin text-white" />
+            </div>
+          )}
+        </div>
+        <div className="mt-3 flex justify-end">
+          <label className="adm-btn adm-btn-secondary cursor-pointer">
+            {dept.banner_image_url ? 'Remplacer la bannière' : 'Ajouter une bannière'}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) uploadBanner.mutate(file)
+              }}
+            />
+          </label>
+        </div>
+      </div>
 
       {/* Édition */}
       <form
@@ -215,5 +291,126 @@ function Field({ label, helper, children }) {
       {children}
       {helper && <p className="text-xs mt-1" style={{ color: 'var(--adm-text-muted)' }}>{helper}</p>}
     </div>
+  )
+}
+
+/**
+ * Modal — Historique chronologique des gouverneurs d'un département.
+ * Affiche tous les mandats (actifs + clos) avec dates et qui les a nommés.
+ * Bouton "Exporter CSV" pour archive Excel.
+ */
+function GovernorsHistoryModal({ open, onClose, deptId, deptName }) {
+  const { data: history = [], isLoading } = useQuery({
+    queryKey: ['admin', 'departments', deptId, 'governors-history'],
+    queryFn: () => departments.governorsHistory(deptId),
+    enabled: open,
+    staleTime: 30 * 1000,
+  })
+
+  const handleExport = async () => {
+    try {
+      await departments.exportGovernorsHistory(deptId, deptName)
+      toast.success('Export CSV téléchargé.')
+    } catch {
+      toast.error('Erreur durant l\'export.')
+    }
+  }
+
+  const fmtDate = (s) => s ? new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="2xl"
+      title="Historique des gouverneurs"
+      description={`Mandats successifs sur ${deptName}`}
+    >
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10" style={{ color: '#6B5F4E' }}>
+          <Loader2 size={24} className="animate-spin mr-2" /> Chargement…
+        </div>
+      ) : history.length === 0 ? (
+        <div className="text-center py-10" style={{ color: '#6B5F4E' }}>
+          <Crown size={32} className="mx-auto mb-3 opacity-40" />
+          <p className="text-sm italic">Aucun mandat de gouverneur enregistré pour ce département.</p>
+        </div>
+      ) : (
+        <ol className="relative space-y-4 pl-6 border-l-2" style={{ borderColor: '#E0D5BB' }}>
+          {history.map((m) => {
+            const fullName = m.user.full_name || [m.user.first_name, m.user.last_name].filter(Boolean).join(' ')
+            return (
+              <li key={m.id} className="relative">
+                {/* Pastille de timeline */}
+                <span
+                  className="absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 flex items-center justify-center"
+                  style={{
+                    background: m.is_active ? '#8B1A2F' : '#E0D5BB',
+                    borderColor: m.is_active ? '#6E1424' : '#B79358',
+                  }}
+                >
+                  {m.is_active && <Crown size={8} color="#fff" />}
+                </span>
+                <div
+                  className="rounded-lg border p-3 sm:p-4"
+                  style={{
+                    background: m.is_active ? '#FAF6EE' : '#FFFFFF',
+                    borderColor: m.is_active ? '#E8DFC9' : 'var(--adm-border)',
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {m.user.avatar ? (
+                        <img src={m.user.avatar} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-medium text-white shrink-0" style={{ background: 'var(--adm-accent)' }}>
+                          {(m.user.first_name?.[0] || m.user.last_name?.[0] || '?').toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-[15px]" style={{ color: '#1F1A14' }}>{fullName}</p>
+                        {m.user.email && <p className="text-xs truncate" style={{ color: '#6B5F4E' }}>{m.user.email}</p>}
+                      </div>
+                    </div>
+                    {m.is_active ? (
+                      <span className="adm-badge adm-badge-success shrink-0">En cours</span>
+                    ) : (
+                      <span className="adm-badge adm-badge-neutral shrink-0">Clôturé</span>
+                    )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs" style={{ color: '#3F362A' }}>
+                    <div><span className="block uppercase text-[10px] tracking-wide" style={{ color: '#8C7E68' }}>Nommé le</span>{fmtDate(m.appointed_at)}</div>
+                    <div><span className="block uppercase text-[10px] tracking-wide" style={{ color: '#8C7E68' }}>Fin du mandat</span>{m.is_active ? <span className="italic" style={{ color: '#8C7E68' }}>en cours</span> : fmtDate(m.ended_at)}</div>
+                    {m.appointed_by && (
+                      <div className="col-span-2"><span className="block uppercase text-[10px] tracking-wide" style={{ color: '#8C7E68' }}>Nommé par</span>{m.appointed_by}</div>
+                    )}
+                    {m.notes && (
+                      <div className="col-span-2 pt-1 border-t" style={{ borderColor: '#E8DFC9' }}>
+                        <span className="block uppercase text-[10px] tracking-wide mb-1" style={{ color: '#8C7E68' }}>Notes</span>
+                        <p className="whitespace-pre-line">{m.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
+      <Modal.Footer>
+        <button type="button" className="nwc-btn-ghost" onClick={onClose}>
+          Fermer
+        </button>
+        <button
+          type="button"
+          className="nwc-btn-primary"
+          onClick={handleExport}
+          disabled={history.length === 0 || isLoading}
+        >
+          <Download size={14} /> Exporter en CSV
+        </button>
+      </Modal.Footer>
+    </Modal>
   )
 }

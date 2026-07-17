@@ -149,10 +149,10 @@ function PostCard({ post: p }) {
       </div>
       <div className="mt-4">
         <h3 className="font-display uppercase text-2xl text-public-ink group-hover:text-public-flame transition leading-tight">
-          {p.title}
+          {p.display_title || p.title}
         </h3>
-        {p.excerpt && (
-          <p className="mt-2 font-editorial text-public-ink/70 line-clamp-3">{p.excerpt}</p>
+        {(p.display_excerpt || p.excerpt) && (
+          <p className="mt-2 font-editorial text-public-ink/70 line-clamp-3">{p.display_excerpt || p.excerpt}</p>
         )}
         <p className="mt-3 tag-mono text-public-ink/50">
           {p.published_at && format(new Date(p.published_at), 'd MMM yyyy', { locale: dateLocale })}

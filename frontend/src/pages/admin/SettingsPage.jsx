@@ -245,6 +245,7 @@ function BrandingPanel({ data, onUpload, uploading }) {
   const nwcLogo    = data.find((r) => r.key === 'logo.nwc')?.value
   const parentLogo = data.find((r) => r.key === 'logo.parent')?.value
   const heroImage  = data.find((r) => r.key === 'branding.hero_image')?.value
+  const heroVideo  = data.find((r) => r.key === 'branding.hero_video')?.value
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -269,6 +270,69 @@ function BrandingPanel({ data, onUpload, uploading }) {
         onUpload={onUpload}
         uploading={uploading}
       />
+      <HeroVideoUploader
+        currentUrl={heroVideo}
+        hasImage={!!heroImage}
+        onUpload={onUpload}
+        uploading={uploading}
+      />
+    </div>
+  )
+}
+
+function HeroVideoUploader({ currentUrl, hasImage, onUpload, uploading }) {
+  return (
+    <div className="adm-card p-4">
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <span
+          className="text-[11px] uppercase tracking-wider font-medium"
+          style={{ color: 'var(--adm-text-faint)' }}
+        >
+          Vidéo de fond hero (optionnel) — prioritaire sur l'image
+        </span>
+        {currentUrl && (
+          <span className="adm-badge adm-badge-success">
+            <Check size={10} /> Active
+          </span>
+        )}
+      </div>
+      <div
+        className="aspect-video rounded-lg flex items-center justify-center overflow-hidden border"
+        style={{ background: '#0A0908', borderColor: 'var(--adm-border)' }}
+      >
+        {currentUrl ? (
+          <video src={currentUrl} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+        ) : (
+          <div className="text-center px-4 text-white/60">
+            <ImagePlus size={36} className="mx-auto mb-2" />
+            <span className="text-sm">
+              {hasImage ? 'Pas de vidéo — l\'image hero est utilisée' : 'Pas de vidéo ni d\'image — fond crème par défaut'}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
+        <p className="text-xs" style={{ color: 'var(--adm-text-muted)' }}>
+          MP4 / WebM · paysage 16:9 · <strong>loop court 10-20s recommandé</strong> · Max 30 Mo · muet (autoplay)
+        </p>
+        <label className="adm-btn adm-btn-secondary cursor-pointer">
+          <ImagePlus size={14} />
+          {uploading ? 'Upload…' : currentUrl ? 'Remplacer' : 'Ajouter'}
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) onUpload(file, 'branding.hero_video')
+            }}
+          />
+        </label>
+      </div>
+      <p className="text-xs mt-2" style={{ color: 'var(--adm-text-muted)' }}>
+        💡 Vidéo cinématique courte qui boucle (foule en culte, drone, etc.).
+        Sera lue en autoplay muet sur la home → garde-la légère pour les mobiles.
+      </p>
     </div>
   )
 }

@@ -11,10 +11,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play } from 'lucide-react'
+import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { publicDepartments, publicMedia } from '@/api/public'
+import { publicDepartments, publicEvents, publicMedia } from '@/api/public'
 import { useSeoMeta } from '@/hooks/useSeoMeta'
 import { useAutoplayVideo, videoMimeFromPath } from '@/hooks/useAutoplayVideo'
 import { cn } from '@/utils/cn'
@@ -28,10 +28,10 @@ export default function GalleryPage() {
   const [page, setPage] = useState(1)
   const [openIndex, setOpenIndex] = useState(null)
 
-  // Étape 5 : filtre département via query param ?departement=slug.
+  // Filtres via URL : ?event=slug ou ?departement=slug (exclusifs).
+  const eventSlug = searchParams.get('event') ?? ''
   const deptSlug = searchParams.get('departement') ?? ''
 
-  // Liste pour dropdown filtre département.
   const { data: deptsList } = useQuery({
     queryKey: ['public', 'departments'],
     queryFn:  publicDepartments.list,
@@ -39,11 +39,20 @@ export default function GalleryPage() {
   })
   const activeDept = deptsList?.data?.find((d) => d.slug === deptSlug)
 
+  // Si filtre événement actif → on charge l'event pour breadcrumb + titre.
+  const { data: activeEvent } = useQuery({
+    queryKey: ['public', 'events', 'detail', eventSlug],
+    queryFn: () => publicEvents.get(eventSlug),
+    enabled: !!eventSlug,
+    staleTime: 5 * 60 * 1000,
+  })
+
   const { data, isLoading } = useQuery({
-    queryKey: ['public', 'media', { file_type: filter, page, department: deptSlug }],
+    queryKey: ['public', 'media', { file_type: filter, page, department: deptSlug, event: eventSlug }],
     queryFn: () => publicMedia.list({
       file_type: filter || undefined,
-      department: deptSlug || undefined,
+      event: eventSlug || undefined,
+      department: !eventSlug && deptSlug ? deptSlug : undefined,
       per_page: PER_PAGE,
       page,
     }),
@@ -54,14 +63,38 @@ export default function GalleryPage() {
   const meta = data?.meta ?? null
   const totalPages = meta?.last_page ?? 1
 
-  // Reset page si filtre type ou département change.
-  useEffect(() => { setPage(1) }, [filter, deptSlug])
+  // Reset page quand un filtre change.
+  useEffect(() => { setPage(1) }, [filter, deptSlug, eventSlug])
+
+  // Deep link ?lightbox=ID — ouvre directement la lightbox sur le média demandé
+  // (utilisé depuis la home : on clique une vignette → arrive ici avec le bon item).
+  // On attend que les items soient chargés pour trouver l'index correspondant.
+  const lightboxId = searchParams.get('lightbox')
+  useEffect(() => {
+    if (! lightboxId) return
+    if (! data?.data?.length) return
+    const idx = data.data.findIndex((m) => String(m.id) === String(lightboxId))
+    if (idx >= 0) {
+      setOpenIndex(idx)
+      // On retire le param de l'URL pour ne pas re-ouvrir si l'utilisateur ferme.
+      const next = new URLSearchParams(searchParams)
+      next.delete('lightbox')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxId, data])
 
   // Update URL helper (sans reload).
   const setDept = (slug) => {
     const next = new URLSearchParams(searchParams)
     if (slug) next.set('departement', slug)
     else next.delete('departement')
+    next.delete('event') // exclusif avec event
+    setSearchParams(next, { replace: true })
+  }
+  const clearEvent = () => {
+    const next = new URLSearchParams(searchParams)
+    next.delete('event')
     setSearchParams(next, { replace: true })
   }
 
@@ -78,8 +111,23 @@ export default function GalleryPage() {
   return (
     <div className="bg-public-bone min-h-screen">
       <header className="container-nwc pt-16 pb-12 lg:pt-24 lg:pb-16">
-        {/* Breadcrumb contextuel quand filtré par département */}
-        {activeDept && (
+        {/* Breadcrumb contextuel — événement prioritaire sur département */}
+        {activeEvent && (
+          <nav className="mb-4 font-mono text-xs uppercase tracking-widest text-public-ink/60 flex items-center gap-2 flex-wrap">
+            <Link to="/galerie" className="hover:text-public-flame">{t('gallery.pageTitle', 'Galerie')}</Link>
+            <ChevronRight size={12} />
+            <Link to={`/evenements/${activeEvent.slug}`} className="hover:text-public-flame">
+              {activeEvent.display_title || activeEvent.title}
+            </Link>
+            <button
+              onClick={clearEvent}
+              className="ml-2 inline-flex items-center gap-1 text-public-flame hover:underline"
+            >
+              <X size={11} /> {t('gallery.removeFilter', 'retirer')}
+            </button>
+          </nav>
+        )}
+        {!activeEvent && activeDept && (
           <nav className="mb-4 font-mono text-xs uppercase tracking-widest text-public-ink/60 flex items-center gap-2 flex-wrap">
             <Link to="/galerie" className="hover:text-public-flame">{t('gallery.pageTitle', 'Galerie')}</Link>
             <ChevronRight size={12} />
@@ -97,7 +145,10 @@ export default function GalleryPage() {
         )}
         <p className="tag-mono text-public-flame mb-3">{t('gallery.pageTitle', 'Galerie')}</p>
         <h1 className="heading-anton text-5xl sm:text-7xl lg:text-9xl text-public-ink">
-          {activeDept ? (
+          {activeEvent ? (
+            <>{t('gallery.heroTitleEventLine1', 'Souvenirs')}<br/>
+              <span className="text-public-flame">{activeEvent.display_title || activeEvent.title}</span></>
+          ) : activeDept ? (
             <>{t('gallery.heroTitleDeptLine1', 'Activités')}<br/>
               <span className="text-public-flame">{activeDept.name}</span></>
           ) : (
@@ -106,9 +157,11 @@ export default function GalleryPage() {
           )}
         </h1>
         <p className="editorial-quote text-xl sm:text-2xl text-public-ink/80 mt-6 max-w-2xl">
-          {activeDept
-            ? t('gallery.heroDescDept', 'Les photos et vidéos du département {{name}}.', { name: activeDept.name })
-            : t('gallery.heroDescDefault', `Les visages, la lumière, les moments. Tout ce qu'une photo dit mieux qu'un texte.`)}
+          {activeEvent
+            ? t('gallery.heroDescEvent', 'Les photos et vidéos de cet événement.')
+            : activeDept
+              ? t('gallery.heroDescDept', 'Les photos et vidéos du département {{name}}.', { name: activeDept.name })
+              : t('gallery.heroDescDefault', `Les visages, la lumière, les moments. Tout ce qu'une photo dit mieux qu'un texte.`)}
         </p>
 
         {/* Filtres */}
@@ -216,7 +269,6 @@ function MediaTile({ item, onClick }) {
   const { t } = useTranslation()
   const isVideo = item.file_type === 'video'
   const videoRef = useAutoplayVideo({ threshold: 0.4 })
-  const [videoFailed, setVideoFailed] = useState(false)
 
   return (
     <div
@@ -232,48 +284,48 @@ function MediaTile({ item, onClick }) {
     >
       {isVideo ? (
         <>
-          {/* Fallback toujours présent — visible si la vidéo n'arrive pas à se décoder
-              (ex: codec MOV non supporté). Sinon il est recouvert par la vidéo. */}
+          {/* Fallback toujours présent derrière la vidéo — visible si décodage
+              impossible (ex: codec MOV non supporté). La vidéo passe au-dessus
+              dès qu'elle a chargé sa première frame. */}
           <div
             aria-hidden="true"
             className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-public-coffee via-public-ink to-public-coffee"
           >
-            <Video size={36} className="text-public-flame/70"/>
+            <Play size={42} fill="currentColor" className="text-public-flame/80"/>
           </div>
 
-          {! videoFailed && (
-            <video
-              ref={videoRef}
-              poster={item.thumbnail ? `/storage/${item.thumbnail}` : undefined}
-              className="absolute inset-0 w-full h-full object-cover"
-              preload="metadata"
-              playsInline
-              muted
-              loop
-              onError={() => setVideoFailed(true)}
-            >
-              <source src={`/storage/${item.file_path}`} type={videoMimeFromPath(item.file_path)}/>
-              {/* Source MP4 fallback : si le fichier est .mov H.264, certains navigateurs
-                  acceptent mieux le hint type="video/mp4". */}
-              {item.file_path?.endsWith('.mov') && (
-                <source src={`/storage/${item.file_path}`} type="video/mp4"/>
-              )}
-            </video>
-          )}
+          {/* On laisse TOUJOURS la balise vidéo : le navigateur affiche le
+              poster si dispo ; s'il ne sait pas décoder, on voit le fallback
+              derrière (pas pire que de masquer). */}
+          <video
+            ref={videoRef}
+            poster={item.thumbnail ? item.thumbnail : undefined}
+            className="absolute inset-0 w-full h-full object-cover"
+            preload="auto"
+            playsInline
+            muted
+            loop
+          >
+            <source src={item.file_path} type={videoMimeFromPath(item.file_path)}/>
+            {item.file_path?.endsWith('.mov') && (
+              <source src={item.file_path} type="video/mp4"/>
+            )}
+          </video>
 
-          <div className="absolute top-2 right-2 inline-flex items-center gap-1 bg-public-ink/80 backdrop-blur-sm px-2 py-1 text-public-bone font-mono text-[10px] uppercase tracking-widest">
+          <div className="absolute top-2 right-2 inline-flex items-center gap-1 bg-public-ink/80 backdrop-blur-sm px-2 py-1 text-public-bone font-mono text-[10px] uppercase tracking-widest pointer-events-none">
             <Video size={9}/> {t('media.video', 'Vidéo')}
           </div>
-          {/* Indicateur play discret au hover */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-            <div className="h-12 w-12 rounded-full bg-public-flame/95 flex items-center justify-center shadow-lg">
-              <Play size={16} fill="white" className="text-white ml-0.5"/>
+          {/* Bouton Play visible en permanence (semi-transparent) — devient
+              opaque au hover pour signifier la cliquabilité. */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="h-14 w-14 rounded-full bg-public-flame/85 group-hover:bg-public-flame group-hover:scale-110 transition flex items-center justify-center shadow-xl">
+              <Play size={20} fill="white" className="text-white ml-0.5"/>
             </div>
           </div>
         </>
       ) : (
         <img
-          src={`/storage/${item.file_path}`}
+          src={item.file_path}
           alt={item.title || ''}
           loading="lazy"
           decoding="async"
@@ -354,77 +406,126 @@ function Lightbox({ items, index, onClose, onNavigate }) {
       role="dialog"
       aria-modal="true"
       aria-label={item.title || t('gallery.previewAria', 'Aperçu média')}
-      className="fixed inset-0 z-50 bg-public-ink/95 backdrop-blur-md flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-public-ink/95 backdrop-blur-md flex flex-col"
       onClick={onClose}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 p-3 text-public-bone hover:text-public-flame transition z-10"
-        aria-label={t('common.close', 'Fermer')}
-      >
-        <X size={28}/>
-      </button>
-
-      {items.length > 1 && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onNavigate(-1) }}
-          className="absolute left-4 lg:left-8 p-3 text-public-bone/70 hover:text-public-flame transition z-10"
-          aria-label={t('common.previous', 'Précédent')}
-        >
-          <ChevronLeft size={32}/>
-        </button>
-      )}
-
+      {/* Header — compteur + bouton fermer */}
       <div
-        className="relative max-w-[92vw] max-h-[88vh]"
+        className="flex items-center justify-between px-4 py-3 text-public-bone/90 border-b border-public-bone/10"
         onClick={(e) => e.stopPropagation()}
       >
-        {item.file_type === 'video' ? (
-          <video
-            controls
-            autoPlay
-            playsInline
-            className="max-w-full max-h-[88vh] block"
-          >
-            <source src={`/storage/${item.file_path}`} type={videoMimeFromPath(item.file_path)}/>
-            {item.file_path?.endsWith('.mov') && (
-              <source src={`/storage/${item.file_path}`} type="video/mp4"/>
-            )}
-            <p className="text-public-bone font-mono text-sm p-4">
-              {t('gallery.videoUnsupported', "Ton navigateur n'arrive pas à lire cette vidéo.")} {' '}
-              <a href={`/storage/${item.file_path}`} className="text-public-flame underline">
-                {t('gallery.downloadFile', 'Télécharger le fichier')}
-              </a>.
-            </p>
-          </video>
-        ) : (
-          <img
-            src={`/storage/${item.file_path}`}
-            alt={item.title || ''}
-            className="max-w-full max-h-[88vh] object-contain block"
-          />
-        )}
-        {item.title && (
-          <p className="mt-3 text-center text-public-bone font-display uppercase tracking-wide">
-            {item.title}
-          </p>
-        )}
-        <p className="mt-1 text-center text-public-bone/50 font-mono text-xs">
-          {index + 1} / {items.length}
-        </p>
+        <span className="font-mono text-xs uppercase tracking-widest text-public-bone/60 tabular-nums">
+          {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
+        </span>
+        <button
+          onClick={onClose}
+          className="p-2 rounded text-public-bone/80 hover:text-public-bone hover:bg-public-bone/10 transition"
+          aria-label={t('common.close', 'Fermer')}
+          title={t('common.close', 'Fermer')}
+        >
+          <X size={20}/>
+        </button>
       </div>
 
-      {items.length > 1 && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onNavigate(1) }}
-          className="absolute right-4 lg:right-8 p-3 text-public-bone/70 hover:text-public-flame transition z-10"
-          aria-label={t('common.next', 'Suivant')}
-        >
-          <ChevronRight size={32}/>
-        </button>
-      )}
+      {/* Média + flèches — encadré pour respirer */}
+      <div
+        className="flex-1 flex items-center justify-center relative px-4 py-6 sm:px-12"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {items.length > 1 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onNavigate(-1) }}
+            className="absolute left-2 sm:left-4 p-3 rounded-full bg-public-ink/40 text-public-bone/80 hover:text-public-bone hover:bg-public-ink/70 transition z-10"
+            aria-label={t('common.previous', 'Précédent')}
+          >
+            <ChevronLeft size={28}/>
+          </button>
+        )}
+
+        <div className="max-w-[min(1000px,88vw)] max-h-[70vh] w-auto h-auto flex items-center justify-center">
+          {item.file_type === 'video' ? (
+            <video
+              key={item.id}
+              controls
+              autoPlay
+              playsInline
+              className="max-w-full max-h-[70vh] block rounded shadow-2xl"
+            >
+              <source src={item.file_path} type={videoMimeFromPath(item.file_path)}/>
+              {item.file_path?.endsWith('.mov') && (
+                <source src={item.file_path} type="video/mp4"/>
+              )}
+              <p className="text-public-bone font-mono text-sm p-4">
+                {t('gallery.videoUnsupported', "Ton navigateur n'arrive pas à lire cette vidéo.")} {' '}
+                <a href={item.file_path} className="text-public-flame underline">
+                  {t('gallery.downloadFile', 'Télécharger le fichier')}
+                </a>.
+              </p>
+            </video>
+          ) : (
+            <img
+              src={item.file_path}
+              alt={item.title || ''}
+              className="max-w-full max-h-[70vh] object-contain block rounded shadow-2xl select-none"
+            />
+          )}
+        </div>
+
+        {items.length > 1 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onNavigate(1) }}
+            className="absolute right-2 sm:right-4 p-3 rounded-full bg-public-ink/40 text-public-bone/80 hover:text-public-bone hover:bg-public-ink/70 transition z-10"
+            aria-label={t('common.next', 'Suivant')}
+          >
+            <ChevronRight size={28}/>
+          </button>
+        )}
+      </div>
+
+      {/* Footer — fiche descriptive (titre + rattachements) */}
+      <div
+        className="px-4 py-4 border-t border-public-bone/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {(item.title || item.event || item.department) && (
+          <div className="max-w-3xl mx-auto text-center space-y-2">
+            {item.title && (
+              <p className="text-public-bone font-display uppercase tracking-wide text-base">
+                {item.title}
+              </p>
+            )}
+            {(item.event?.title || item.department?.name) && (
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                {item.event?.title && (
+                  <Link
+                    to={`/evenements/${item.event.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-public-flame/15 hover:bg-public-flame/30 text-public-flame font-mono text-[11px] uppercase tracking-widest transition border border-public-flame/40"
+                    title={t('gallery.chipEventHint', "Voir la fiche de l'événement")}
+                  >
+                    <Calendar size={11}/> {item.event.display_title || item.event.title}
+                  </Link>
+                )}
+                {item.department?.name && (
+                  <Link
+                    to={`/communaute/${item.department.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-public-bone/10 hover:bg-public-bone/25 text-public-bone font-mono text-[11px] uppercase tracking-widest transition border border-public-bone/30"
+                    title={t('gallery.chipDeptHint', 'Voir le département')}
+                  >
+                    <Building2 size={11}/> {item.department.name}
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        <p className="mt-3 text-center text-[10px] text-public-bone/40 font-mono uppercase tracking-widest">
+          ← → {t('gallery.navHint', 'pour naviguer')} · ESC {t('common.close', 'fermer')}
+        </p>
+      </div>
     </div>
   )
 }

@@ -48,12 +48,21 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Champs assignables en masse (mass assignment).
      */
+    /**
+     * ⚠️ SÉCURITÉ : `is_governor` et `is_cell_leader` NE SONT PAS en $fillable
+     * intentionnellement pour éviter les élévations de privilège via mass
+     * assignment (ex: PUT /me { "is_governor": true } serait rejeté par
+     * validation MAIS un dev futur pourrait utiliser $request->all() par erreur).
+     *
+     * Ces flags ne s'assignent QUE via forceFill() explicite dans les
+     * controllers d'admin après vérification de rôle.
+     */
     protected $fillable = [
         'name', 'first_name', 'email', 'password', 'phone',
         'avatar', 'birth_date', 'gender', 'address', 'city', 'bio',
         'status', 'is_baptized', 'joined_at',
-        // Refonte Étape 1.
-        'department_id', 'cell_id', 'is_governor', 'is_cell_leader',
+        // Refonte Étape 1 — appartenance département / cellule (dérive du rôle).
+        'department_id', 'cell_id',
         'last_active_at', 'notification_preferences',
         // Fiche membre NWC étendue (profil complet, rempli après inscription).
         'profession', 'education_level', 'residence_area',
@@ -207,6 +216,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function eventRegistrations(): HasMany
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    /** Grants event-scopés (Étape A rôles billetterie). */
+    public function eventStaff(): HasMany
+    {
+        return $this->hasMany(EventStaff::class);
+    }
+
+    /** Magic-link scanners invités créés par ce user. */
+    public function guestScannerTokensCreated(): HasMany
+    {
+        return $this->hasMany(GuestScannerToken::class, 'created_by_id');
     }
 
     public function prayerRequests(): HasMany

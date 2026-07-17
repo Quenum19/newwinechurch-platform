@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\FormatsStorageUrls;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LiveStreamResource extends JsonResource
 {
+    use FormatsStorageUrls;
+
     public function toArray(Request $request): array
     {
         return [
@@ -19,7 +22,7 @@ class LiveStreamResource extends JsonResource
             'started_at'     => $this->started_at?->toIso8601String(),
             'ended_at'       => $this->ended_at?->toIso8601String(),
             'replay_url'     => $this->replay_url,
-            'cover_image'    => $this->cover_image,
+            'cover_image'    => $this->fullStorageUrl($this->cover_image),
             'viewers_count'  => $this->viewers_count,
         ];
     }

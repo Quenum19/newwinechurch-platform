@@ -35,6 +35,8 @@ class UpdateMemberRequest extends FormRequest
             'status'      => ['nullable', 'in:active,inactive,pending'],
             // Reset optionnel du password — utile si l'admin doit dépanner un membre.
             'password'    => ['nullable', 'confirmed', Password::defaults()],
+            // Option pour envoyer le nouveau mdp par email après update.
+            'send_credentials' => ['nullable', 'boolean'],
         ];
     }
 

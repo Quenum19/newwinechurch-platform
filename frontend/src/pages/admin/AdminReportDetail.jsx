@@ -10,10 +10,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Download, CheckCircle2, XCircle, Eye, FileText, RefreshCw,
+  Download, CheckCircle2, XCircle, Eye, FileText, RefreshCw,
 } from 'lucide-react'
 
 import api from '@/api/axios'
+import BackButton from '@/components/admin/BackButton.jsx'
 import { departmentReports } from '@/api/admin'
 
 export default function AdminReportDetail() {
@@ -93,9 +94,7 @@ export default function AdminReportDetail() {
 
   return (
     <div className="space-y-5">
-      <Link to="/admin/rapports-departement" className="inline-flex items-center gap-2 text-sm" style={{ color: 'var(--adm-text-muted)' }}>
-        <ArrowLeft size={14} /> Retour à la liste
-      </Link>
+      <BackButton to="/admin/rapports-departement" label="Retour à la liste" />
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>

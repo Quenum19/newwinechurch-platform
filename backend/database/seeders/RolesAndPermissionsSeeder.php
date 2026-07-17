@@ -60,10 +60,17 @@ class RolesAndPermissionsSeeder extends Seeder
             // Sermons
             'view sermons', 'create sermons', 'edit sermons',
             'delete sermons', 'publish sermons',
+            // Séries & thèmes de sermons (archivage long terme)
+            'manage sermon series', 'manage sermon themes',
+            // Témoignages (CRUD + publication)
+            'manage testimonials',
 
             // Événements
             'view events', 'create events', 'edit events',
             'delete events', 'publish events', 'manage event registrations',
+            // Billetterie
+            'manage event tickets', 'scan tickets', 'validate ticket payments',
+            'refund tickets', 'view attendance',
 
             // Dons
             'view donations', 'confirm donations', 'export donations',
@@ -128,6 +135,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'view donations', 'export donations',
             'view prayer requests',
             'view activity log',
+            // Phase 6 — Pasteur peut rembourser (supervision financière).
+            'refund tickets',
+            // Liste de présence (accès accueil temps réel + exports).
+            'view attendance',
         ]);
 
         // RH ADMIN — pilote les personnes : membres, gouverneurs, rapports liés
@@ -164,8 +175,11 @@ class RolesAndPermissionsSeeder extends Seeder
             // PAS de manage department media / upload media : RÉSERVÉ au superadmin
             // pour contrôler les bannières et la galerie publique.
             'view sermons', 'create sermons', 'edit sermons', 'publish sermons',
+            'manage sermon series', 'manage sermon themes',
+            'manage testimonials',
             'view events', 'create events', 'edit events',
             'publish events', 'manage event registrations',
+            'manage event tickets', 'scan tickets', 'view attendance',
             'view donations', 'confirm donations', 'export donations',
             'view posts', 'create posts', 'edit posts', 'publish posts',
             'view gallery', // peut consulter mais pas uploader
@@ -190,8 +204,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'view department reports', 'view cell reports',
             // Contenu spirituel : CRUD complet (cœur du rôle).
             'view sermons', 'create sermons', 'edit sermons', 'delete sermons', 'publish sermons',
+            'manage sermon series', 'manage sermon themes',
+            'manage testimonials',
             'view events', 'create events', 'edit events', 'delete events',
             'publish events', 'manage event registrations',
+            'manage event tickets', 'scan tickets', 'validate ticket payments',
+            'refund tickets', 'view attendance',
             'view posts', 'create posts', 'edit posts', 'delete posts', 'publish posts',
             // Médias & galerie : peut uploader et organiser.
             'view gallery', 'upload media', 'delete media',
@@ -253,6 +271,23 @@ class RolesAndPermissionsSeeder extends Seeder
         $membre = Role::firstOrCreate(['name' => 'membre', 'guard_name' => 'web']);
         // Aucune permission admin (consultation publique seulement).
 
+        // CONTROLEUR — agent de sécurité qui scanne les tickets à l'entrée.
+        // Accès uniquement à la page /scan. Pas d'accès admin panel.
+        $controleur = Role::firstOrCreate(['name' => 'controleur', 'guard_name' => 'web']);
+        $controleur->syncPermissions(['scan tickets']);
+
+        // TRÉSORIER — Phase 6 — supervision financière billetterie.
+        // Valide les paiements ET rembourse, lecture des dons et événements.
+        // Pas d'autres accès admin pour rester focalisé sur les flux financiers.
+        $tresorier = Role::firstOrCreate(['name' => 'tresorier', 'guard_name' => 'web']);
+        $tresorier->syncPermissions([
+            'access admin panel', 'view dashboard',
+            'view events',
+            'manage event tickets', 'validate ticket payments', 'refund tickets',
+            'view attendance',
+            'view donations', 'export donations',
+        ]);
+
         // === 3. Compatibilité legacy : alias capitaine = gouverneur ===
         // Garde un rôle "capitaine" temporaire mappé sur les permissions gouverneur
         // pour ne pas casser les seeders/tests existants qui s'appuient dessus.
@@ -260,7 +295,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $capitaine = Role::firstOrCreate(['name' => 'capitaine', 'guard_name' => 'web']);
         $capitaine->syncPermissions($gouverneur->permissions);
 
-        $this->command->info('  ✓ 8 rôles créés (superadmin, pasteur, rh, admin, admin-site, gouverneur, leader, membre)');
+        $this->command->info('  ✓ 10 rôles créés (superadmin, pasteur, rh, admin, admin-site, gouverneur, leader, membre, controleur, tresorier)');
         $this->command->info('  ✓ '.count($permissions).' permissions créées');
     }
 }

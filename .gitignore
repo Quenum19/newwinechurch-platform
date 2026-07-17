@@ -28,6 +28,8 @@ backend/Homestead.json
 backend/Homestead.yaml
 backend/auth.json
 backend/.env
+backend/.env.*
+!backend/.env.example
 backend/.env.backup
 backend/.env.production
 backend/.phpactor.json
@@ -46,6 +48,9 @@ frontend/.env.local
 frontend/.env.production
 frontend/.eslintcache
 frontend/*.local
+
+# === Windows shortcuts / OS clutter ===
+*.lnk
 
 # === IDE & OS ===
 .idea/

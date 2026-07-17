@@ -50,7 +50,7 @@ export default function BlogPostDetail() {
             </span>
           )}
           <h1 className="heading-anton text-5xl sm:text-7xl lg:text-8xl text-public-ink leading-[0.92]">
-            {post.title}
+            {post.display_title || post.title}
           </h1>
           <div className="mt-6 flex flex-wrap items-center gap-3 tag-mono text-public-ink/60">
             {post.published_at && (
@@ -79,9 +79,9 @@ export default function BlogPostDetail() {
           </div>
         )}
 
-        {post.excerpt && (
+        {(post.display_excerpt || post.excerpt) && (
           <div className="border-l-2 border-public-flame pl-6 mb-10 max-w-3xl">
-            <p className="editorial-quote text-2xl text-public-ink/80">{post.excerpt}</p>
+            <p className="editorial-quote text-2xl text-public-ink/80">{post.display_excerpt || post.excerpt}</p>
           </div>
         )}
 
@@ -101,7 +101,7 @@ export default function BlogPostDetail() {
                      prose-img:w-full prose-img:object-cover
                      prose-code:bg-public-ink/5 prose-code:text-public-ink prose-code:px-1.5 prose-code:py-0.5
                      prose-pre:bg-public-ink prose-pre:text-public-bone"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: post.display_content || post.content }}
         />
       </article>
     </div>

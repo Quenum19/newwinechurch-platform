@@ -374,6 +374,22 @@
     color: theme('colors.gold.300');
   }
 
+  /* Utility class : masque la scrollbar tout en gardant la scrollabilité.
+     Utilisée pour les tabs scrollables horizontalement sur mobile. */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Breakpoint xs custom (400px) pour boutons compacts sur très petits mobiles. */
+  @media (min-width: 400px) {
+    .xs\:inline { display: inline; }
+    .xs\:hidden { display: none; }
+  }
+
   /* Scrollbar custom (WebKit) sombre + accent or. */
   ::-webkit-scrollbar {
     width: 10px;

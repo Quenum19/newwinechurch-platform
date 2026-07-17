@@ -55,7 +55,7 @@ class DepartmentReportSubmittedNotification extends Notification implements Shou
                 'department' => $report->department,
                 'governor'   => $report->governor,
                 'isPasteur'  => $isPasteur,
-                'adminUrl'   => rtrim(config('app.url'), '/').'/admin/rapports-departement/'.$report->id,
+                'adminUrl'   => rtrim(config('app.frontend_url') ?: config('app.url'), '/').'/admin/rapports-departement/'.$report->id,
             ]);
     }
 

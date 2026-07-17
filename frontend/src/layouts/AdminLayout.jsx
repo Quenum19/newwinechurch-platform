@@ -15,6 +15,7 @@ import {
   HandCoins, Settings as SettingsIcon, LogOut, Menu, ExternalLink,
   Mic, Calendar, BookOpen, Image as ImageIcon, MessageSquare, Mail, Activity, Shield,
   ChevronLeft, ChevronRight, Search, FileText, Smartphone, Images, UserPlus,
+  MessageCircle, ScanLine, Ticket, Layers,
 } from 'lucide-react'
 
 import { useAuthStore } from '@/store/authStore'
@@ -42,7 +43,11 @@ function buildNavItems(t) {
     { section: t('admin.sidebar.section.content') },
     { to: '/admin/sermons',           icon: Mic,            label: t('admin.sidebar.sermons'),    perm: 'view sermons' },
     { to: '/admin/evenements',        icon: Calendar,       label: t('admin.sidebar.events'),     perm: 'view events' },
+    { to: '/admin/series',            icon: Layers,         label: t('admin.sidebar.series', 'Séries'),         perm: 'create events' },
+    { to: '/admin/billetterie',       icon: Ticket,         label: t('admin.sidebar.ticketing', 'Billetterie'), perm: 'manage event tickets' },
+    { to: '/scan',                    icon: ScanLine,       label: t('admin.sidebar.scan', 'Scanner billets'), perm: 'scan tickets', target: '_blank' },
     { to: '/admin/blog',              icon: BookOpen,       label: t('admin.sidebar.blog'),       perm: 'view posts' },
+    { to: '/admin/temoignages',       icon: MessageCircle,  label: t('admin.sidebar.testimonials', 'Témoignages'), perm: 'manage testimonials' },
     { to: '/admin/galerie',           icon: ImageIcon,      label: t('admin.sidebar.gallery'),    perm: 'view gallery' },
 
     { section: t('admin.sidebar.section.engagement') },
@@ -165,12 +170,13 @@ export default function AdminLayout() {
                 </div>
               )
             }
-            const { to, icon: Icon, label, end } = item
+            const { to, icon: Icon, label, end, target } = item
             return (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
+                target={target}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
                   cn(
@@ -187,6 +193,9 @@ export default function AdminLayout() {
               >
                 <Icon size={16} className="shrink-0" />
                 {!collapsed && <span className="truncate">{label}</span>}
+                {target === '_blank' && !collapsed && (
+                  <ExternalLink size={11} className="opacity-50 shrink-0"/>
+                )}
               </NavLink>
             )
           })}

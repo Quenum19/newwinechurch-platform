@@ -10,7 +10,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import Spinner from './ui/Spinner.jsx'
 
-export function AuthGuard({ children, role, staffOnly = false }) {
+export function AuthGuard({ children, role, anyRole, staffOnly = false }) {
   const { isAuthenticated, hasRole, isStaff, user } = useAuthStore()
   const location = useLocation()
 
@@ -33,6 +33,11 @@ export function AuthGuard({ children, role, staffOnly = false }) {
   }
 
   if (role && ! hasRole(role)) {
+    return <Forbidden />
+  }
+
+  // Liste de rôles autorisés : il suffit d'en avoir UN.
+  if (Array.isArray(anyRole) && anyRole.length > 0 && ! anyRole.some((r) => hasRole(r))) {
     return <Forbidden />
   }
 

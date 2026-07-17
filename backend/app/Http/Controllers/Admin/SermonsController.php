@@ -35,7 +35,7 @@ class SermonsController extends Controller
         $perPage = min((int) $request->query('per_page', 20), 100);
 
         $query = Sermon::query()
-            ->with(['speaker:id,name,first_name,avatar', 'series:id,title,slug']);
+            ->with(['speaker:id,name,first_name,avatar', 'series:id,title,slug', 'themes:id,slug,name,color']);
 
         // Filtres
         if ($request->boolean('trashed')) {
@@ -50,11 +50,22 @@ class SermonsController extends Controller
         if ($seriesId = $request->query('series_id')) {
             $query->where('series_id', $seriesId);
         }
+        // Filtre par thème (slug OU id). Utile pour la recherche transverse.
+        if ($themeFilter = $request->query('theme')) {
+            $query->whereHas('themes', function ($q) use ($themeFilter) {
+                if (is_numeric($themeFilter)) {
+                    $q->where('sermon_themes.id', (int) $themeFilter);
+                } else {
+                    $q->where('sermon_themes.slug', $themeFilter);
+                }
+            });
+        }
         if ($search = trim((string) $request->query('search'))) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('scripture_reference', 'like', "%{$search}%");
+                  ->orWhere('scripture_reference', 'like', "%{$search}%")
+                  ->orWhere('external_speaker_name', 'like', "%{$search}%");
             });
         }
 
@@ -71,7 +82,7 @@ class SermonsController extends Controller
     public function show(int $id): SermonResource
     {
         $sermon = Sermon::withTrashed()
-            ->with(['speaker', 'series'])
+            ->with(['speaker', 'series', 'themes'])
             ->findOrFail($id);
 
         return new SermonResource($sermon);
@@ -79,7 +90,8 @@ class SermonsController extends Controller
 
     public function store(StoreSermonRequest $request): JsonResponse
     {
-        $data = $request->safe()->except(['thumbnail', 'audio_file', 'video_file']);
+        $data    = $request->safe()->except(['thumbnail', 'audio_file', 'video_file', 'themes']);
+        $themeIds = $this->normalizeThemeIds($request->input('themes'));
 
         // Auto-publication : si is_published=true, on stamp published_at.
         if (($data['is_published'] ?? false) && empty($data['published_at'])) {
@@ -87,19 +99,20 @@ class SermonsController extends Controller
         }
 
         $sermon = Sermon::create($data);
+        $sermon->themes()->sync($themeIds);
 
         $this->handleSermonUploads($request, $sermon);
 
         return response()->json([
             'message' => 'Sermon créé.',
-            'data'    => new SermonResource($sermon->fresh(['speaker', 'series'])),
+            'data'    => new SermonResource($sermon->fresh(['speaker', 'series', 'themes'])),
         ], 201);
     }
 
     public function update(UpdateSermonRequest $request, int $id): JsonResponse
     {
         $sermon = Sermon::findOrFail($id);
-        $data   = $request->safe()->except(['thumbnail', 'audio_file', 'video_file']);
+        $data   = $request->safe()->except(['thumbnail', 'audio_file', 'video_file', 'themes']);
 
         // Bascule de publication : stamp/dé-stamp published_at.
         if (array_key_exists('is_published', $data)) {
@@ -110,11 +123,44 @@ class SermonsController extends Controller
 
         $sermon->fill($data)->save();
 
+        // Sync des thèmes UNIQUEMENT si le client a explicitement envoyé le
+        // champ (sinon on les conserve — utile pour les requêtes partielles).
+        if ($request->has('themes')) {
+            $sermon->themes()->sync($this->normalizeThemeIds($request->input('themes')));
+        }
+
         $this->handleSermonUploads($request, $sermon);
 
         return response()->json([
-            'data' => new SermonResource($sermon->fresh(['speaker', 'series'])),
+            'data' => new SermonResource($sermon->fresh(['speaker', 'series', 'themes'])),
         ]);
+    }
+
+    /**
+     * Accepte un tableau d'IDs (int ou string numérique), un CSV "1,2,3" ou
+     * un JSON encodé. Retourne uniquement les IDs qui existent réellement
+     * dans la table sermon_themes (silencieux : les invalides sont droppés).
+     *
+     * On accepte plusieurs formats car FormData ne supporte pas nativement
+     * les tableaux d'entiers (toujours casté en string côté HTTP).
+     */
+    private function normalizeThemeIds(mixed $input): array
+    {
+        if (empty($input)) return [];
+
+        $candidates = match (true) {
+            is_array($input)                   => $input,
+            is_string($input) && str_starts_with(trim($input), '[') => (array) json_decode($input, true),
+            is_string($input)                  => array_filter(array_map('trim', explode(',', $input))),
+            default                            => [],
+        };
+
+        $ids = array_unique(array_map('intval', $candidates));
+        $ids = array_filter($ids, fn ($id) => $id > 0);
+
+        if (empty($ids)) return [];
+
+        return \App\Models\SermonTheme::whereIn('id', $ids)->pluck('id')->all();
     }
 
     /**
@@ -196,19 +242,79 @@ class SermonsController extends Controller
         return response()->json(['message' => 'Sermon restauré.']);
     }
 
-    /** Bascule rapide de publication (toggle). */
+    /**
+     * Action en lot sur N sermons.
+     * Body : { action: 'publish'|'unpublish'|'feature'|'unfeature'|'delete'|'restore', ids: [int] }
+     */
+    public function bulk(Request $request): JsonResponse
+    {
+        $request->validate([
+            'action' => ['required', 'string', 'in:publish,unpublish,feature,unfeature,delete,restore'],
+            'ids'    => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*'  => ['integer'],
+        ]);
+
+        $user = $request->user();
+        $action = $request->input('action');
+        $ids = $request->input('ids');
+
+        $perm = match ($action) {
+            'publish', 'unpublish'        => 'publish sermons',
+            'feature', 'unfeature'        => 'edit sermons',
+            'delete'                      => 'delete sermons',
+            'restore'                     => 'delete sermons',
+        };
+        abort_unless($user?->can($perm), 403);
+
+        switch ($action) {
+            case 'publish':
+                $count = Sermon::whereIn('id', $ids)->update([
+                    'is_published' => true,
+                    'published_at' => now(),
+                ]);
+                return response()->json(['message' => "$count sermon(s) publié(s).", 'count' => $count]);
+            case 'unpublish':
+                $count = Sermon::whereIn('id', $ids)->update(['is_published' => false]);
+                return response()->json(['message' => "$count sermon(s) dépublié(s).", 'count' => $count]);
+            case 'feature':
+                $count = Sermon::whereIn('id', $ids)->update(['is_featured' => true]);
+                return response()->json(['message' => "$count sermon(s) mis en avant.", 'count' => $count]);
+            case 'unfeature':
+                $count = Sermon::whereIn('id', $ids)->update(['is_featured' => false]);
+                return response()->json(['message' => "$count sermon(s) retirés de la mise en avant.", 'count' => $count]);
+            case 'delete':
+                $count = Sermon::whereIn('id', $ids)->delete();
+                return response()->json(['message' => "$count sermon(s) archivé(s).", 'count' => $count]);
+            case 'restore':
+                $count = Sermon::onlyTrashed()->whereIn('id', $ids)->restore();
+                return response()->json(['message' => "$count sermon(s) restauré(s).", 'count' => $count]);
+        }
+        return response()->json(['message' => 'Action inconnue.'], 400);
+    }
+
+    /**
+     * Bascule rapide de publication (toggle).
+     *
+     * NB : on capture `was_published` AVANT update — sinon les valeurs
+     * dérivées (message, published_at) sont calculées sur le NEW state et
+     * le résultat devient incohérent.
+     */
     public function togglePublish(Request $request, int $id): JsonResponse
     {
         if (! $request->user()->can('publish sermons')) abort(403);
 
         $sermon = Sermon::findOrFail($id);
+        $wasPublished = (bool) $sermon->is_published;
+
         $sermon->update([
-            'is_published' => ! $sermon->is_published,
-            'published_at' => $sermon->is_published ? $sermon->published_at : now(),
+            'is_published' => ! $wasPublished,
+            // PUBLISH → stamp now() (sauf si déjà un timestamp historique)
+            // DÉPUBLIE → vide le timestamp (cohérent avec le flag).
+            'published_at' => $wasPublished ? null : ($sermon->published_at ?? now()),
         ]);
 
         return response()->json([
-            'message' => $sermon->is_published ? 'Sermon publié.' : 'Sermon dépublié.',
+            'message' => $wasPublished ? 'Sermon dépublié.' : 'Sermon publié.',
             'data'    => new SermonResource($sermon->fresh(['speaker', 'series'])),
         ]);
     }

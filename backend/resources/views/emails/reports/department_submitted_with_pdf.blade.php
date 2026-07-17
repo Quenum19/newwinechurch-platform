@@ -7,10 +7,13 @@
     'rh'       => 'Rapport département disponible',
     'governor' => 'Votre rapport a bien été soumis',
   ];
+  // ⚠️ SÉCURITÉ #M4 audit : $department->name est user-fourni (créé par admin
+  // via /admin/departements). Il DOIT passer par e() avant intégration dans
+  // du HTML rendu par `{!! !!}` sinon XSS stocké possible.
   $intros = [
-    'pasteur'  => 'Le département <strong style="color:#C9A84C;">' . $department->name . '</strong> vient de soumettre son rapport. Le PDF officiel est joint à ce mail.',
-    'rh'       => 'Pour information : le département <strong style="color:#C9A84C;">' . $department->name . '</strong> a soumis son rapport. Le PDF est joint à ce mail.',
-    'governor' => 'Bonjour ' . e($recipient->first_name ?? $recipient->name) . ', votre rapport pour <strong style="color:#C9A84C;">' . $department->name . '</strong> a bien été enregistré et transmis au pasteur et à la RH. Vous trouverez le PDF officiel en pièce jointe.',
+    'pasteur'  => 'Le département <strong style="color:#C9A84C;">' . e($department->name) . '</strong> vient de soumettre son rapport. Le PDF officiel est joint à ce mail.',
+    'rh'       => 'Pour information : le département <strong style="color:#C9A84C;">' . e($department->name) . '</strong> a soumis son rapport. Le PDF est joint à ce mail.',
+    'governor' => 'Bonjour ' . e($recipient->first_name ?? $recipient->name) . ', votre rapport pour <strong style="color:#C9A84C;">' . e($department->name) . '</strong> a bien été enregistré et transmis au pasteur et à la RH. Vous trouverez le PDF officiel en pièce jointe.',
   ];
   $cta = [
     'pasteur'  => ['url' => $adminUrl, 'label' => 'Examiner et approuver'],

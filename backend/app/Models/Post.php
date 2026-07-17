@@ -12,11 +12,16 @@ use Spatie\Sluggable\SlugOptions;
 
 class Post extends Model
 {
-    use HasFactory, HasSlug, SoftDeletes;
+    use HasFactory, HasSlug, SoftDeletes, \App\Models\Concerns\HasBilingualFields;
+
+    protected array $bilingualFields = ['title', 'excerpt', 'content'];
 
     protected $fillable = [
-        'title', 'slug', 'excerpt', 'content', 'cover_image',
-        'author_id', 'category_id', 'status',
+        'title', 'title_en',
+        'slug',
+        'excerpt', 'excerpt_en',
+        'content', 'content_en',
+        'cover_image', 'author_id', 'category_id', 'status',
         'is_featured', 'published_at', 'views_count',
     ];
 

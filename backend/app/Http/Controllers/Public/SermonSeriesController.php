@@ -30,7 +30,10 @@ class SermonSeriesController extends Controller
             ->firstOrFail();
 
         $sermons = $series->sermons()->published()
-            ->with(['speaker:id,name,first_name,avatar'])
+            ->with([
+                'speaker:id,name,first_name,avatar',
+                'themes:id,slug,name,color',
+            ])
             ->recent()
             ->get();
 

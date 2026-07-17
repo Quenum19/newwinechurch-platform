@@ -9,6 +9,8 @@ import { HandCoins, Calendar, Home as HomeIcon, MailCheck } from 'lucide-react'
 
 import { useAuthStore } from '@/store/authStore'
 import { getMyDonations, getMyEvents, getMyCell } from '@/api/me'
+import MyStaffAssignments from '@/components/MyStaffAssignments.jsx'
+import SafeBoundary from '@/components/SafeBoundary.jsx'
 
 export default function MyDashboard() {
   const { t } = useTranslation()
@@ -47,6 +49,11 @@ export default function MyDashboard() {
           {t('memberArea.dashboard.tagline', 'Sauvé pour Sauver — voici ton espace.')}
         </p>
       </header>
+
+      {/* Étape F — Missions billetterie actives (null si aucune) */}
+      <SafeBoundary>
+        <MyStaffAssignments />
+      </SafeBoundary>
 
       {/* Bandeau de vérification email */}
       {!verified && (

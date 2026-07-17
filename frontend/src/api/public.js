@@ -7,6 +7,62 @@ export const publicSermons = {
   get: async (slug) => (await api.get(`/sermons/${slug}`)).data?.data ?? null,
 }
 
+export const publicSermonSeries = {
+  list: async () => (await api.get('/sermon-series')).data?.data ?? [],
+  get: async (slug) => (await api.get(`/sermon-series/${slug}`)).data ?? null,
+}
+
+export const publicSermonThemes = {
+  list: async () => (await api.get('/sermon-themes')).data?.data ?? [],
+}
+
+export const publicTestimonials = {
+  list: async () => (await api.get('/testimonials')).data?.data ?? [],
+}
+
+export const publicSeries = {
+  list: async () => (await api.get('/series')).data?.data ?? [],
+  get: async (slug) => (await api.get(`/series/${slug}`)).data,
+}
+
+export const publicTickets = {
+  /** Liste des events ticketés actifs. */
+  events: async () => (await api.get('/tickets/events')).data?.data ?? [],
+  /** Détail event avec compteurs (sold, remaining, is_open, etc.). */
+  show: async (slug) => (await api.get(`/tickets/events/${slug}`)).data,
+  /** Réservation — payload {event_id, first_name, last_name, email, phone, quantity, guests[]?, selfie?}. */
+  register: async (payload, selfieFile = null) => {
+    const fd = new FormData()
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v === undefined || v === null) return
+      if (Array.isArray(v)) {
+        v.forEach((item, i) => Object.entries(item).forEach(([kk, vv]) =>
+          fd.append(`${k}[${i}][${kk}]`, vv)
+        ))
+      } else fd.append(k, v)
+    })
+    if (selfieFile) fd.append('selfie', selfieFile)
+    return (await api.post('/tickets/register', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data
+  },
+  myTicket: async (token) => (await api.get(`/tickets/my/${token}`)).data,
+  cancel: async (token) => (await api.post(`/tickets/cancel/${token}`)).data,
+  // === Phase 2 — Suivi commande payante ===
+  order: async (orderCode) => (await api.get(`/tickets/order/${orderCode}`)).data,
+  // Phase 7 — Initialise un paiement CinetPay (renvoie URL où rediriger)
+  initiateOnlinePayment: async (orderCode) =>
+    (await api.post(`/tickets/order/${orderCode}/initiate-payment`)).data,
+  submitPayment: async (orderCode, payload, proofFile = null) => {
+    const fd = new FormData()
+    Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v) })
+    if (proofFile) fd.append('payment_proof', proofFile)
+    return (await api.post(`/tickets/order/${orderCode}/submit-payment`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data
+  },
+}
+
 export const publicEvents = {
   list: async (params = {}) => (await api.get('/events', { params })).data,
   get: async (slug) => (await api.get(`/events/${slug}`)).data?.data ?? null,
@@ -61,4 +117,10 @@ export const publicDonationMethods = {
 /** Soumission d'une demande d'adhésion (modèle admission). */
 export const publicMembershipRequests = {
   submit: async (payload) => (await api.post('/membership-requests', payload)).data,
+}
+
+/** Étape C — Landing scanner invité (magic-link). */
+export const publicScannerInvite = {
+  verify: async (token) => (await api.get(`/scanner-invite/${token}`)).data,
+  redeem: async (token) => (await api.post(`/scanner-invite/${token}/redeem`)).data,
 }

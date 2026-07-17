@@ -8,11 +8,14 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Plus, Shield, ChevronRight, X } from 'lucide-react'
+import { Plus, Shield, ChevronRight, X, Check, Square, CheckSquare, Power, PowerOff } from 'lucide-react'
 
 import DataTable from '@/components/admin/DataTable.jsx'
+import BulkActionBar from '@/components/admin/BulkActionBar.jsx'
+import ResetFiltersButton from '@/components/admin/ResetFiltersButton.jsx'
+import useMultiSelect from '@/hooks/useMultiSelect'
 import { members } from '@/api/admin'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/utils/cn'
@@ -36,6 +39,26 @@ export default function UsersAdminPage() {
 
   const [filters, setFilters] = useState({ page: 1, per_page: 25 })
   const [editing, setEditing] = useState(null)
+  const sel = useMultiSelect()
+
+  // Lecture cache pour avoir les IDs visibles (utile au toggleAll + bulk).
+  const { data: pageData } = useQuery({
+    queryKey: ['admin', 'members', 'users-view', filters],
+    queryFn: () => members.list(filters),
+    keepPreviousData: true,
+  })
+  const visibleIds = (pageData?.data ?? []).map((u) => u.id)
+  const allVisibleSelected = sel.allSelected(visibleIds)
+
+  const bulkAction = useMutation({
+    mutationFn: ({ action, ids }) => members.bulkDelete(ids, action),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Action effectuée.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'members'] })
+      sel.clear()
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Action impossible.'),
+  })
 
   const updateRoles = useMutation({
     mutationFn: ({ id, roles }) => members.assignRoles(id, roles),
@@ -48,6 +71,20 @@ export default function UsersAdminPage() {
   })
 
   const columns = [
+    {
+      key: '_select', label: '', cellClassName: 'w-10',
+      render: (u) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); sel.toggle(u.id, e, visibleIds) }}
+          className={`h-5 w-5 rounded flex items-center justify-center transition ${
+            sel.isSelected(u.id) ? 'bg-[var(--adm-accent)] text-white' : 'border-2 hover:bg-zinc-100'
+          }`}
+          style={{ borderColor: sel.isSelected(u.id) ? 'transparent' : 'var(--adm-border)' }}
+          aria-label="Sélectionner"
+        >{sel.isSelected(u.id) && <Check size={12} strokeWidth={3} />}</button>
+      ),
+    },
     {
       key: 'name', label: 'Utilisateur', sortable: true,
       render: (u) => <UserCell user={u} />,
@@ -137,6 +174,14 @@ export default function UsersAdminPage() {
         onRowClick={(u) => navigate(`/admin/membres/${u.id}`)}
         mobileRow={(u) => (
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); sel.toggle(u.id, e, visibleIds) }}
+              className={`h-5 w-5 rounded flex items-center justify-center transition shrink-0 ${
+                sel.isSelected(u.id) ? 'bg-[var(--adm-accent)] text-white' : 'border-2 hover:bg-zinc-100'
+              }`}
+              style={{ borderColor: sel.isSelected(u.id) ? 'transparent' : 'var(--adm-border)' }}
+            >{sel.isSelected(u.id) && <Check size={12} strokeWidth={3}/>}</button>
             <UserCell user={u} compact />
             <button
               onClick={(e) => { e.stopPropagation(); setEditing(u) }}
@@ -147,6 +192,42 @@ export default function UsersAdminPage() {
             <ChevronRight size={14} style={{ color: 'var(--adm-text-faint)' }} className="shrink-0" />
           </div>
         )}
+        filtersSlot={
+          <>
+            {visibleIds.length > 0 && (
+              <button
+                onClick={() => sel.toggleAll(visibleIds)}
+                className="adm-btn adm-btn-secondary text-xs h-9"
+              >
+                {allVisibleSelected ? <CheckSquare size={13}/> : <Square size={13}/>}
+                {allVisibleSelected ? 'Désélectionner' : `Tout (${visibleIds.length})`}
+              </button>
+            )}
+            <ResetFiltersButton
+              filters={filters}
+              onReset={() => setFilters({ page: 1, per_page: 25 })}
+            />
+          </>
+        }
+      />
+
+      <BulkActionBar
+        count={sel.count}
+        onClear={sel.clear}
+        label="utilisateur"
+        actions={[
+          {
+            key: 'activate', label: 'Activer', icon: Power,
+            onClick: () => bulkAction.mutate({ action: 'activate', ids: sel.ids }),
+          },
+          {
+            key: 'deactivate', label: 'Désactiver', icon: PowerOff, variant: 'danger', confirm: true,
+            confirmTitle: 'Désactiver ces comptes ?',
+            confirmText: `${sel.count} compte(s) seront désactivés. Sessions actives coupées immédiatement. Réversible.`,
+            confirmCta: 'Désactiver',
+            onClick: () => bulkAction.mutate({ action: 'deactivate', ids: sel.ids }),
+          },
+        ]}
       />
 
       {editing && (

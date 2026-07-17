@@ -89,10 +89,12 @@ class GovernorCellsController extends Controller
             if (! $leader->hasRole('leader')) {
                 $leader->assignRole('leader');
             }
-            $leader->update([
+            // forceFill : is_cell_leader hors $fillable pour éviter mass
+            // assignment. Ici admin controller donc explicite OK.
+            $leader->forceFill([
                 'is_cell_leader' => true,
                 'cell_id'        => $cell->id,
-            ]);
+            ])->save();
 
             // Mandat actif dans cell_leaders.
             DB::table('cell_leaders')->insert([

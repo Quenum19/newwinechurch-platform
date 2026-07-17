@@ -40,6 +40,9 @@ class EventsController extends Controller
         if ($search = trim((string) $request->query('search'))) {
             $query->where('title', 'like', "%{$search}%");
         }
+        if ($request->filled('ticketing_enabled')) {
+            $query->where('ticketing_enabled', $request->boolean('ticketing_enabled'));
+        }
 
         $sort = (string) $request->query('sort', 'starts_at');
         $allowed = ['starts_at', 'title', 'created_at'];
@@ -53,7 +56,10 @@ class EventsController extends Controller
     public function show(int $id): EventResource
     {
         $event = Event::withTrashed()
-            ->withCount(['registrations' => fn ($q) => $q->where('status', 'registered')])
+            ->withCount([
+                'registrations' => fn ($q) => $q->where('status', 'registered'),
+                'media as media_count' => fn ($q) => $q->where('is_published', true),
+            ])
             ->findOrFail($id);
         return new EventResource($event);
     }
@@ -104,6 +110,61 @@ class EventsController extends Controller
         if (! $request->user()->can('delete events')) abort(403);
         Event::findOrFail($id)->delete();
         return response()->json(['message' => 'Événement archivé.']);
+    }
+
+    /** Action en lot. action: publish|unpublish|delete|feature|unfeature */
+    public function bulk(Request $request): JsonResponse
+    {
+        $request->validate([
+            'action' => ['required', 'in:publish,unpublish,delete,feature,unfeature'],
+            'ids'    => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*'  => ['integer'],
+        ]);
+        $user = $request->user();
+        $perm = in_array($request->action, ['publish', 'unpublish']) ? 'publish events'
+              : ($request->action === 'delete' ? 'delete events' : 'edit events');
+        abort_unless($user?->can($perm), 403);
+
+        $ids = $request->input('ids');
+        $a = $request->input('action');
+
+        $count = match ($a) {
+            'publish'   => Event::whereIn('id', $ids)->update(['is_published' => true]),
+            'unpublish' => Event::whereIn('id', $ids)->update(['is_published' => false]),
+            'feature'   => Event::whereIn('id', $ids)->update(['is_featured' => true]),
+            'unfeature' => Event::whereIn('id', $ids)->update(['is_featured' => false]),
+            'delete'    => Event::whereIn('id', $ids)->delete(),
+        };
+        $labels = ['publish' => 'publié(s)', 'unpublish' => 'dépublié(s)', 'feature' => 'mis en avant', 'unfeature' => 'retiré(s) de la mise en avant', 'delete' => 'archivé(s)'];
+        return response()->json(['message' => "$count événement(s) " . $labels[$a] . '.', 'count' => $count]);
+    }
+
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        if (! $request->user()->can('delete events')) abort(403);
+        $event = Event::onlyTrashed()->findOrFail($id);
+        $event->restore();
+        return response()->json(['message' => 'Événement restauré.']);
+    }
+
+    /**
+     * Bascule rapide de publication. Capture l'état AVANT update sinon
+     * la valeur dérivée serait fausse (même bug évité dans togglePublish des
+     * sermons).
+     */
+    public function togglePublish(Request $request, int $id): JsonResponse
+    {
+        if (! $request->user()->can('publish events')) abort(403);
+
+        $event = Event::findOrFail($id);
+        $wasPublished = (bool) $event->is_published;
+
+        $event->update(['is_published' => ! $wasPublished]);
+
+        return response()->json([
+            'message' => $wasPublished ? 'Événement dépublié.' : 'Événement publié.',
+            'data'    => new EventResource($event->fresh()),
+        ]);
     }
 
     /** Liste des inscrits à un événement. */

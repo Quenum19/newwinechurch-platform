@@ -161,4 +161,28 @@ class MembershipRequestsController extends Controller
     {
         return response()->json(['count' => MembershipRequest::pending()->count()]);
     }
+
+    /**
+     * Action en lot — reject uniquement (l'approbation crée des comptes
+     * utilisateurs avec envoi mail, trop sensible pour du bulk silencieux).
+     */
+    public function bulk(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->can('create members'), 403);
+        $request->validate([
+            'action' => ['required', 'in:reject'],
+            'ids'    => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*'  => ['integer'],
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+        $count = MembershipRequest::whereIn('id', $request->input('ids'))
+            ->where('status', 'pending')
+            ->update([
+                'status'           => 'rejected',
+                'processed_by'     => $request->user()->id,
+                'processed_at'     => now(),
+                'rejection_reason' => $request->input('reason'),
+            ]);
+        return response()->json(['message' => "$count demande(s) rejetée(s).", 'count' => $count]);
+    }
 }

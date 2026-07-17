@@ -29,7 +29,14 @@ class DepartmentController extends Controller
             ->withCount('members')
             ->get();
 
-        return DepartmentResource::collection($departments);
+        // Le frontend affiche le nombre EXACT de départements (actifs + inactifs)
+        // dans le compteur, mais ne liste que les actifs dans la grille.
+        return DepartmentResource::collection($departments)
+            ->additional([
+                'meta' => [
+                    'total_count' => Department::count(),
+                ],
+            ]);
     }
 
     public function show(string $slug): JsonResponse
@@ -64,34 +71,51 @@ class DepartmentController extends Controller
             ]);
 
         // 6 derniers médias du département (featured d'abord).
-        $recentMedia = MediaGallery::published()
+        // On passe par MediaGalleryResource pour avoir des URLs ABSOLUES
+        // (sinon le frontend résout sur le mauvais sous-domaine → 404).
+        $recentMediaCollection = MediaGallery::published()
             ->where('department_id', $department->id)
             ->orderByDesc('is_featured')
             ->orderByDesc('id')
             ->limit(6)
-            ->get(['id', 'title', 'file_path', 'file_type', 'thumbnail', 'is_featured']);
+            ->get();
+        $recentMedia = \App\Http\Resources\MediaGalleryResource::collection($recentMediaCollection)->resolve();
 
         // 3 prochains événements liés (via pivot event_department).
         $upcomingEvents = $department->events()
             ->upcoming()
             ->limit(3)
             ->get(['events.id', 'title', 'slug', 'description', 'starts_at', 'location', 'cover_image'])
-            ->map(fn ($e) => [
-                'id'          => $e->id,
-                'title'       => $e->title,
-                'slug'        => $e->slug,
-                'description' => \Illuminate\Support\Str::limit($e->description, 160),
-                'starts_at'   => $e->starts_at?->toIso8601String(),
-                'location'    => $e->location,
-                'cover_image' => $e->cover_image,
-            ]);
+            ->map(fn ($e) => $this->mapEvent($e));
+
+        // 6 événements PASSÉS liés (les plus récents en premier) — pour donner
+        // au visiteur l'historique des actions du département.
+        $pastEvents = $department->events()
+            ->past()
+            ->limit(6)
+            ->get(['events.id', 'title', 'slug', 'description', 'starts_at', 'location', 'cover_image'])
+            ->map(fn ($e) => $this->mapEvent($e));
 
         return response()->json([
             'data'            => new DepartmentResource($department),
             'cells'           => $cells,
             'recent_media'    => $recentMedia,
             'upcoming_events' => $upcomingEvents,
+            'past_events'     => $pastEvents,
         ]);
+    }
+
+    private function mapEvent($e): array
+    {
+        return [
+            'id'          => $e->id,
+            'title'       => $e->title,
+            'slug'        => $e->slug,
+            'description' => \Illuminate\Support\Str::limit($e->description, 160),
+            'starts_at'   => $e->starts_at?->toIso8601String(),
+            'location'    => $e->location,
+            'cover_image' => $e->cover_image, // déjà URL ou path — frontend rend via STORAGE() ou direct
+        ];
     }
 
     /** Médias paginés d'un département (filtrable par type). */
@@ -110,6 +134,6 @@ class DepartmentController extends Controller
         }
 
         $perPage = min((int) $request->query('per_page', 20), 100);
-        return JsonResource::collection($query->paginate($perPage));
+        return \App\Http\Resources\MediaGalleryResource::collection($query->paginate($perPage));
     }
 }

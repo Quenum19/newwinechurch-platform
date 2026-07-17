@@ -34,6 +34,8 @@ class UpdateDepartmentRequest extends FormRequest
             'display_order' => ['nullable', 'integer', 'min:0'],
             'sort_order'    => ['nullable', 'integer', 'min:0'],
             'founded_at'    => ['nullable', 'date'],
+            // Bannière département (image paysage, max 8 Mo).
+            'banner_image'  => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ];
     }
 

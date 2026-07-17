@@ -2,11 +2,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Send, Users, Trash2, Check, Mail } from 'lucide-react'
+import { Send, Users, Trash2, Check, Mail, Square, CheckSquare, X as XIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import TiptapEditor from '@/components/admin/TiptapEditor.jsx'
+import BulkActionBar from '@/components/admin/BulkActionBar.jsx'
+import ResetFiltersButton from '@/components/admin/ResetFiltersButton.jsx'
+import useMultiSelect from '@/hooks/useMultiSelect'
 import { newsletter } from '@/api/admin'
 import { cn } from '@/utils/cn'
 
@@ -187,6 +190,7 @@ function ComposeTab() {
 function SubscribersTab() {
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState({ per_page: 50 })
+  const sel = useMultiSelect()
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'newsletter', 'subscribers', filters],
@@ -199,6 +203,16 @@ function SubscribersTab() {
       toast.success('Abonné supprimé.')
       queryClient.invalidateQueries({ queryKey: ['admin', 'newsletter', 'subscribers'] })
     },
+  })
+
+  const bulk = useMutation({
+    mutationFn: ({ action, ids }) => newsletter.bulk(action, ids),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Action effectuée.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'newsletter', 'subscribers'] })
+      sel.clear()
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Action impossible.'),
   })
 
   if (isLoading) {
@@ -216,6 +230,8 @@ function SubscribersTab() {
 
   const subs = data?.subscribers?.data ?? []
   const stats = data?.stats ?? {}
+  const visibleIds = subs.map((s) => s.id)
+  const allVisibleSelected = sel.allSelected(visibleIds)
 
   return (
     <div className="space-y-4">
@@ -253,6 +269,19 @@ function SubscribersTab() {
           value={filters.search ?? ''}
           onChange={(e) => setFilters({ ...filters, search: e.target.value || undefined })}
         />
+        {visibleIds.length > 0 && (
+          <button
+            onClick={() => sel.toggleAll(visibleIds)}
+            className="adm-btn adm-btn-secondary text-xs h-9"
+          >
+            {allVisibleSelected ? <CheckSquare size={13}/> : <Square size={13}/>}
+            {allVisibleSelected ? 'Désélectionner' : `Tout (${visibleIds.length})`}
+          </button>
+        )}
+        <ResetFiltersButton
+          filters={filters}
+          onReset={() => setFilters({ per_page: 50 })}
+        />
       </div>
 
       {/* Desktop table */}
@@ -261,6 +290,7 @@ function SubscribersTab() {
           <table className="adm-table">
             <thead>
               <tr>
+                <th className="w-10"></th>
                 <th>Email</th>
                 <th>Nom</th>
                 <th>Langue</th>
@@ -272,12 +302,23 @@ function SubscribersTab() {
             <tbody>
               {subs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12" style={{ color: 'var(--adm-text-muted)' }}>
+                  <td colSpan={7} className="text-center py-12" style={{ color: 'var(--adm-text-muted)' }}>
                     Aucun abonné.
                   </td>
                 </tr>
               ) : subs.map((s) => (
                 <tr key={s.id}>
+                  <td className="w-10">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); sel.toggle(s.id, e, visibleIds) }}
+                      className={`h-5 w-5 rounded flex items-center justify-center transition ${
+                        sel.isSelected(s.id) ? 'bg-[var(--adm-accent)] text-white' : 'border-2 hover:bg-zinc-100'
+                      }`}
+                      style={{ borderColor: sel.isSelected(s.id) ? 'transparent' : 'var(--adm-border)' }}
+                      aria-label="Sélectionner"
+                    >{sel.isSelected(s.id) && <Check size={12} strokeWidth={3}/>}</button>
+                  </td>
                   <td className="text-xs" style={{ color: 'var(--adm-text)' }}>{s.email}</td>
                   <td>{s.name || <span style={{ color: 'var(--adm-text-faint)' }}>—</span>}</td>
                   <td className="uppercase text-xs">{s.language}</td>
@@ -332,6 +373,25 @@ function SubscribersTab() {
           </div>
         ))}
       </div>
+
+      <BulkActionBar
+        count={sel.count}
+        onClear={sel.clear}
+        label="abonné"
+        actions={[
+          {
+            key: 'unsubscribe', label: 'Désabonner', icon: XIcon,
+            onClick: () => bulk.mutate({ action: 'unsubscribe', ids: sel.ids }),
+          },
+          {
+            key: 'delete', label: 'Supprimer', icon: Trash2, variant: 'danger', confirm: true,
+            confirmTitle: 'Supprimer ces abonnés ?',
+            confirmText: `${sel.count} abonné(s) seront supprimés définitivement.`,
+            confirmCta: 'Supprimer',
+            onClick: () => bulk.mutate({ action: 'delete', ids: sel.ids }),
+          },
+        ]}
+      />
     </div>
   )
 }

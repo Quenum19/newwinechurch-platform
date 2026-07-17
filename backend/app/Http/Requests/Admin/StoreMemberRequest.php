@@ -43,6 +43,9 @@ class StoreMemberRequest extends FormRequest
             'roles.*'     => ['string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'departments' => ['nullable', 'array'],
             'departments.*' => ['integer', Rule::exists('departments', 'id')],
+            // Option : envoyer les identifiants par email après création.
+            // Lu depuis le controller via $request->boolean('send_credentials').
+            'send_credentials' => ['nullable', 'boolean'],
         ];
     }
 }

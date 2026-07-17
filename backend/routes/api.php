@@ -32,7 +32,10 @@ use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController
 use App\Http\Controllers\Admin\PostsController as AdminPostsController;
 use App\Http\Controllers\Admin\PrayerRequestsController as AdminPrayersController;
 use App\Http\Controllers\Admin\SermonsController as AdminSermonsController;
+use App\Http\Controllers\Admin\SermonSeriesController as AdminSermonSeriesController;
+use App\Http\Controllers\Admin\SermonThemesController as AdminSermonThemesController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\TestimonialsController as AdminTestimonialsController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -50,6 +53,8 @@ use App\Http\Controllers\Public\DepartmentController;
 use App\Http\Controllers\Public\DonationMethodController;
 use App\Http\Controllers\Public\MembershipRequestController;
 use App\Http\Controllers\Public\EventController;
+use App\Http\Controllers\Public\EventSeriesController as PublicEventSeriesController;
+use App\Http\Controllers\Public\PaymentGatewayController as PublicPaymentGatewayController;
 use App\Http\Controllers\Public\LiveStreamController;
 use App\Http\Controllers\Public\MediaGalleryController as PublicMediaController;
 use App\Http\Controllers\Public\NewsletterController;
@@ -57,6 +62,16 @@ use App\Http\Controllers\Public\PostController;
 use App\Http\Controllers\Public\PrayerRequestController;
 use App\Http\Controllers\Public\SermonController;
 use App\Http\Controllers\Public\SermonSeriesController;
+use App\Http\Controllers\Public\SermonThemeController;
+use App\Http\Controllers\Public\TestimonialController;
+use App\Http\Controllers\Public\TicketsController as PublicTicketsController;
+use App\Http\Controllers\Admin\EventStaffController as AdminEventStaffController;
+use App\Http\Controllers\Admin\EventTicketsController as AdminEventTicketsController;
+use App\Http\Controllers\Admin\EventAttendanceController as AdminEventAttendanceController;
+use App\Http\Controllers\Public\GuestScannerAuthController;
+use App\Http\Controllers\Admin\EventTicketTypesController as AdminEventTicketTypesController;
+use App\Http\Controllers\Admin\TicketingAnalyticsController as AdminAnalyticsController;
+use App\Http\Controllers\Admin\EventSeriesController as AdminEventSeriesController;
 use App\Http\Controllers\Public\SettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -80,6 +95,52 @@ Route::get('/sermons/{slug}',         [SermonController::class, 'show'])
 Route::get('/sermon-series',          [SermonSeriesController::class, 'index']);
 Route::get('/sermon-series/{slug}',   [SermonSeriesController::class, 'show'])
      ->where('slug', '[a-z0-9-]+');
+
+// Thèmes (catalogue public, utilisé par les filtres de /messages).
+Route::get('/sermon-themes',          [SermonThemeController::class, 'index']);
+
+// Témoignages publiés (consommés par la home + page /temoignages).
+Route::get('/testimonials',           [TestimonialController::class, 'index']);
+
+// === Billetterie publique (no auth) ===
+Route::get('/tickets/events',             [PublicTicketsController::class, 'events']);
+Route::get('/tickets/events/{slug}',      [PublicTicketsController::class, 'show'])
+     ->where('slug', '[a-z0-9-]+');
+Route::post('/tickets/register',          [PublicTicketsController::class, 'register'])
+     ->middleware('throttle:public-register');
+// Sécurité #H6 audit : rate limits stricts sur les endpoints token public.
+Route::get('/tickets/my/{token}',         [PublicTicketsController::class, 'myTicket'])
+     ->middleware('throttle:ticket-view');
+Route::get('/tickets/qr/{token}',         [PublicTicketsController::class, 'qrImage'])
+     ->middleware('throttle:ticket-view');
+Route::post('/tickets/cancel/{token}',    [PublicTicketsController::class, 'cancel'])
+     ->middleware('throttle:ticket-cancel');
+
+// === Étape C — Magic-link scanners externes (public, sans auth) ===
+Route::get ('/scanner-invite/{token}',        [GuestScannerAuthController::class, 'show'])
+     ->where('token', '[A-Za-z0-9]+');
+Route::post('/scanner-invite/{token}/redeem', [GuestScannerAuthController::class, 'redeem'])
+     ->where('token', '[A-Za-z0-9]+')
+     ->middleware('throttle:public-register');
+
+// === Phase 5 — Séries d'événements (public) ===
+Route::get('/series',                     [PublicEventSeriesController::class, 'index']);
+Route::get('/series/{slug}',              [PublicEventSeriesController::class, 'show'])
+     ->where('slug', '[a-z0-9-]+');
+// === Phase 2 : suivi commande payante (avant émission tickets) ===
+Route::get('/tickets/order/{orderCode}',  [PublicTicketsController::class, 'showOrder']);
+Route::post('/tickets/order/{orderCode}/submit-payment',
+    [PublicTicketsController::class, 'submitPayment'])
+    ->middleware('throttle:public-register');
+
+// === Phase 7 — Passerelle paiement automatisée ===
+Route::post('/tickets/order/{orderCode}/initiate-payment',
+    [PublicPaymentGatewayController::class, 'initiate'])
+    ->middleware('throttle:public-register');
+// Webhook callback fournisseur (CinetPay rappelle ici quand le paiement est terminé).
+// Pas d'auth — la vérification se fait dans le driver via /check API.
+Route::post('/payments/cinetpay/webhook',
+    [PublicPaymentGatewayController::class, 'webhook']);
 
 // Événements
 Route::get('/events',                 [EventController::class, 'index']);
@@ -185,6 +246,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/me/password',  [MeController::class, 'changePassword']);
 
     // Avatar — limite stockage : 10 uploads / jour / user.
+    // Étape F — Missions billetterie actives du user connecté (panneau "Mes missions").
+    Route::get('/me/staff-assignments', [MeController::class, 'staffAssignments']);
+
     Route::post('/me/avatar',   [MeController::class, 'uploadAvatar'])
          ->middleware('throttle:avatar-upload');
     Route::delete('/me/avatar', [MeController::class, 'deleteAvatar']);
@@ -230,11 +294,19 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     // === Membres ===
     Route::get('/members',                  [AdminMembersController::class, 'index']);
     Route::get('/members/export',           [AdminMembersController::class, 'export']);
+    Route::post('/members/bulk',            [AdminMembersController::class, 'bulk']);
     Route::post('/members',                 [AdminMembersController::class, 'store']);
-    Route::get('/members/{id}',             [AdminMembersController::class, 'show'])->whereNumber('id');
-    Route::put('/members/{id}',             [AdminMembersController::class, 'update'])->whereNumber('id');
-    Route::delete('/members/{id}',          [AdminMembersController::class, 'destroy'])->whereNumber('id');
+    Route::get('/members/{id}',                  [AdminMembersController::class, 'show'])->whereNumber('id');
+    Route::get('/members/{id}/deletion-impact',  [AdminMembersController::class, 'deletionImpact'])->whereNumber('id');
+    Route::put('/members/{id}',                  [AdminMembersController::class, 'update'])->whereNumber('id');
+    Route::delete('/members/{id}',               [AdminMembersController::class, 'destroy'])->whereNumber('id');
     Route::post('/members/{id}/restore',    [AdminMembersController::class, 'restore'])->whereNumber('id');
+    Route::delete('/members/{id}/force',     [AdminMembersController::class, 'forceDelete'])->whereNumber('id');
+    Route::post('/members/{id}/resend-credentials',
+                                            [AdminMembersController::class, 'resendCredentials'])->whereNumber('id');
+    Route::post('/members/{id}/toggle-status',
+                                            [AdminMembersController::class, 'toggleStatus'])->whereNumber('id');
+    Route::post('/members/{id}/avatar',      [AdminMembersController::class, 'uploadAvatar'])->whereNumber('id');
     Route::put('/members/{id}/roles',       [AdminMembersController::class, 'assignRoles'])->whereNumber('id');
 
     // === Départements ===
@@ -242,6 +314,8 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::post('/departments',                                [AdminDepartmentsController::class, 'store']);
     Route::get('/departments/{id}',                            [AdminDepartmentsController::class, 'show'])->whereNumber('id');
     Route::put('/departments/{id}',                            [AdminDepartmentsController::class, 'update'])->whereNumber('id');
+    // Variante POST + _method=PUT pour multipart (upload bannière).
+    Route::post('/departments/{id}',                           [AdminDepartmentsController::class, 'update'])->whereNumber('id');
     Route::delete('/departments/{id}',                         [AdminDepartmentsController::class, 'destroy'])->whereNumber('id');
     // Nouvelle route gouverneur (canonique).
     Route::put('/departments/{id}/governor',                   [AdminDepartmentsController::class, 'assignGovernor'])->whereNumber('id');
@@ -250,6 +324,10 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::post('/departments/{id}/members',                   [AdminDepartmentsController::class, 'addMember'])->whereNumber('id');
     Route::delete('/departments/{id}/members/{userId}',        [AdminDepartmentsController::class, 'removeMember'])
          ->whereNumber('id')->whereNumber('userId');
+    // Historique des gouverneurs (timeline + export CSV via ?format=csv).
+    Route::get('/departments/{id}/governors-history',          [AdminDepartmentsController::class, 'governorsHistory'])->whereNumber('id');
+    // Stats globales pour le dashboard de la liste admin.
+    Route::get('/departments-stats',                           [AdminDepartmentsController::class, 'stats']);
 
     // === Cellules + Rapports ===
     Route::get('/cells',                                  [AdminCellsController::class, 'index']);
@@ -308,6 +386,7 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::get('/membership-requests/{id}',             [MembershipRequestsController::class, 'show'])->whereNumber('id');
     Route::post('/membership-requests/{id}/approve',    [MembershipRequestsController::class, 'approve'])->whereNumber('id');
     Route::post('/membership-requests/{id}/reject',     [MembershipRequestsController::class, 'reject'])->whereNumber('id');
+    Route::post('/membership-requests/bulk',            [MembershipRequestsController::class, 'bulk']);
 
     // ============================================================
     // === PHASE 6 : ADMIN CONTENU ================================
@@ -323,6 +402,21 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::delete('/sermons/{id}',               [AdminSermonsController::class, 'destroy'])->whereNumber('id');
     Route::post('/sermons/{id}/restore',         [AdminSermonsController::class, 'restore'])->whereNumber('id');
     Route::post('/sermons/{id}/toggle-publish',  [AdminSermonsController::class, 'togglePublish'])->whereNumber('id');
+    Route::post('/sermons/bulk',                 [AdminSermonsController::class, 'bulk']);
+
+    // === Séries de sermons (admin) ===
+    Route::get('/sermon-series',                 [AdminSermonSeriesController::class, 'index']);
+    Route::post('/sermon-series',                [AdminSermonSeriesController::class, 'store']);
+    Route::get('/sermon-series/{id}',            [AdminSermonSeriesController::class, 'show'])->whereNumber('id');
+    Route::put('/sermon-series/{id}',            [AdminSermonSeriesController::class, 'update'])->whereNumber('id');
+    Route::post('/sermon-series/{id}',           [AdminSermonSeriesController::class, 'update'])->whereNumber('id');
+    Route::delete('/sermon-series/{id}',         [AdminSermonSeriesController::class, 'destroy'])->whereNumber('id');
+
+    // === Thèmes de sermons (catalogue de tags) ===
+    Route::get('/sermon-themes',                 [AdminSermonThemesController::class, 'index']);
+    Route::post('/sermon-themes',                [AdminSermonThemesController::class, 'store']);
+    Route::put('/sermon-themes/{id}',            [AdminSermonThemesController::class, 'update'])->whereNumber('id');
+    Route::delete('/sermon-themes/{id}',         [AdminSermonThemesController::class, 'destroy'])->whereNumber('id');
 
     // === Events ===
     Route::get('/events',                                [AdminEventsController::class, 'index']);
@@ -331,6 +425,27 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::put('/events/{id}',                           [AdminEventsController::class, 'update'])->whereNumber('id');
     Route::post('/events/{id}',                          [AdminEventsController::class, 'update'])->whereNumber('id');
     Route::delete('/events/{id}',                        [AdminEventsController::class, 'destroy'])->whereNumber('id');
+    Route::post('/events/{id}/restore',                  [AdminEventsController::class, 'restore'])->whereNumber('id');
+    Route::post('/events/{id}/toggle-publish',           [AdminEventsController::class, 'togglePublish'])->whereNumber('id');
+    Route::post('/events/bulk',                          [AdminEventsController::class, 'bulk']);
+
+    // === Phase 4 — Analytics billetterie AGGREGÉES (admin uniquement) ===
+    Route::get('/ticketing/overview',                             [AdminAnalyticsController::class, 'overview']);
+    Route::get('/ticketing/revenue-monthly',                      [AdminAnalyticsController::class, 'revenueMonthly']);
+    Route::get('/ticketing/payment-methods',                      [AdminAnalyticsController::class, 'paymentMethods']);
+    Route::get('/ticketing/types-breakdown',                      [AdminAnalyticsController::class, 'typesBreakdown']);
+    Route::get('/ticketing/pending-orders',                       [AdminAnalyticsController::class, 'allPendingOrders']);
+    Route::get('/ticketing/export-overview',                      [AdminAnalyticsController::class, 'exportOverview']);
+
+    // === Phase 5 — Séries d'événements (admin) ===
+    Route::get('/event-series',                                   [AdminEventSeriesController::class, 'index']);
+    Route::post('/event-series',                                  [AdminEventSeriesController::class, 'store']);
+    Route::get('/event-series/{id}',                              [AdminEventSeriesController::class, 'show'])->whereNumber('id');
+    Route::put('/event-series/{id}',                              [AdminEventSeriesController::class, 'update'])->whereNumber('id');
+    Route::post('/event-series/{id}',                             [AdminEventSeriesController::class, 'update'])->whereNumber('id'); // support FormData
+    Route::delete('/event-series/{id}',                           [AdminEventSeriesController::class, 'destroy'])->whereNumber('id');
+    Route::post('/event-series/{id}/generate',                    [AdminEventSeriesController::class, 'generateOccurrences'])->whereNumber('id');
+    Route::post('/event-series/{id}/add-occurrence',              [AdminEventSeriesController::class, 'addOccurrence'])->whereNumber('id');
     Route::get('/events/{id}/registrations',             [AdminEventsController::class, 'registrations'])->whereNumber('id');
     Route::post('/events/{id}/registrations/{userId}/attended',
                                                          [AdminEventsController::class, 'markAttended'])
@@ -345,11 +460,24 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::delete('/posts/{id}',                  [AdminPostsController::class, 'destroy'])->whereNumber('id');
     Route::post('/posts/{id}/restore',            [AdminPostsController::class, 'restore'])->whereNumber('id');
     Route::post('/posts/{id}/toggle-publish',     [AdminPostsController::class, 'togglePublish'])->whereNumber('id');
+    Route::post('/posts/bulk',                    [AdminPostsController::class, 'bulk']);
     Route::post('/posts/inline-image',            [AdminPostsController::class, 'uploadInlineImage']);
 
     // === Galerie médias ===
+    // === Témoignages ===
+    Route::get('/testimonials',                  [AdminTestimonialsController::class, 'index']);
+    Route::post('/testimonials',                 [AdminTestimonialsController::class, 'store']);
+    Route::get('/testimonials/{id}',             [AdminTestimonialsController::class, 'show'])->whereNumber('id');
+    Route::put('/testimonials/{id}',             [AdminTestimonialsController::class, 'update'])->whereNumber('id');
+    Route::post('/testimonials/{id}',            [AdminTestimonialsController::class, 'update'])->whereNumber('id');
+    Route::delete('/testimonials/{id}',          [AdminTestimonialsController::class, 'destroy'])->whereNumber('id');
+    Route::post('/testimonials/{id}/toggle-publish',
+                                                 [AdminTestimonialsController::class, 'togglePublish'])->whereNumber('id');
+    Route::post('/testimonials/bulk',            [AdminTestimonialsController::class, 'bulk']);
+
     Route::get('/media',                  [AdminMediaController::class, 'index']);
     Route::post('/media/upload',          [AdminMediaController::class, 'uploadBatch']);
+    Route::post('/media/bulk',            [AdminMediaController::class, 'bulk']);
     Route::delete('/media/{id}',          [AdminMediaController::class, 'destroy'])->whereNumber('id');
     Route::post('/media/{id}/toggle-publish',
                                           [AdminMediaController::class, 'togglePublish'])->whereNumber('id');
@@ -364,6 +492,7 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     // === Newsletter ===
     Route::get('/newsletter/subscribers',           [AdminNewsletterController::class, 'index']);
     Route::delete('/newsletter/subscribers/{id}',   [AdminNewsletterController::class, 'destroy'])->whereNumber('id');
+    Route::post('/newsletter/subscribers/bulk',     [AdminNewsletterController::class, 'bulk']);
     Route::post('/newsletter/send',                 [AdminNewsletterController::class, 'send']);
 
     // === Live streaming (Agora + Reverb) ===
@@ -411,6 +540,76 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
 
     // Analytics globales tous départements.
     Route::get('/analytics/departments',                           [AdminReportReviewController::class, 'departmentsAnalytics']);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÉTAPE F — BILLETTERIE SCOPÉE (routes accessibles hors permission admin)
+//
+// Ces routes gardent le préfixe /admin pour compat frontend, mais ne passent
+// PAS par le gate 'permission:access admin panel'. Chaque contrôleur enforce
+// l'autorisation event-scopée en interne (via $event->userCanManage/Scan()).
+//
+// Cas d'usage : un gouverneur/leader/membre avec un grant event_staff manager
+// sur un event spécifique peut gérer SA billetterie via /mission/evenement/{id}
+// sans avoir la permission globale 'access admin panel'.
+// ═══════════════════════════════════════════════════════════════════════════
+Route::middleware(['auth:sanctum'])
+    ->prefix('admin')
+    ->group(function () {
+
+    // Billetterie — lecture/écriture par event
+    Route::get('/events/{id}/tickets',                   [AdminEventTicketsController::class, 'index'])->whereNumber('id');
+    Route::get('/events/{id}/tickets/stats',             [AdminEventTicketsController::class, 'stats'])->whereNumber('id');
+    Route::get('/events/{id}/tickets/export',            [AdminEventTicketsController::class, 'export'])->whereNumber('id');
+    Route::post('/events/{id}/tickets/{tid}/resend',     [AdminEventTicketsController::class, 'resend'])
+         ->whereNumber('id')->whereNumber('tid');
+    // Sécurité #H7 audit : rate limit sur scan (anti brute-force short_code)
+    Route::post('/tickets/scan',                         [AdminEventTicketsController::class, 'scan'])
+         ->middleware('throttle:ticket-scan');
+    Route::post('/tickets/{id}/unscan',                  [AdminEventTicketsController::class, 'unscan'])->whereNumber('id');
+
+    // === Liste de présence temps réel (Étape D — accueil) ===
+    Route::get ('/events/{id}/attendance',                [AdminEventAttendanceController::class, 'index'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/export/xlsx',    [AdminEventAttendanceController::class, 'exportXlsx'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/export/pdf',     [AdminEventAttendanceController::class, 'exportPdf'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/backup-pdf',     [AdminEventAttendanceController::class, 'backupPdf'])->whereNumber('id');
+    Route::post('/events/{id}/attendance/manual',         [AdminEventAttendanceController::class, 'manualCheckIn'])->whereNumber('id');
+
+    // Types de tickets (Phase 2)
+    Route::get   ('/events/{eventId}/ticket-types',        [AdminEventTicketTypesController::class, 'index'])->whereNumber('eventId');
+    Route::post  ('/events/{eventId}/ticket-types',        [AdminEventTicketTypesController::class, 'store'])->whereNumber('eventId');
+    Route::put   ('/events/{eventId}/ticket-types/{id}',   [AdminEventTicketTypesController::class, 'update'])->whereNumber('eventId')->whereNumber('id');
+    Route::delete('/events/{eventId}/ticket-types/{id}',   [AdminEventTicketTypesController::class, 'destroy'])->whereNumber('eventId')->whereNumber('id');
+
+    // Validation paiements + bulk (Phase 2)
+    Route::get ('/events/{eventId}/tickets/pending-orders', [AdminEventTicketsController::class, 'pendingOrders'])->whereNumber('eventId');
+    Route::post('/events/{eventId}/tickets/bulk',           [AdminEventTicketsController::class, 'bulkAction'])->whereNumber('eventId');
+
+    // Staff événement (Étape B) + magic-links invités (Étape C)
+    Route::get   ('/events/{eventId}/staff',                                [AdminEventStaffController::class, 'index'])->whereNumber('eventId');
+    Route::post  ('/events/{eventId}/staff',                                [AdminEventStaffController::class, 'store'])->whereNumber('eventId');
+    Route::delete('/events/{eventId}/staff/{staffId}',                      [AdminEventStaffController::class, 'destroy'])->whereNumber('eventId')->whereNumber('staffId');
+    Route::post  ('/events/{eventId}/staff/{staffId}/resend-notification',  [AdminEventStaffController::class, 'resendNotification'])->whereNumber('eventId')->whereNumber('staffId');
+    Route::patch ('/events/{eventId}/guest-scanners/{tokenId}',             [AdminEventStaffController::class, 'updateGuest'])->whereNumber('eventId')->whereNumber('tokenId');
+    Route::delete('/events/{eventId}/guest-scanners/{tokenId}',             [AdminEventStaffController::class, 'destroyGuest'])->whereNumber('eventId')->whereNumber('tokenId');
+    Route::post  ('/events/{eventId}/guest-scanners',                       [AdminEventStaffController::class, 'inviteGuest'])->whereNumber('eventId');
+    Route::post  ('/events/{eventId}/guest-scanners/{tokenId}/regenerate',  [AdminEventStaffController::class, 'regenerateGuest'])->whereNumber('eventId')->whereNumber('tokenId');
+    Route::get   ('/users/search',                                          [AdminEventStaffController::class, 'searchUsers']);
+
+    // Liste d'attente
+    Route::get   ('/events/{eventId}/waitlist',                     [AdminEventTicketsController::class, 'waitlist'])->whereNumber('eventId');
+    Route::post  ('/events/{eventId}/waitlist/{id}/convert',        [AdminEventTicketsController::class, 'waitlistConvert'])->whereNumber('eventId')->whereNumber('id');
+    Route::delete('/events/{eventId}/waitlist/{id}',                [AdminEventTicketsController::class, 'waitlistRemove'])->whereNumber('eventId')->whereNumber('id');
+
+    // Paiements + remboursements (Phase 2 + 6)
+    Route::post('/tickets/orders/{orderCode}/validate-payment',   [AdminEventTicketsController::class, 'validatePayment']);
+    Route::post('/tickets/orders/{orderCode}/refuse-payment',     [AdminEventTicketsController::class, 'refusePayment']);
+    Route::post('/tickets/{id}/refund',                           [AdminEventTicketsController::class, 'refundTicket'])->whereNumber('id');
+    Route::post('/tickets/orders/{orderCode}/refund',             [AdminEventTicketsController::class, 'refundOrder']);
+    Route::post('/events/{eventId}/cancel-and-refund',            [AdminEventTicketsController::class, 'refundWholeEvent'])->whereNumber('eventId');
+
+    // Analytics d'UN event (aggregate reste en admin-only)
+    Route::get ('/events/{eventId}/analytics',                    [AdminAnalyticsController::class, 'eventDetail'])->whereNumber('eventId');
 });
 
 // ============================================================

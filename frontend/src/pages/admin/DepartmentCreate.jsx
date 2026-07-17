@@ -3,8 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
+import BackButton from '@/components/admin/BackButton.jsx'
 import { departments } from '@/api/admin'
 
 export default function DepartmentCreate() {
@@ -37,13 +38,7 @@ export default function DepartmentCreate() {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-3xl">
-      <Link
-        to="/admin/departements"
-        className="inline-flex items-center gap-1 text-sm transition hover:underline"
-        style={{ color: 'var(--adm-text-muted)' }}
-      >
-        <ArrowLeft size={14} /> Retour à la liste
-      </Link>
+      <BackButton to="/admin/departements" label="Retour à la liste" />
 
       <header>
         <h1>Nouveau département</h1>

@@ -12,10 +12,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Save, Plus, Trash2, ChevronUp, ChevronDown, Layers, Eye, EyeOff,
+  Save, Plus, Trash2, ChevronUp, ChevronDown, Layers, Eye, EyeOff,
   Type, AlignLeft, Hash, Calendar, Clock, Check, ListChecks, Table as TableIcon,
 } from 'lucide-react'
 
+import BackButton from '@/components/admin/BackButton.jsx'
 import { reportTemplates, departments } from '@/api/admin'
 import ReportFormRenderer from '@/components/shared/ReportFormRenderer'
 
@@ -170,9 +171,7 @@ export default function ReportTemplateBuilder() {
 
   return (
     <div className="space-y-5">
-      <Link to={`/admin/departements/${departmentId}`} className="inline-flex items-center gap-2 text-sm" style={{ color: 'var(--adm-text-muted)' }}>
-        <ArrowLeft size={14} /> Retour au département
-      </Link>
+      <BackButton to={`/admin/departements/${departmentId}`} label="Retour au département" />
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>

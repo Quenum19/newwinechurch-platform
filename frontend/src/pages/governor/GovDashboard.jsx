@@ -22,6 +22,8 @@ import KpiCard from '@/components/shared/KpiCard'
 import { SkeletonCard } from '@/components/shared/Skeleton'
 import AttendanceGauge from '@/components/shared/AttendanceGauge'
 import CellHealthIndicator from '@/components/shared/CellHealthIndicator'
+import MyStaffAssignments from '@/components/MyStaffAssignments.jsx'
+import SafeBoundary from '@/components/SafeBoundary.jsx'
 
 const TICK_STYLE = { fill: 'rgba(255,255,255,0.5)', fontSize: 11 }
 const GRID_STROKE = 'rgba(255,255,255,0.08)'
@@ -89,20 +91,34 @@ export default function GovDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header avec nom du dept + bannière dégradée */}
+      {/* Header avec nom du dept + bannière dégradée.
+          NB : styles inline pour bypasser le compat layer .admin-scope qui
+          remap .text-white/.text-gold-* vers du texte sombre (illisible
+          sur ce fond wine dark). */}
       <motion.section
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-wine-700 to-wine-900 p-5 sm:p-8 border border-white/5"
+        className="relative rounded-2xl overflow-hidden p-5 sm:p-8"
+        style={{
+          background: 'linear-gradient(135deg, #6F1425 0%, #4A0E1A 100%)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}
       >
-        <p className="text-[11px] uppercase tracking-wider text-gold-300">Gouverneur</p>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-white mt-1">
+        <p className="text-[11px] uppercase tracking-wider" style={{ color: '#E8C97C' }}>Gouverneur</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold mt-1" style={{ color: '#ffffff' }}>
           {department?.name ?? 'Mon département'}
         </h1>
-        <p className="text-sm text-white/70 mt-2 max-w-2xl">
+        <p className="text-sm mt-2 max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
           Bonjour {user?.first_name ?? user?.name}, voici l'état temps réel de ton département.
         </p>
       </motion.section>
+
+      {/* Étape F — Missions billetterie actives (null si aucune).
+          Wrap SafeBoundary : si le composant crash pour n'importe quelle
+          raison, on n'entraîne pas le dashboard entier dans le vide. */}
+      <SafeBoundary>
+        <MyStaffAssignments />
+      </SafeBoundary>
 
       {/* Alertes */}
       {alerts.length > 0 && (

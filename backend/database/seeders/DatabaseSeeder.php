@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             UserSeeder::class,
             SermonSeriesSeeder::class,
+            SermonThemesSeeder::class,
             SermonSeeder::class,
             EventSeeder::class,
             CellSeeder::class,
@@ -55,6 +56,8 @@ class DatabaseSeeder extends Seeder
             MediaGallerySeeder::class,        // Polish : médias rattachés aux dépts (galerie publique)
             MemberDepartmentSeeder::class,    // Polish : distribue membres simples aux dépts
             PostSeeder::class,
+            DarkNightEventSeeder::class,      // Phase 1 billetterie : event de démo
+            CycleDiscipulatSeeder::class,     // Phase 5 billetterie : série démo (4 samedis)
         ]);
 
         $this->command->info('');

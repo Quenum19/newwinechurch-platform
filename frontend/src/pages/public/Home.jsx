@@ -22,9 +22,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Play, ArrowUpRight, Headphones, MapPin, Copy, Check, Radio, Video } from 'lucide-react'
+import { Play, ArrowUpRight, Headphones, MapPin, Copy, Check, Radio, Video, X, ChevronLeft, ChevronRight, Calendar, Ticket, Clock } from 'lucide-react'
 
-import { publicSermons, publicEvents, publicSettings, publicMedia } from '@/api/public'
+import { publicSermons, publicEvents, publicSettings, publicMedia, publicTestimonials } from '@/api/public'
 import { useLiveStore } from '@/store/liveStore'
 import { useAutoplayVideo, videoMimeFromPath } from '@/hooks/useAutoplayVideo'
 import Marquee from '@/components/public/Marquee.jsx'
@@ -41,12 +41,23 @@ export default function Home() {
   })
   const { data: events } = useQuery({
     queryKey: ['public', 'events', 'upcoming-home'],
-    queryFn: () => publicEvents.list({ per_page: 2 }),
+    // per_page=10 pour capturer le prochain culte même s'il est derrière des
+    // events spéciaux (bal, concert…) dans le tri chronologique.
+    queryFn: () => publicEvents.list({ per_page: 10, when: 'upcoming' }),
     staleTime: 5 * 60 * 1000,
   })
   const { data: media } = useQuery({
     queryKey: ['public', 'media', 'home'],
-    queryFn: () => publicMedia.list({ per_page: 7 }),
+    // 12 médias aléatoires + GARANTIE de 3 vidéos minimum si dispo (pour
+    // donner de l'animation à la home — sinon que des photos statiques).
+    // staleTime:0 + refetchOnMount:'always' → nouvel échantillon à chaque visite.
+    queryFn: () => publicMedia.list({ per_page: 12, random: 1, prefer_videos: 3 }),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  })
+  const { data: testimonialsList } = useQuery({
+    queryKey: ['public', 'testimonials', 'home'],
+    queryFn: () => publicTestimonials.list(),
     staleTime: 5 * 60 * 1000,
   })
   const { data: settings } = useQuery({
@@ -56,10 +67,12 @@ export default function Home() {
   })
 
   const featuredSermon = (featured?.data ?? [])[0] ?? null
-  const nextEvent = (events?.data ?? [])[0] ?? null
+  const upcomingEvents = events?.data ?? []
   const galleryItems = media?.data ?? []
   const donation = settings?.donation ?? {}
   const heroImage = settings?.branding?.hero_image || null
+  const heroVideo = settings?.branding?.hero_video || null
+  const testimonials = testimonialsList ?? []
 
   const marqueeItems = (() => {
     const raw = i18n.t('home.marqueeItems', { returnObjects: true })
@@ -73,16 +86,19 @@ export default function Home() {
         sermon={featuredSermon}
         marqueeItems={marqueeItems}
         heroImage={heroImage}
+        heroVideo={heroVideo}
       />
 
       <GalleryPreview gallery={galleryItems} />
 
-      <NextStep
-        sermon={featuredSermon}
-        event={nextEvent}
-      />
+      <NextStep sermon={featuredSermon} />
 
-      <Testimonials />
+      {/* Section "Événements à venir" — affichée seulement si on a des events.
+          Grid adaptive : 1 → pleine largeur · 2 → 50/50 · 3 → tiers · 4 → quart. */}
+      {upcomingEvents.length > 0 && <UpcomingEvents events={upcomingEvents} t={t} />}
+
+      {/* Section témoignages — affichée UNIQUEMENT si on en a (sinon section omise). */}
+      {testimonials.length > 0 && <Testimonials items={testimonials} />}
 
       <GiveBand donation={donation} />
     </div>
@@ -92,36 +108,53 @@ export default function Home() {
 // ============================================================
 // 1. HERO — slogan Anton XXL + sermon featured + image bg
 // ============================================================
-function Hero({ t, sermon, marqueeItems, heroImage }) {
-  const hasImage = !! heroImage
+function Hero({ t, sermon, marqueeItems, heroImage, heroVideo }) {
+  // Priorité : vidéo > image > fond crème par défaut.
+  // La vidéo joue en autoplay muet en boucle, fallback image en poster pour
+  // éviter le flash noir avant le décodage.
+  const hasMedia = !! (heroVideo || heroImage)
 
   return (
     <section className="relative bg-public-bone pt-12 lg:pt-16 pb-16 lg:pb-24 isolate">
-      {hasImage && (
+      {hasMedia && (
         <>
-          <img
-            src={heroImage}
-            alt=""
-            aria-hidden="true"
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover -z-10"
-          />
+          {heroVideo ? (
+            <video
+              src={heroVideo}
+              poster={heroImage || undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover -z-10"
+            />
+          ) : (
+            <img
+              src={heroImage}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover -z-10"
+            />
+          )}
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-10"
             style={{
               background: `
                 linear-gradient(90deg,
-                  rgba(244,241,235,0.96) 0%,
-                  rgba(244,241,235,0.88) 35%,
-                  rgba(244,241,235,0.45) 70%,
-                  rgba(244,241,235,0.15) 100%
+                  rgba(244,241,235,0.78) 0%,
+                  rgba(244,241,235,0.55) 35%,
+                  rgba(244,241,235,0.18) 70%,
+                  rgba(244,241,235,0.02) 100%
                 ),
                 linear-gradient(180deg,
-                  rgba(244,241,235,0) 60%,
-                  rgba(244,241,235,0.92) 100%
+                  rgba(244,241,235,0) 55%,
+                  rgba(244,241,235,0.85) 100%
                 )
               `,
             }}
@@ -219,7 +252,7 @@ function FeaturedSermonCard({ sermon }) {
       <div className="relative aspect-[4/5] overflow-hidden">
         {sermon.thumbnail ? (
           <img
-            src={`/storage/${sermon.thumbnail}`}
+            src={sermon.thumbnail}
             alt=""
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
@@ -237,6 +270,12 @@ function FeaturedSermonCard({ sermon }) {
           {sermon.type === 'audio' ? t('media.audio') : t('media.video')}
         </div>
 
+        {sermon.series?.title && (
+          <div className="absolute top-4 right-4 inline-flex items-center gap-1.5 bg-public-bone/95 px-3 py-1.5 text-public-ink font-mono text-[11px] uppercase tracking-widest max-w-[60%] truncate">
+            {sermon.series.title}
+          </div>
+        )}
+
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="h-20 w-20 rounded-full bg-public-flame flex items-center justify-center shadow-2xl">
             <Play size={28} fill="white" className="text-white ml-1"/>
@@ -246,7 +285,7 @@ function FeaturedSermonCard({ sermon }) {
         <div className="absolute bottom-0 left-0 right-0 p-5 text-public-bone">
           <p className="tag-mono text-public-bone/70 mb-2">{t('home.lastSunday')}</p>
           <h3 className="font-display text-3xl sm:text-4xl uppercase leading-none mb-2">
-            {sermon.title}
+            {sermon.display_title || sermon.title}
           </h3>
           {sermon.scripture_reference && (
             <p className="font-editorial italic text-public-flame text-lg">
@@ -273,9 +312,12 @@ function FeaturedSermonCard({ sermon }) {
 // ============================================================
 function GalleryPreview({ gallery }) {
   const { t } = useTranslation()
-  if (! gallery?.length) return null
+  // On stocke l'ID du média cliqué (pas l'index) — la lightbox charge ensuite
+  // TOUS les médias publiés et retrouve la bonne position par ID.
+  const [openedId, setOpenedId] = useState(null)
 
-  const items = gallery.slice(0, 7)
+  if (! gallery?.length) return null
+  const items = gallery.slice(0, 12)
 
   return (
     <section className="py-20 lg:py-28 bg-public-bone">
@@ -298,30 +340,209 @@ function GalleryPreview({ gallery }) {
         </div>
 
         {/*
-          Bento aperçu : 6 tuiles uniformes en aspect-square (mobile-first),
-          arrangement 2/3/3 colonnes selon breakpoint. Vidéos auto-play silencieuses
-          quand visibles. Toutes les tuiles ont la même taille → cohérence garantie.
+          Bento aperçu : 12 tuiles aspect-square aléatoires (refresh à chaque
+          visite via staleTime:0). Clic = ouverture lightbox locale qui charge
+          ensuite l'intégralité des médias publiés pour navigation étendue.
         */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
-          {items.slice(0, 6).map((item) => (
-            <BentoMediaTile key={item.id} item={item} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 lg:gap-4">
+          {items.map((item) => (
+            <BentoMediaTile key={item.id} item={item} onClick={() => setOpenedId(item.id)} />
           ))}
         </div>
       </div>
+
+      {openedId !== null && (
+        <HomeLightbox
+          initialId={openedId}
+          fallbackItems={items}
+          onClose={() => setOpenedId(null)}
+        />
+      )}
     </section>
   )
 }
 
+/**
+ * Lightbox plein écran de la home — navigation clavier + swipe + autoplay vidéo.
+ *
+ * Stratégie :
+ *  - Affichage immédiat avec `fallbackItems` (les 12 aperçus visibles sur la home).
+ *  - En arrière-plan on fetch TOUS les médias publiés (latest, jusqu'à 100).
+ *  - Une fois chargé, on bascule sur cette liste complète → l'utilisateur peut
+ *    naviguer au-delà des 12 vignettes initiales.
+ *  - L'index reste calé sur le média cliqué (recherche par ID).
+ */
+function HomeLightbox({ initialId, fallbackItems, onClose }) {
+  const { t } = useTranslation()
+
+  // Fetch lazy de la liste complète — uniquement quand la lightbox est ouverte.
+  const { data: allData } = useQuery({
+    queryKey: ['public', 'media', 'lightbox-full'],
+    queryFn: () => publicMedia.list({ per_page: 100 }),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Liste effective : tous les médias si chargés, sinon les 12 de fallback.
+  const items = (allData?.data?.length ?? 0) > 0 ? allData.data : fallbackItems
+
+  // Index calculé à partir de l'ID — re-calculé quand la liste change pour
+  // rester pointé sur le bon média lors du switch fallback → liste complète.
+  const [index, setIndex] = useState(() =>
+    Math.max(0, fallbackItems.findIndex((i) => i.id === initialId))
+  )
+  useEffect(() => {
+    const idx = items.findIndex((i) => i.id === initialId)
+    if (idx >= 0) setIndex(idx)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allData])
+
+  const onNavigate = (delta) => {
+    setIndex((i) => (i + delta + items.length) % items.length)
+  }
+
+  const item = items[index]
+  if (! item) return null
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') onNavigate(-1)
+      if (e.key === 'ArrowRight') onNavigate(1)
+    }
+    window.addEventListener('keydown', handler)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', handler)
+      document.body.style.overflow = prev
+    }
+  }, [onClose, onNavigate])
+
+  const [touchStart, setTouchStart] = useState(null)
+  const onTouchStart = (e) => setTouchStart(e.touches[0].clientX)
+  const onTouchEnd = (e) => {
+    if (touchStart === null) return
+    const delta = e.changedTouches[0].clientX - touchStart
+    if (Math.abs(delta) > 60) onNavigate(delta < 0 ? 1 : -1)
+    setTouchStart(null)
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[100] bg-public-ink/95 backdrop-blur-md flex flex-col"
+      onClick={onClose}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-4 py-3 text-public-bone/90 border-b border-public-bone/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="font-mono text-xs uppercase tracking-widest text-public-bone/60 tabular-nums">
+          {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
+        </span>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/galerie"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-public-bone hover:text-public-flame transition border border-public-bone/30 hover:border-public-flame"
+          >
+            {t('home.lightboxSeeMore', 'Voir tout')}
+            <ArrowUpRight size={12}/>
+          </Link>
+          <button
+            onClick={onClose}
+            className="p-2 rounded text-public-bone/80 hover:text-public-bone hover:bg-public-bone/10 transition"
+            aria-label={t('common.close', 'Fermer')}
+          >
+            <X size={20}/>
+          </button>
+        </div>
+      </div>
+
+      {/* Media + flèches — média encadré, pas plein écran (UX préférée). */}
+      <div
+        className="flex-1 flex items-center justify-center relative px-4 py-6 sm:px-12"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {items.length > 1 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onNavigate(-1) }}
+            className="absolute left-2 sm:left-4 p-3 rounded-full bg-public-ink/40 text-public-bone/80 hover:text-public-bone hover:bg-public-ink/70 transition z-10"
+            aria-label={t('common.previous', 'Précédent')}
+          >
+            <ChevronLeft size={28}/>
+          </button>
+        )}
+
+        {/* Container du média avec dimensions contraintes */}
+        <div className="max-w-[min(900px,85vw)] max-h-[70vh] w-auto h-auto flex items-center justify-center">
+          {item.file_type === 'video' ? (
+            <video
+              key={item.id}
+              src={item.file_path}
+              poster={item.thumbnail || undefined}
+              controls
+              autoPlay
+              playsInline
+              className="max-w-full max-h-[70vh] block rounded shadow-2xl"
+            />
+          ) : (
+            <img
+              src={item.file_path}
+              alt={item.title || ''}
+              className="max-w-full max-h-[70vh] object-contain block select-none rounded shadow-2xl"
+            />
+          )}
+        </div>
+
+        {items.length > 1 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onNavigate(1) }}
+            className="absolute right-2 sm:right-4 p-3 rounded-full bg-public-ink/40 text-public-bone/80 hover:text-public-bone hover:bg-public-ink/70 transition z-10"
+            aria-label={t('common.next', 'Suivant')}
+          >
+            <ChevronRight size={28}/>
+          </button>
+        )}
+      </div>
+
+      {/* Footer hint */}
+      <div className="px-4 py-2 text-center text-[11px] text-public-bone/40 font-mono border-t border-public-bone/10">
+        ← → {t('home.lightboxNav', 'pour naviguer')} · ESC {t('common.close', 'fermer')}
+      </div>
+    </div>
+  )
+}
+
 // ============================================================
-// 3. NEXT STEP — Prochain culte ou live ou message + quote
+// 3. NEXT STEP — Prochain culte du dimanche (date auto)
+//    Affichage fixe : DIMANCHE / 13H00 + date du prochain dim
+//    calculée côté client (aucun event DB requis).
+//    Si live en cours → override par bandeau "En direct".
 // ============================================================
-function NextStep({ sermon, event }) {
+function NextStep({ sermon }) {
   const { t, i18n } = useTranslation()
   const live = useLiveStore((s) => s.current)
   // Locale date-fns selon la langue active : fr-FR ou en-US.
   const dateLocale = i18n.language?.startsWith('en') ? undefined : fr
-  // Format heure : 13h pour FR, 1pm pour EN.
-  const timeFormat = i18n.language?.startsWith('en') ? 'haaa' : "H'h'mm"
+
+  // Prochain dimanche à 13h — recalculé à chaque render (léger, pas de state).
+  // Si on est dimanche AVANT 14h, on garde aujourd'hui (culte en cours ou à venir).
+  // Sinon on décale au dimanche suivant.
+  const nextSunday = (() => {
+    const now = new Date()
+    const day = now.getDay() // 0 = dimanche
+    let delta = (7 - day) % 7
+    if (day === 0 && now.getHours() >= 14) delta = 7
+    const d = new Date(now)
+    d.setDate(now.getDate() + delta)
+    d.setHours(13, 0, 0, 0)
+    return d
+  })()
 
   return (
     <section className="py-20 lg:py-28 bg-public-coffee text-public-bone relative overflow-hidden">
@@ -346,33 +567,17 @@ function NextStep({ sermon, event }) {
                   <ArrowUpRight size={14} className="transition-transform group-hover:rotate-45"/>
                 </span>
               </Link>
-            ) : event ? (
-              <Link to={`/evenements/${event.slug}`} className="block group">
-                <h2 className="heading-anton text-6xl sm:text-7xl lg:text-9xl text-public-bone leading-[0.88]">
-                  {event.starts_at && format(new Date(event.starts_at), 'EEEE', { locale: dateLocale })}<br/>
-                  <span className="text-public-flame">
-                    {event.starts_at && format(new Date(event.starts_at), timeFormat, { locale: dateLocale })}
-                  </span>
-                </h2>
-                <p className="editorial-quote text-2xl mt-6 text-public-bone/80">{event.title}</p>
-                {event.location && (
-                  <p className="mt-3 text-sm text-public-bone/60 inline-flex items-center gap-2">
-                    <MapPin size={14}/> {event.location}
-                  </p>
-                )}
-                <span className="mt-6 inline-flex btn-flame">
-                  {t('home.sectionEventComeCta')}
-                  <ArrowUpRight size={14}/>
-                </span>
-              </Link>
             ) : (
               <div>
                 <h2 className="heading-anton text-6xl sm:text-7xl lg:text-9xl text-public-bone leading-[0.88]">
-                  {t('home.sectionSundayTitle1')}<br/>
-                  <span className="text-public-flame">{t('home.sectionSundayTitle2')}</span>
+                  {format(nextSunday, 'EEEE', { locale: dateLocale }).toUpperCase()}<br/>
+                  <span className="text-public-flame">13H00</span>
                 </h2>
                 <p className="editorial-quote text-2xl mt-6 text-public-bone/80">
-                  {t('home.sectionSundaySubtitle')}
+                  {format(nextSunday, "d MMMM yyyy", { locale: dateLocale })}
+                </p>
+                <p className="mt-3 text-sm text-public-bone/60 inline-flex items-center gap-2">
+                  <MapPin size={14}/> {t('home.sectionSundaySubtitle')}
                 </p>
                 <Link to="/contact" className="mt-6 inline-flex btn-flame">
                   {t('home.sectionSundayHowCome')}
@@ -384,11 +589,14 @@ function NextStep({ sermon, event }) {
 
           <div className="col-span-12 lg:col-span-5 flex flex-col justify-end">
             <div className="border-l-2 border-public-flame pl-6 lg:pl-8">
-              <p className="font-editorial italic text-2xl sm:text-3xl text-public-bone/90 leading-snug whitespace-pre-line">
-                « {t('home.pastorQuote')} »
+              {/* Verset biblique en mise en avant principale (sans citation
+                  pastorale au-dessus — choix éditorial : laisser parler la Parole). */}
+              <p className="font-editorial italic text-2xl sm:text-3xl text-public-bone/95 leading-snug">
+                « Venez à moi, vous tous qui êtes fatigués et chargés,
+                et je vous donnerai du repos. »
               </p>
-              <p className="mt-4 tag-mono text-public-bone/50">
-                {t('home.pastorName')}
+              <p className="mt-4 tag-mono text-public-flame">
+                Matthieu 11:28
               </p>
             </div>
           </div>
@@ -408,68 +616,340 @@ function NextStep({ sermon, event }) {
 }
 
 // ============================================================
-// 4. TÉMOIGNAGES — 2 voix courtes
+// 3-bis. ÉVÉNEMENTS À VENIR — grid adaptive (1/2/3/4 cols)
+//    Affichée seulement si on a au moins 1 event upcoming.
+//    Layout dynamique : pas d'espace mort si moins de 4 events.
 // ============================================================
-function Testimonials() {
-  const { t } = useTranslation()
-  const items = [
-    {
-      name: t('home.testimonial1Name'),
-      age: 23,
-      role: t('home.testimonial1Role'),
-      quote: t('home.testimonial1Quote'),
-      color: '#FF4A1C',
-    },
-    {
-      name: t('home.testimonial2Name'),
-      age: 27,
-      role: t('home.testimonial2Role'),
-      quote: t('home.testimonial2Quote'),
-      color: '#0A0908',
-    },
-  ]
+function UpcomingEvents({ events, t }) {
+  // Grille adaptive selon le nombre d'events — pas de "trous" visuels.
+  //   1  → pleine largeur (mise en avant XXL)
+  //   2  → 50/50 dès sm
+  //   3  → 33/33/33 dès lg
+  //   4+ → 25 % chacune dès lg
+  const gridCols = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  }[events.length] ?? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+
+  const isSingle = events.length === 1
 
   return (
     <section className="py-20 lg:py-28 bg-public-bone">
       <div className="container-nwc">
-        <p className="tag-mono text-public-flame mb-3">{t('home.sectionTestimonialsLabel')}</p>
-        <h2 className="heading-anton text-5xl sm:text-6xl lg:text-8xl text-public-ink leading-[0.92] mb-12 lg:mb-16">
-          {t('home.sectionTestimonialsTitle')}
-        </h2>
+        {/* Header section : eyebrow + title + CTA "Voir tout" */}
+        <div className="flex flex-wrap items-end justify-between gap-6 mb-10 lg:mb-14">
+          <div className="max-w-2xl">
+            <p className="tag-mono text-public-flame mb-3">
+              <span className="inline-block w-8 h-px bg-public-flame/60 mr-3 align-middle"/>
+              {t('home.upcomingLabel', 'Agenda')}
+            </p>
+            <h2 className="heading-anton text-5xl sm:text-6xl lg:text-7xl text-public-ink leading-[0.92]">
+              {t('home.upcomingTitle1', 'Événements')}<br/>
+              <span className="text-public-flame">{t('home.upcomingTitle2', 'à venir.')}</span>
+            </h2>
+            <p className="editorial-quote text-xl sm:text-2xl text-public-ink/70 mt-5">
+              {t('home.upcomingSubtitle', "Bloque ton agenda — les prochains rendez-vous de la maison.")}
+            </p>
+          </div>
+          <Link to="/evenements"
+                className="inline-flex items-center gap-2 px-5 py-3 border-2 border-public-ink hover:bg-public-ink hover:text-public-bone transition font-mono uppercase text-xs tracking-widest">
+            {t('home.upcomingSeeAll', 'Tous les événements')}
+            <ArrowUpRight size={14}/>
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-12 gap-8 lg:gap-12">
-          {items.map((item, i) => (
-            <article
-              key={item.name}
-              className={`col-span-12 lg:col-span-6 ${i === 1 ? 'lg:translate-y-12' : ''}`}
-            >
-              <span
-                className="font-display text-7xl sm:text-9xl block leading-none mb-2 select-none"
-                style={{ color: item.color }}
-              >
-                «
-              </span>
-              <p className="editorial-quote text-3xl sm:text-4xl lg:text-5xl text-public-ink leading-tight">
-                {item.quote}
-              </p>
-              <div className="mt-6 flex items-center gap-3">
-                <div
-                  className="h-10 w-10 rounded-full flex items-center justify-center font-display text-base text-public-bone"
-                  style={{ backgroundColor: item.color }}
-                >
-                  {item.name[0]}
-                </div>
-                <div>
-                  <p className="font-display uppercase text-base">{item.name}, {item.age}</p>
-                  <p className="tag-mono text-public-ink/50">{item.role}</p>
-                </div>
-              </div>
-            </article>
-          ))}
+        {/* Grid adaptive */}
+        <div className={`grid ${gridCols} gap-6 lg:gap-8`}>
+          {events.map((e) => <EventCard key={e.id} event={e} featured={isSingle}/>)}
         </div>
       </div>
     </section>
   )
+}
+
+function EventCard({ event, featured = false }) {
+  const { i18n } = useTranslation()
+  const date = event.starts_at ? new Date(event.starts_at) : null
+  const dateLocale = i18n.language?.startsWith('en') ? undefined : fr
+
+  // Compte à rebours simple : "Dans 3 jours" / "Demain" / "Aujourd'hui" / "Dans 2 semaines"
+  const proximityLabel = (() => {
+    if (! date) return null
+    const now = new Date()
+    const diff = Math.ceil((date - now) / (1000 * 60 * 60 * 24))
+    if (diff < 0) return null
+    if (diff === 0) return "Aujourd'hui"
+    if (diff === 1) return 'Demain'
+    if (diff <= 7) return `Dans ${diff} jours`
+    if (diff <= 30) return `Dans ${Math.ceil(diff / 7)} sem.`
+    return null
+  })()
+
+  // Mode "featured" = 1 seul event → carte XXL avec image et infos côte à côte.
+  if (featured) {
+    return (
+      <Link to={event.ticketing_enabled ? `/billetterie/${event.slug}` : `/evenements/${event.slug}`}
+            className="group block">
+        <article className="grid lg:grid-cols-2 bg-public-ink text-public-bone overflow-hidden">
+          {/* Image */}
+          <div className="aspect-video lg:aspect-auto relative bg-public-coffee overflow-hidden">
+            {event.cover_image ? (
+              <img src={event.cover_image} alt="" loading="lazy"
+                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"/>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-public-flame/40 to-public-coffee"/>
+            )}
+            {date && (
+              <div className="absolute top-4 left-4 bg-public-bone text-public-ink p-3 leading-none text-center min-w-[70px]">
+                <p className="tag-mono text-public-flame text-[10px]">{format(date, 'MMM', { locale: dateLocale })}</p>
+                <p className="font-display text-4xl mt-1">{format(date, 'd')}</p>
+              </div>
+            )}
+          </div>
+          {/* Texte */}
+          <div className="p-8 lg:p-12 flex flex-col justify-center">
+            {proximityLabel && (
+              <p className="tag-mono text-public-flame mb-3 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-public-flame animate-pulse"/>
+                {proximityLabel}
+              </p>
+            )}
+            <h3 className="heading-anton text-4xl sm:text-5xl lg:text-6xl text-public-bone leading-[0.92] group-hover:text-public-flame transition">
+              {event.display_title || event.title}
+            </h3>
+            <div className="mt-6 space-y-2 text-public-bone/80">
+              {date && (
+                <p className="inline-flex items-center gap-2 text-sm">
+                  <Clock size={14} className="text-public-flame"/>
+                  {format(date, "EEEE d MMMM · HH'h'mm", { locale: dateLocale })}
+                </p>
+              )}
+              {event.location && (
+                <p className="inline-flex items-center gap-2 text-sm">
+                  <MapPin size={14} className="text-public-flame"/>{event.display_location || event.location}
+                </p>
+              )}
+            </div>
+            <div className="mt-8 inline-flex items-center gap-2 font-mono uppercase text-xs tracking-widest text-public-flame group-hover:gap-3 transition-all">
+              {event.ticketing_enabled ? (
+                <><Ticket size={12}/> Réserver ma place</>
+              ) : (
+                <>Découvrir l'événement</>
+              )}
+              <ArrowUpRight size={14}/>
+            </div>
+          </div>
+        </article>
+      </Link>
+    )
+  }
+
+  // Mode "grid" = 2/3/4 events → card compacte avec image en haut + infos dessous.
+  return (
+    <Link to={event.ticketing_enabled ? `/billetterie/${event.slug}` : `/evenements/${event.slug}`}
+          className="group block">
+      <article className="h-full flex flex-col">
+        {/* Image */}
+        <div className="aspect-video relative bg-public-coffee overflow-hidden">
+          {event.cover_image ? (
+            <img src={event.cover_image} alt="" loading="lazy"
+                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"/>
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-public-flame/30 to-public-coffee"/>
+          )}
+          {/* Overlay dégradé pour lisibilité badge date */}
+          <div className="absolute inset-0 bg-gradient-to-t from-public-ink/40 via-transparent"/>
+          {date && (
+            <div className="absolute top-3 left-3 bg-public-bone text-public-ink p-2.5 leading-none text-center min-w-[56px]">
+              <p className="tag-mono text-public-flame text-[9px]">{format(date, 'MMM', { locale: dateLocale })}</p>
+              <p className="font-display text-3xl mt-0.5">{format(date, 'd')}</p>
+            </div>
+          )}
+          {event.ticketing_enabled && (
+            <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 bg-public-flame text-public-bone font-mono text-[10px] uppercase tracking-widest">
+              <Ticket size={9}/> Billetterie
+            </div>
+          )}
+          {proximityLabel && (
+            <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2 py-1 bg-public-bone/95 text-public-ink font-mono text-[10px] uppercase tracking-widest">
+              <span className="h-1.5 w-1.5 rounded-full bg-public-flame animate-pulse"/>
+              {proximityLabel}
+            </div>
+          )}
+        </div>
+
+        {/* Texte */}
+        <div className="pt-5 flex flex-col flex-1">
+          <h3 className="font-display uppercase text-xl sm:text-2xl text-public-ink group-hover:text-public-flame transition leading-tight">
+            {event.display_title || event.title}
+          </h3>
+          {date && (
+            <p className="mt-2 tag-mono text-public-ink/60 inline-flex items-center gap-2">
+              <Calendar size={11}/> {format(date, "EEEE · HH'h'mm", { locale: dateLocale })}
+            </p>
+          )}
+          {event.location && (
+            <p className="mt-1 text-xs text-public-ink/50 inline-flex items-center gap-1.5">
+              <MapPin size={11}/> {event.display_location || event.location}
+            </p>
+          )}
+          <div className="mt-auto pt-4 inline-flex items-center gap-1.5 font-mono uppercase text-[10px] tracking-widest text-public-flame group-hover:gap-2.5 transition-all">
+            {event.ticketing_enabled ? 'Réserver' : 'En savoir +'}
+            <ArrowUpRight size={12}/>
+          </div>
+        </div>
+      </article>
+    </Link>
+  )
+}
+
+// ============================================================
+// 4. TÉMOIGNAGES — Carrousel spotlight (vidéo OU photo + texte)
+//    Affiché UNIQUEMENT si items.length > 0 (parent contrôle).
+// ============================================================
+function Testimonials({ items }) {
+  const { t } = useTranslation()
+  const [index, setIndex] = useState(0)
+  const current = items[index]
+
+  // Auto-rotate toutes les 9s — pause si vidéo (vidéo doit être lue entière).
+  useEffect(() => {
+    if (current?.has_video) return // ne pas changer pendant la lecture vidéo
+    const tm = setTimeout(() => setIndex((i) => (i + 1) % items.length), 9000)
+    return () => clearTimeout(tm)
+  }, [index, items.length, current?.has_video])
+
+  const goNext = () => setIndex((i) => (i + 1) % items.length)
+  const goPrev = () => setIndex((i) => (i - 1 + items.length) % items.length)
+
+  return (
+    <section className="py-20 lg:py-28 bg-public-bone">
+      <div className="container-nwc">
+        <div className="flex items-end justify-between flex-wrap gap-3 mb-10 lg:mb-14">
+          <div>
+            <p className="tag-mono text-public-flame mb-2">{t('home.sectionTestimonialsLabel', 'Témoignages')}</p>
+            <h2 className="heading-anton text-5xl sm:text-6xl lg:text-8xl text-public-ink leading-[0.92]">
+              {t('home.sectionTestimonialsTitle', 'Vies transformées.')}
+            </h2>
+          </div>
+          {items.length > 1 && (
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs tabular-nums text-public-ink/50">
+                {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
+              </span>
+              <button
+                onClick={goPrev}
+                className="h-9 w-9 border-2 border-public-ink text-public-ink hover:bg-public-ink hover:text-public-bone transition flex items-center justify-center"
+                aria-label="Témoignage précédent"
+              >‹</button>
+              <button
+                onClick={goNext}
+                className="h-9 w-9 border-2 border-public-ink text-public-ink hover:bg-public-ink hover:text-public-bone transition flex items-center justify-center"
+                aria-label="Témoignage suivant"
+              >›</button>
+            </div>
+          )}
+        </div>
+
+        <TestimonialSpotlight item={current} keyId={current?.id} />
+
+        {items.length > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-1.5">
+            {items.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                className={`h-1.5 transition-all ${
+                  i === index ? 'w-10 bg-public-flame' : 'w-2 bg-public-ink/20 hover:bg-public-ink/40'
+                }`}
+                aria-label={`Témoignage ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function TestimonialSpotlight({ item, keyId }) {
+  if (! item) return null
+  return (
+    <div key={keyId} className="grid grid-cols-12 gap-8 lg:gap-12 items-center animate-[fadeIn_400ms_ease-out]">
+      {/* Média (vidéo prioritaire, sinon photo, sinon initiale géante) */}
+      <div className="col-span-12 lg:col-span-5">
+        {item.video_path ? (
+          <div className="relative bg-public-coffee aspect-[4/5] overflow-hidden border-2 border-public-ink rotate-[-1deg]">
+            <video
+              src={item.video_path}
+              poster={item.thumbnail || item.image_path || undefined}
+              controls
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : item.video_url ? (
+          <div className="relative bg-public-coffee aspect-[4/5] overflow-hidden border-2 border-public-ink rotate-[-1deg]">
+            <iframe
+              src={toEmbedUrl(item.video_url)}
+              title={`Témoignage ${item.name}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        ) : item.image_path ? (
+          <div className="relative bg-public-coffee aspect-[4/5] overflow-hidden border-2 border-public-ink rotate-[-1deg]">
+            <img src={item.image_path} alt={item.name} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="aspect-[4/5] bg-public-flame border-2 border-public-ink rotate-[-1deg] flex items-center justify-center">
+            <span className="font-display text-[12rem] text-public-bone leading-none select-none">
+              {item.name?.[0]?.toUpperCase()}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Citation + identité */}
+      <div className="col-span-12 lg:col-span-7">
+        <span className="font-display text-7xl sm:text-9xl block leading-none mb-2 select-none text-public-flame">«</span>
+        <p className="editorial-quote text-2xl sm:text-3xl lg:text-4xl text-public-ink leading-tight">
+          {item.quote}
+        </p>
+        <div className="mt-8 flex items-center gap-4">
+          {item.image_path ? (
+            <img src={item.image_path} alt={item.name} className="h-14 w-14 rounded-full object-cover border-2 border-public-ink" />
+          ) : (
+            <div className="h-14 w-14 rounded-full flex items-center justify-center font-display text-2xl text-public-bone bg-public-ink">
+              {item.name?.[0]?.toUpperCase()}
+            </div>
+          )}
+          <div>
+            <p className="font-display uppercase text-xl text-public-ink">
+              {item.name}{item.age && `, ${item.age}`}
+            </p>
+            <p className="tag-mono text-public-ink/50">
+              {[item.role, item.location].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Convertit une URL YouTube/Vimeo "watch" en URL embed compatible iframe. */
+function toEmbedUrl(url) {
+  if (! url) return url
+  // YouTube : youtu.be/ID, youtube.com/watch?v=ID
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`
+  // Vimeo
+  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}`
+  return url
 }
 
 // ============================================================
@@ -569,15 +1049,18 @@ function useCopy() {
  * Tuile galerie home — aspect-square uniforme + autoplay vidéo on intersect.
  * Composant séparé pour bénéficier du hook useAutoplayVideo proprement.
  */
-function BentoMediaTile({ item }) {
+function BentoMediaTile({ item, onClick }) {
   const isVideo = item.file_type === 'video'
   const videoRef = useAutoplayVideo({ threshold: 0.4 })
 
   return (
-    <Link
-      to="/galerie"
+    <button
+      // Ouvre la lightbox locale (page d'accueil). Si pas de onClick fourni,
+      // fallback vers /galerie via Link wrapper (rétrocompat).
+      onClick={onClick}
+      type="button"
       style={{ aspectRatio: '1 / 1' }}
-      className="w-full relative bg-public-coffee overflow-hidden group block"
+      className="w-full relative bg-public-coffee overflow-hidden group block cursor-pointer text-left"
     >
       {isVideo ? (
         <>
@@ -590,16 +1073,16 @@ function BentoMediaTile({ item }) {
           </div>
           <video
             ref={videoRef}
-            poster={item.thumbnail ? `/storage/${item.thumbnail}` : undefined}
+            poster={item.thumbnail ? item.thumbnail : undefined}
             className="absolute inset-0 w-full h-full object-cover"
-            preload="metadata"
+            preload="auto"
             playsInline
             muted
             loop
           >
-            <source src={`/storage/${item.file_path}`} type={videoMimeFromPath(item.file_path)}/>
+            <source src={item.file_path} type={videoMimeFromPath(item.file_path)}/>
             {item.file_path?.endsWith('.mov') && (
-              <source src={`/storage/${item.file_path}`} type="video/mp4"/>
+              <source src={item.file_path} type="video/mp4"/>
             )}
           </video>
           <div className="absolute top-2 right-2 inline-flex items-center gap-1 bg-public-ink/80 backdrop-blur-sm px-1.5 py-0.5 text-public-bone font-mono text-[9px] uppercase tracking-widest">
@@ -608,7 +1091,7 @@ function BentoMediaTile({ item }) {
         </>
       ) : (
         <img
-          src={`/storage/${item.file_path}`}
+          src={item.file_path}
           alt={item.title || ''}
           loading="lazy"
           decoding="async"
@@ -620,6 +1103,6 @@ function BentoMediaTile({ item }) {
           <p className="text-public-bone font-display uppercase text-sm truncate">{item.title}</p>
         </div>
       )}
-    </Link>
+    </button>
   )
 }

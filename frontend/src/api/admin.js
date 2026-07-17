@@ -21,7 +21,12 @@ export const activityLog = {
 
 // === Helpers download Excel ===
 async function downloadExcel(url, params = {}) {
-  const res = await api.get(url, { params, responseType: 'blob' })
+  // Sérialise les tableaux en CSV pour traverser HTTP de manière fiable.
+  // Axios fait par défaut ?ids[]=1&ids[]=2 mais selon la version certains
+  // serveurs PHP ne le parsent pas → on force ?ids=1,2,3 + parsing backend.
+  const normalized = { ...params }
+  if (Array.isArray(normalized.ids)) normalized.ids = normalized.ids.join(',')
+  const res = await api.get(url, { params: normalized, responseType: 'blob' })
   const cd = res.headers['content-disposition'] || ''
   const match = cd.match(/filename="?([^";]+)"?/i)
   const filename = match?.[1] || 'export.xlsx'
@@ -56,20 +61,50 @@ export const members = {
     const { data } = await api.delete(`/admin/members/${id}`)
     return data
   },
+  deletionImpact: async (id) => {
+    const { data } = await api.get(`/admin/members/${id}/deletion-impact`)
+    return data
+  },
   restore: async (id) => {
     const { data } = await api.post(`/admin/members/${id}/restore`)
     return data
+  },
+  /** Suppression DÉFINITIVE — efface la ligne en base. Irréversible. */
+  forceDelete: async (id) => (await api.delete(`/admin/members/${id}/force`)).data,
+  /**
+   * Définit un mot de passe (custom ou auto-généré) + envoie email d'accès.
+   * Options : { password?: string, send_email?: bool }
+   */
+  resendCredentials: async (id, options = {}) =>
+    (await api.post(`/admin/members/${id}/resend-credentials`, options)).data,
+  /** Active/désactive le compte (sessions coupées si désactivation). */
+  toggleStatus: async (id) =>
+    (await api.post(`/admin/members/${id}/toggle-status`)).data,
+  /** Upload photo de profil (multipart). */
+  uploadAvatar: async (id, file) => {
+    const fd = new FormData()
+    fd.append('avatar', file)
+    return (await api.post(`/admin/members/${id}/avatar`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: UPLOAD_TIMEOUT,
+    })).data
   },
   assignRoles: async (id, roles) => {
     const { data } = await api.put(`/admin/members/${id}/roles`, { roles })
     return data?.data ?? data
   },
+  /** Suppression groupée (en lot) : 'delete' (archive) ou 'force_delete' (définitif). */
+  bulkDelete: async (ids, action = 'delete') => (await api.post('/admin/members/bulk', { action, ids })).data,
 }
 
 // === DÉPARTEMENTS ===
 export const departments = {
   list: async (params = {}) => {
     const { data } = await api.get('/admin/departments', { params })
+    return data
+  },
+  stats: async () => {
+    const { data } = await api.get('/admin/departments-stats')
     return data
   },
   get: async (id) => {
@@ -81,6 +116,15 @@ export const departments = {
     return data?.data ?? data
   },
   update: async (id, payload) => {
+    // Si on uploade une bannière, on passe en multipart avec _method=PUT.
+    if (payload instanceof FormData) {
+      payload.append('_method', 'PUT')
+      const { data } = await api.post(`/admin/departments/${id}`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: UPLOAD_TIMEOUT,
+      })
+      return data?.data ?? data
+    }
     const { data } = await api.put(`/admin/departments/${id}`, payload)
     return data?.data ?? data
   },
@@ -91,6 +135,21 @@ export const departments = {
   assignCaptain: async (id, captainId) => {
     const { data } = await api.put(`/admin/departments/${id}/captain`, { captain_id: captainId })
     return data
+  },
+  governorsHistory: async (id) => {
+    const { data } = await api.get(`/admin/departments/${id}/governors-history`)
+    return data?.data ?? []
+  },
+  exportGovernorsHistory: async (id, deptName = 'departement') => {
+    const { data } = await api.get(`/admin/departments/${id}/governors-history`, { params: { format: 'csv' } })
+    // Backend renvoie le CSV en base64 pour éviter les soucis d'encoding
+    const csvBytes = atob(data.data)
+    const blob = new Blob([csvBytes], { type: 'text/csv;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = data.filename || `historique_gouverneurs_${deptName}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
   },
   addMember: async (id, userId, role = 'member') => {
     const { data } = await api.post(`/admin/departments/${id}/members`, { user_id: userId, role })
@@ -193,6 +252,8 @@ const UPLOAD_TIMEOUT = 10 * 60 * 1000  // 10 min
 
 export const sermons = {
   list: async (params = {}) => (await api.get('/admin/sermons', { params })).data,
+  series: async () => (await api.get('/admin/sermon-series', { params: { per_page: 100 } })).data?.data ?? [],
+  themes: async () => (await api.get('/admin/sermon-themes')).data?.data ?? [],
   get: async (id) => (await api.get(`/admin/sermons/${id}`)).data?.data ?? null,
   create: async (formData) => {
     const { data } = await api.post('/admin/sermons', formData, {
@@ -211,6 +272,61 @@ export const sermons = {
   },
   delete: async (id) => (await api.delete(`/admin/sermons/${id}`)).data,
   togglePublish: async (id) => (await api.post(`/admin/sermons/${id}/toggle-publish`)).data,
+  bulk: async (action, ids) => (await api.post('/admin/sermons/bulk', { action, ids })).data,
+}
+
+// === SERMON SERIES (CRUD admin) ===
+export const sermonSeries = {
+  list: async (params = {}) => (await api.get('/admin/sermon-series', { params })).data,
+  get: async (id) => (await api.get(`/admin/sermon-series/${id}`)).data?.data ?? null,
+  create: async (formData) => {
+    const { data } = await api.post('/admin/sermon-series', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: UPLOAD_TIMEOUT,
+    })
+    return data?.data ?? data
+  },
+  update: async (id, formData) => {
+    formData.append('_method', 'PUT')
+    const { data } = await api.post(`/admin/sermon-series/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: UPLOAD_TIMEOUT,
+    })
+    return data?.data ?? data
+  },
+  delete: async (id) => (await api.delete(`/admin/sermon-series/${id}`)).data,
+}
+
+// === TESTIMONIALS ===
+export const testimonials = {
+  list: async (params = {}) => (await api.get('/admin/testimonials', { params })).data,
+  get: async (id) => (await api.get(`/admin/testimonials/${id}`)).data?.data ?? null,
+  create: async (formData) => {
+    const { data } = await api.post('/admin/testimonials', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: UPLOAD_TIMEOUT,
+    })
+    return data?.data ?? data
+  },
+  update: async (id, formData) => {
+    formData.append('_method', 'PUT')
+    const { data } = await api.post(`/admin/testimonials/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: UPLOAD_TIMEOUT,
+    })
+    return data?.data ?? data
+  },
+  delete: async (id) => (await api.delete(`/admin/testimonials/${id}`)).data,
+  togglePublish: async (id) => (await api.post(`/admin/testimonials/${id}/toggle-publish`)).data,
+  bulk: async (action, ids) => (await api.post('/admin/testimonials/bulk', { action, ids })).data,
+}
+
+// === SERMON THEMES (catalogue de tags) ===
+export const sermonThemes = {
+  list: async (params = {}) => (await api.get('/admin/sermon-themes', { params })).data?.data ?? [],
+  create: async (payload) => (await api.post('/admin/sermon-themes', payload)).data?.data ?? null,
+  update: async (id, payload) => (await api.put(`/admin/sermon-themes/${id}`, payload)).data?.data ?? null,
+  delete: async (id) => (await api.delete(`/admin/sermon-themes/${id}`)).data,
 }
 
 // === EVENTS ===
@@ -233,10 +349,102 @@ export const events = {
     return data?.data ?? data
   },
   delete: async (id) => (await api.delete(`/admin/events/${id}`)).data,
+  restore: async (id) => (await api.post(`/admin/events/${id}/restore`)).data,
+  togglePublish: async (id) => (await api.post(`/admin/events/${id}/toggle-publish`)).data,
+  bulk: async (action, ids) => (await api.post('/admin/events/bulk', { action, ids })).data,
+  // === Billetterie admin ===
+  ticketsList:  async (eventId, params = {}) => (await api.get(`/admin/events/${eventId}/tickets`, { params })).data,
+  ticketsStats: async (eventId) => (await api.get(`/admin/events/${eventId}/tickets/stats`)).data,
+  ticketsExport:(eventId, params = {}) => downloadExcel(`/admin/events/${eventId}/tickets/export`, params),
+  ticketResend: async (eventId, ticketId) =>
+    (await api.post(`/admin/events/${eventId}/tickets/${ticketId}/resend`)).data,
+  ticketScan:   async (code, eventId = null) =>
+    (await api.post('/admin/tickets/scan', { code, event_id: eventId })).data,
+  ticketUnscan: async (ticketId) =>
+    (await api.post(`/admin/tickets/${ticketId}/unscan`)).data,
+  ticketsBulk:  async (eventId, action, ids) =>
+    (await api.post(`/admin/events/${eventId}/tickets/bulk`, { action, ids })).data,
+
+  // === Phase 2 — Types de tickets ===
+  ticketTypesList:   async (eventId) => (await api.get(`/admin/events/${eventId}/ticket-types`)).data,
+  ticketTypeCreate:  async (eventId, data) => (await api.post(`/admin/events/${eventId}/ticket-types`, data)).data,
+  ticketTypeUpdate:  async (eventId, id, data) => (await api.put(`/admin/events/${eventId}/ticket-types/${id}`, data)).data,
+  ticketTypeDelete:  async (eventId, id) => (await api.delete(`/admin/events/${eventId}/ticket-types/${id}`)).data,
+
+  // === Liste d'attente ===
+  waitlist:          async (eventId) => (await api.get(`/admin/events/${eventId}/waitlist`)).data,
+  waitlistConvert:   async (eventId, id) => (await api.post(`/admin/events/${eventId}/waitlist/${id}/convert`)).data,
+  waitlistRemove:    async (eventId, id) => (await api.delete(`/admin/events/${eventId}/waitlist/${id}`)).data,
+
+  // === Phase 2 — Validation paiements ===
+  pendingOrders:     async (eventId) => (await api.get(`/admin/events/${eventId}/tickets/pending-orders`)).data,
+  validatePayment:   async (orderCode) =>
+    (await api.post(`/admin/tickets/orders/${orderCode}/validate-payment`)).data,
+  refusePayment:     async (orderCode, reason) =>
+    (await api.post(`/admin/tickets/orders/${orderCode}/refuse-payment`, { reason })).data,
+
+  // === Phase 6 — Remboursements ===
+  refundTicket:      async (ticketId, payload) =>
+    (await api.post(`/admin/tickets/${ticketId}/refund`, payload)).data,
+  refundOrder:       async (orderCode, payload) =>
+    (await api.post(`/admin/tickets/orders/${orderCode}/refund`, payload)).data,
+  refundWholeEvent:  async (eventId, reason) =>
+    (await api.post(`/admin/events/${eventId}/cancel-and-refund`, { reason })).data,
+
+  // === Phase 4 — Analytics ===
+  analyticsOverview:        async () => (await api.get('/admin/ticketing/overview')).data,
+  analyticsRevenueMonthly:  async () => (await api.get('/admin/ticketing/revenue-monthly')).data,
+  analyticsPaymentMethods:  async () => (await api.get('/admin/ticketing/payment-methods')).data,
+  analyticsTypesBreakdown:  async () => (await api.get('/admin/ticketing/types-breakdown')).data,
+  analyticsPendingOrdersAll:async () => (await api.get('/admin/ticketing/pending-orders')).data,
+  analyticsEvent:           async (eventId) => (await api.get(`/admin/events/${eventId}/analytics`)).data,
+  analyticsExport:          (params = {}) => downloadExcel('/admin/ticketing/export-overview', params),
+
+  // === Phase 5 — Séries d'événements ===
+  seriesList:        async (params = {}) => (await api.get('/admin/event-series', { params })).data,
+  seriesGet:         async (id) => (await api.get(`/admin/event-series/${id}`)).data?.data,
+  seriesCreate:      async (formData) => (await api.post('/admin/event-series', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })).data,
+  seriesUpdate:      async (id, formData) => (await api.post(`/admin/event-series/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })).data,
+  seriesDelete:      async (id) => (await api.delete(`/admin/event-series/${id}`)).data,
+  seriesGenerate:    async (id, { start_date, count }) =>
+    (await api.post(`/admin/event-series/${id}/generate`, { start_date, count })).data,
+  seriesAddOccurrence: async (id, starts_at) =>
+    (await api.post(`/admin/event-series/${id}/add-occurrence`, { starts_at })).data,
+
   registrations: async (id, params = {}) =>
     (await api.get(`/admin/events/${id}/registrations`, { params })).data,
   markAttended: async (id, userId) =>
     (await api.post(`/admin/events/${id}/registrations/${userId}/attended`)).data,
+
+  // === Étape B — Panneau Staff (rôles scopés + magic-links invités) ===
+  staffList:        async (eventId) =>
+    (await api.get(`/admin/events/${eventId}/staff`)).data,
+  staffAdd:         async (eventId, { user_id, grant }) =>
+    (await api.post(`/admin/events/${eventId}/staff`, { user_id, grant })).data,
+  staffRemove:      async (eventId, staffId, reason = null) =>
+    (await api.delete(`/admin/events/${eventId}/staff/${staffId}`, { data: { reason } })).data,
+  staffResendNotification: async (eventId, staffId) =>
+    (await api.post(`/admin/events/${eventId}/staff/${staffId}/resend-notification`)).data,
+  guestUpdateStatus:async (eventId, tokenId, status) =>
+    (await api.patch(`/admin/events/${eventId}/guest-scanners/${tokenId}`, { status })).data,
+  guestRevoke:      async (eventId, tokenId) =>
+    (await api.delete(`/admin/events/${eventId}/guest-scanners/${tokenId}`)).data,
+
+  // === Étape C — Invitation magic-link scanner externe ===
+  guestInvite:      async (eventId, { display_name, contact, contact_type }) =>
+    (await api.post(`/admin/events/${eventId}/guest-scanners`, { display_name, contact, contact_type })).data,
+  guestRegenerate:  async (eventId, tokenId) =>
+    (await api.post(`/admin/events/${eventId}/guest-scanners/${tokenId}/regenerate`)).data,
+}
+
+// === Recherche utilisateurs (autocomplete pour ajouter un staff) ===
+export const userSearch = {
+  find: async (q, limit = 10) =>
+    (await api.get('/admin/users/search', { params: { q, limit } })).data,
 }
 
 // === POSTS (blog) ===
@@ -260,6 +468,7 @@ export const posts = {
   },
   delete: async (id) => (await api.delete(`/admin/posts/${id}`)).data,
   togglePublish: async (id) => (await api.post(`/admin/posts/${id}/toggle-publish`)).data,
+  bulk: async (action, ids) => (await api.post('/admin/posts/bulk', { action, ids })).data,
   uploadInlineImage: async (file) => {
     const fd = new FormData()
     fd.append('image', file)
@@ -288,6 +497,13 @@ export const media = {
     return data
   },
   delete: async (id) => (await api.delete(`/admin/media/${id}`)).data,
+  /**
+   * Action groupée sur N médias.
+   * action ∈ delete | publish | unpublish | attach_event | attach_dept
+   * payload optionnel selon l'action (event_id, department_id, null pour détacher)
+   */
+  bulk: async (action, ids, payload = null) =>
+    (await api.post('/admin/media/bulk', { action, ids, payload })).data,
   togglePublish: async (id) => (await api.post(`/admin/media/${id}/toggle-publish`)).data,
 }
 
@@ -304,6 +520,7 @@ export const prayers = {
 export const newsletter = {
   subscribers: async (params = {}) => (await api.get('/admin/newsletter/subscribers', { params })).data,
   deleteSubscriber: async (id) => (await api.delete(`/admin/newsletter/subscribers/${id}`)).data,
+  bulk: async (action, ids) => (await api.post('/admin/newsletter/subscribers/bulk', { action, ids })).data,
   send: async (payload) => (await api.post('/admin/newsletter/send', payload)).data,
 }
 
@@ -355,6 +572,9 @@ export const membershipRequests = {
       initial_password ? { initial_password } : {})).data,
   reject: async (id, reason) =>
     (await api.post(`/admin/membership-requests/${id}/reject`, { reason })).data,
+  /** Action en lot — uniquement 'reject' (l'approbation bulk est trop sensible). */
+  bulk: async (action, ids, reason = null) =>
+    (await api.post('/admin/membership-requests/bulk', { action, ids, reason })).data,
 }
 
 // === IMAGES AUTH (hero connexion/inscription, superadmin) ===

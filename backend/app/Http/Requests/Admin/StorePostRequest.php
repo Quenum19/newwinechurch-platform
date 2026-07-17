@@ -18,8 +18,11 @@ class StorePostRequest extends FormRequest
     {
         return [
             'title'        => ['required', 'string', 'max:200'],
+            'title_en'     => ['nullable', 'string', 'max:200'],
             'excerpt'      => ['nullable', 'string', 'max:500'],
+            'excerpt_en'   => ['nullable', 'string', 'max:500'],
             'content'      => ['required', 'string', 'max:60000'],
+            'content_en'   => ['nullable', 'string', 'max:60000'],
             'category_id'  => ['nullable', 'integer', Rule::exists('post_categories', 'id')],
             'status'       => ['nullable', 'in:draft,published,archived'],
             'is_featured'  => ['nullable', 'boolean'],

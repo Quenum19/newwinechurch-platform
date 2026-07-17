@@ -73,6 +73,25 @@ class NewsletterController extends Controller
         return response()->json(['message' => 'Abonné supprimé.']);
     }
 
+    /** Action en lot — désabonner ou supprimer. */
+    public function bulk(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->can('manage newsletter subscribers'), 403);
+        $request->validate([
+            'action' => ['required', 'in:unsubscribe,delete'],
+            'ids'    => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*'  => ['integer'],
+        ]);
+        $ids = $request->input('ids');
+        $a = $request->input('action');
+        $count = match ($a) {
+            'unsubscribe' => NewsletterSubscriber::whereIn('id', $ids)->update(['unsubscribed_at' => now()]),
+            'delete'      => NewsletterSubscriber::whereIn('id', $ids)->delete(),
+        };
+        $labels = ['unsubscribe' => 'désabonné(s)', 'delete' => 'supprimé(s)'];
+        return response()->json(['message' => "$count abonné(s) " . $labels[$a] . '.', 'count' => $count]);
+    }
+
     /**
      * Envoyer la newsletter.
      * - Si test_email présent : envoi immédiat synchrone à cette adresse.

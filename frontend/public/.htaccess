@@ -1,0 +1,90 @@
+# ==============================================================
+#  NEW WINE CHURCH — Frontend SPA — Apache/LiteSpeed config
+#
+#  Place ce fichier dans frontend/public/ pour qu'il soit copié
+#  automatiquement dans dist/ à chaque npm run build.
+#
+#  Rôles :
+#    1. Forcer HTTPS (le SSL Let's Encrypt est installé)
+#    2. SPA fallback : toutes les routes inconnues → index.html
+#       (React Router gère ensuite côté client)
+#    3. Cache long sur les assets hashés Vite
+# ==============================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # --- Force HTTPS ---
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # --- Open Graph pour bots sociaux (WhatsApp, Facebook, Twitter, Slack, LinkedIn…) ---
+    # Objectif : quand quelqu'un partage un lien /billetterie ou /billetterie/{slug},
+    # le bot fetche la page pour générer l'aperçu. On lui renvoie og-billetterie.php
+    # avec les vraies balises OG (affiche + titre event) au lieu de l'index.html
+    # générique de la SPA (logo + description de l'église).
+    #
+    # Détection : User-Agent contient un des noms de bot connus.
+    # Les vrais visiteurs (Chrome, Safari, Firefox…) ne matchent PAS et reçoivent
+    # normalement l'index.html.
+    RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|WhatsApp|Twitterbot|Slackbot|LinkedInBot|TelegramBot|Discordbot|SkypeUriPreview|Pinterest) [NC]
+    RewriteRule ^billetterie/?$ /og-billetterie.php [L]
+    RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|WhatsApp|Twitterbot|Slackbot|LinkedInBot|TelegramBot|Discordbot|SkypeUriPreview|Pinterest) [NC]
+    RewriteRule ^billetterie/([a-z0-9-]+)/?$ /og-billetterie.php?slug=$1 [L,QSA]
+
+    # --- SPA fallback ---
+    # Les fichiers/dossiers existants (assets/, favicon.svg, etc.) sont
+    # servis directement. Tout le reste (/connexion, /admin, /blog/X) →
+    # index.html, qui boot React Router côté client.
+    #
+    # NB : on ne touche pas à /api (le dossier api/ contient Laravel).
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/api
+    RewriteRule . /index.html [L]
+</IfModule>
+
+# --- Cache longue durée sur assets hashés (1 an) ---
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                "access plus 1 year"
+    ExpiresByType application/javascript  "access plus 1 year"
+    ExpiresByType image/svg+xml           "access plus 1 year"
+    ExpiresByType image/png               "access plus 1 year"
+    ExpiresByType image/jpeg              "access plus 1 year"
+    ExpiresByType image/webp              "access plus 1 year"
+    ExpiresByType image/x-icon            "access plus 1 month"
+    ExpiresByType font/woff2              "access plus 1 year"
+    ExpiresByType font/woff               "access plus 1 year"
+</IfModule>
+
+# --- index.html JAMAIS caché (sinon plus de mises à jour côté user) ---
+<IfModule mod_headers.c>
+    <FilesMatch "index\.html$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    # Sécurité minimale
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# --- Gzip pour fichiers non déjà pré-compressés ---
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# --- Bloque l'accès aux fichiers cachés (sauf .well-known pour Let's Encrypt) ---
+<FilesMatch "^\.(?!well-known)">
+    Require all denied
+</FilesMatch>

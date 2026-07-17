@@ -1,0 +1,183 @@
+name: Deploy NWC to Hostinger
+
+# Se déclenche à chaque push sur main.
+# Peut aussi être lancé manuellement depuis GitHub → Actions → "Run workflow".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Empêche 2 déploiements en parallèle sur la même branche (sinon écrasement).
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ================================================================
+  # Job 1 — Détecte quels dossiers ont changé (backend/frontend/les 2).
+  # Évite de re-déployer ce qui n'a pas bougé.
+  # ================================================================
+  changes:
+    name: Détection des changements
+    runs-on: ubuntu-latest
+    outputs:
+      backend:  ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  # ================================================================
+  # Job 2 — DÉPLOIEMENT BACKEND Laravel
+  #   1. Upload des fichiers backend/ vers ~/nwc_backend/ via rsync
+  #   2. SSH → composer install + migrate --force + optimize
+  # ================================================================
+  deploy-backend:
+    name: Backend Laravel
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Upload via rsync — plus rapide que scp + gère les diff incrémentaux.
+      # --delete SUPPRIME sur le serveur les fichiers absents en local (miroir strict).
+      # On EXCLUT tout ce qui doit rester tel quel côté prod :
+      #   .env          → configuré manuellement sur Hostinger
+      #   vendor/       → généré par composer install (post-deploy)
+      #   node_modules/ → non pertinent côté PHP
+      #   storage/      → contient logs + fichiers uploadés par les users
+      #   bootstrap/cache/ → régénéré par artisan optimize
+      #   *.log         → sécurité (jamais de log en repo)
+      - name: Upload backend via rsync
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: >-
+            -avzr --delete
+            --exclude='.env'
+            --exclude='vendor/'
+            --exclude='node_modules/'
+            --exclude='storage/'
+            --exclude='bootstrap/cache/'
+            --exclude='*.log'
+            --exclude='.git*'
+            --exclude='.DS_Store'
+          path: backend/
+          remote_path: /home/${{ secrets.HOSTINGER_USER }}/nwc_backend/
+          remote_host: ${{ secrets.HOSTINGER_HOST }}
+          remote_user: ${{ secrets.HOSTINGER_USER }}
+          remote_port: ${{ secrets.HOSTINGER_PORT }}
+          remote_key:  ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      # Post-deploy Laravel : dépendances + migration + cache.
+      # `composer install --no-dev` = pas d'outils de dev en prod (économise ~40 Mo).
+      # `--optimize-autoloader` = autoloader compilé (~30 % plus rapide).
+      # `migrate --force` = passe sans prompt interactif.
+      # `optimize` = config:cache + route:cache + view:cache combinés.
+      - name: Post-deploy Laravel (composer + migrate + cache)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script_stop: true # arrête au premier échec
+          script: |
+            set -e
+            cd ~/nwc_backend
+
+            echo "→ Installation des dépendances Composer (prod uniquement)"
+            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+            echo "→ Migration BDD"
+            php artisan migrate --force
+
+            echo "→ Vidage caches"
+            php artisan cache:clear
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
+
+            echo "→ Re-cache production (perf)"
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "✅ Backend déployé"
+
+  # ================================================================
+  # Job 3 — DÉPLOIEMENT FRONTEND React (build + upload dist/)
+  # ================================================================
+  deploy-frontend:
+    name: Frontend React
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer dépendances
+        working-directory: frontend
+        run: npm ci --prefer-offline
+
+      - name: Build production
+        working-directory: frontend
+        env:
+          # Injecte l'URL de l'API de prod si besoin (à adapter).
+          # VITE_API_URL: https://newwinechurch.ci/api
+          NODE_ENV: production
+        run: npm run build
+
+      # Upload uniquement dist/* vers public_html.
+      # NB : on ne met PAS --delete ici pour préserver un éventuel .htaccess
+      # personnalisé (rewrite API → Laravel). Si tu veux un miroir strict,
+      # ajoute --delete mais protège .htaccess avec --exclude='.htaccess'.
+      - name: Upload build vers public_html
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: >-
+            -avzr
+            --exclude='.htaccess'
+            --exclude='.well-known/'
+          path: frontend/dist/
+          remote_path: ${{ secrets.HOSTINGER_FRONTEND_PATH }}
+          remote_host: ${{ secrets.HOSTINGER_HOST }}
+          remote_user: ${{ secrets.HOSTINGER_USER }}
+          remote_port: ${{ secrets.HOSTINGER_PORT }}
+          remote_key:  ${{ secrets.HOSTINGER_SSH_KEY }}
+
+  # ================================================================
+  # Job 4 — Notification finale (succès ou échec)
+  # ================================================================
+  notify:
+    name: Notification
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Résumé
+        run: |
+          echo "Backend : ${{ needs.deploy-backend.result }}"
+          echo "Frontend : ${{ needs.deploy-frontend.result }}"
+          if [ "${{ needs.deploy-backend.result }}" = "failure" ] || \
+             [ "${{ needs.deploy-frontend.result }}" = "failure" ]; then
+            echo "❌ Déploiement échoué"
+            exit 1
+          fi
+          echo "✅ Déploiement terminé"

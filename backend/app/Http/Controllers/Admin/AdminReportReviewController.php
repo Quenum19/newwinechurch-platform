@@ -53,6 +53,11 @@ class AdminReportReviewController extends Controller
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
+        } elseif (! $request->boolean('include_drafts')) {
+            // Par défaut on MASQUE les brouillons jamais soumis (un brouillon
+            // créé automatiquement par template puis abandonné polluait la
+            // liste admin). Pour les voir, passer ?include_drafts=1.
+            $query->where('status', '!=', 'draft');
         }
         if ($deptId = $request->query('department_id')) {
             $query->where('department_id', $deptId);

@@ -54,6 +54,35 @@ Schedule::job(new SendWeeklyDepartmentDigestJob())
     ->onOneServer()
     ->withoutOverlapping();
 
+// Billetterie : rappel J-1 à 18h pour les events du lendemain.
+Schedule::command('tickets:remind-day-before')
+    ->dailyAt('18:00')
+    ->name('nwc:tickets-remind-day-before')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// Billetterie Phase 2 : expire les paiements pending > 24h (toutes les heures).
+Schedule::command('tickets:expire-pending')
+    ->hourly()
+    ->name('nwc:tickets-expire-pending')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// Étape E — Auto-révocation grants event_staff + guest tokens des events
+// terminés depuis > 24h. Tourne quotidiennement à 3h15 (heure creuse).
+Schedule::command('nwc:revoke-expired-event-staff')
+    ->dailyAt('03:15')
+    ->name('nwc:revoke-expired-event-staff')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// Billetterie Phase 4 : récap hebdo lundi 8h → pasteur + admins.
+Schedule::command('tickets:weekly-recap')
+    ->weeklyOn(1, '08:00') // 1 = lundi
+    ->name('nwc:tickets-weekly-recap')
+    ->onOneServer()
+    ->withoutOverlapping();
+
 // Le 1er de chaque mois à 8h : liste PDF des anniversaires du mois → RH.
 Schedule::job(new SendMonthlyBirthdaysListJob())
     ->monthlyOn(1, '08:00')

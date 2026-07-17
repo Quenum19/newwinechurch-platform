@@ -18,8 +18,10 @@ class StoreSermonRequest extends FormRequest
         return [
             'title'               => ['required', 'string', 'max:200'],
             'description'         => ['nullable', 'string', 'max:5000'],
-            'speaker_id'          => ['nullable', 'integer', Rule::exists('users', 'id')],
-            'series_id'           => ['nullable', 'integer', Rule::exists('sermon_series', 'id')],
+            'speaker_id'            => ['nullable', 'integer', Rule::exists('users', 'id')],
+            // Prédicateur externe (invité sans compte) — exclusif avec speaker_id.
+            'external_speaker_name' => ['nullable', 'string', 'max:150'],
+            'series_id'             => ['nullable', 'integer', Rule::exists('sermon_series', 'id')],
             'scripture_reference' => ['nullable', 'string', 'max:120'],
             'sermon_date'         => ['required', 'date'],
             'type'                => ['required', 'in:audio,video,live_replay'],
