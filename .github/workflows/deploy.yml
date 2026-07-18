@@ -154,8 +154,11 @@ jobs:
       - name: Build production
         working-directory: frontend
         env:
-          # Injecte l'URL de l'API de prod si besoin (à adapter).
-          # VITE_API_URL: https://newwinechurch.ci/api
+          # URL absolue de l'API en prod — le default /api du code ne marche
+          # que si l'API est servie sur le même domaine, ce qui n'est pas le
+          # cas ici (sous-domaine api.newinechurch.org dédié à Laravel).
+          # Le secret VITE_API_URL peut override en cas de changement d'infra.
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.newinechurch.org/api' }}
           NODE_ENV: production
         run: npm run build
 
