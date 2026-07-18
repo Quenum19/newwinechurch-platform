@@ -400,6 +400,22 @@ export const events = {
   analyticsEvent:           async (eventId) => (await api.get(`/admin/events/${eventId}/analytics`)).data,
   analyticsExport:          (params = {}) => downloadExcel('/admin/ticketing/export-overview', params),
 
+  // === Sprint C — Dashboard billetterie 360° ===
+  // Endpoints protégés par permission `view billetterie dashboard`.
+  dashboard360Kpis:            async () => (await api.get('/admin/billetterie/dashboard-360/kpis')).data,
+  dashboard360Timeline:        async (days = 30) =>
+    (await api.get('/admin/billetterie/dashboard-360/revenue-timeline', { params: { days } })).data,
+  dashboard360PaymentBreakdown:async (period = 'month') =>
+    (await api.get('/admin/billetterie/dashboard-360/payment-breakdown', { params: { period } })).data,
+  dashboard360TopEvents:       async (limit = 5) =>
+    (await api.get('/admin/billetterie/dashboard-360/top-events', { params: { limit } })).data,
+  dashboard360Alerts:          async () => (await api.get('/admin/billetterie/dashboard-360/alerts')).data,
+  dashboard360Segmentation:    async () => (await api.get('/admin/billetterie/dashboard-360/segmentation')).data,
+  dashboard360NoShow:          async () => (await api.get('/admin/billetterie/dashboard-360/no-show-rate')).data,
+  dashboard360LiveScans:       async () => (await api.get('/admin/billetterie/dashboard-360/live-scans')).data,
+  dashboard360ExportMonthly:   (year, month) =>
+    downloadExcel('/admin/billetterie/dashboard-360/export-monthly', { year, month }),
+
   // === Phase 5 — Séries d'événements ===
   seriesList:        async (params = {}) => (await api.get('/admin/event-series', { params })).data,
   seriesGet:         async (id) => (await api.get(`/admin/event-series/${id}`)).data?.data,
