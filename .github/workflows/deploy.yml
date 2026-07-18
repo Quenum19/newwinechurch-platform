@@ -102,16 +102,13 @@ jobs:
             echo "→ Migration BDD"
             php artisan migrate --force
 
-            echo "→ Recréation du lien symbolique storage (idempotent)"
-            # Hostinger désactive exec() en PHP → on ne peut pas utiliser artisan storage:link.
-            # On crée le lien directement avec ln, en le supprimant d'abord s'il existe.
-            if [ ! -L public/storage ]; then
-              rm -rf public/storage
-              ln -s ../storage/app/public public/storage
-              echo "  ✓ Lien créé : public/storage → ../storage/app/public"
-            else
-              echo "  ✓ Lien déjà présent"
-            fi
+            echo "→ Vérification lien symbolique storage (idempotent)"
+            # Hostinger désactive exec() en PHP → on ne peut pas utiliser
+            # artisan storage:link. On utilise ln -sfn qui gère nativement
+            # l'écrasement du lien existant sans provoquer d'exit-code 1
+            # (piège avec set -e sur `if [ ! -L ]`).
+            ln -sfn ../storage/app/public public/storage
+            echo "  ✓ Lien OK : public/storage → ../storage/app/public"
 
             echo "→ Vidage caches"
             php artisan cache:clear
