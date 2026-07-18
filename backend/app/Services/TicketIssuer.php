@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\TicketIssuedMail;
 use App\Models\EventTicket;
+use App\Services\BilletterieNotifier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -51,6 +52,19 @@ class TicketIssuer
             if ($pdfPath && file_exists($pdfPath)) @unlink($pdfPath);
             if ($qrPngPath && file_exists($qrPngPath)) @unlink($qrPngPath);
             if ($qrSvgPath && file_exists($qrSvgPath)) @unlink($qrSvgPath);
+
+            // Sprint B — #1 Notif admin + #3 alerte capacité (best-effort).
+            try {
+                $notifier = app(BilletterieNotifier::class);
+                if ($ticket->event) {
+                    $notifier->nouvelleInscription($ticket->event, $ticket);
+                    $notifier->alerteCapaciteSiSeuil($ticket->event->fresh());
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Billetterie notifier failed post-issue', [
+                    'ticket' => $ticket->id, 'err' => $e->getMessage(),
+                ]);
+            }
 
             return ['sent' => true];
         } catch (\Throwable $e) {

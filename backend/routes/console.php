@@ -54,10 +54,29 @@ Schedule::job(new SendWeeklyDepartmentDigestJob())
     ->onOneServer()
     ->withoutOverlapping();
 
-// Billetterie : rappel J-1 à 18h pour les events du lendemain.
+// Billetterie : rappel J-1 à 18h pour les events du lendemain (legacy — Phase 1).
 Schedule::command('tickets:remind-day-before')
     ->dailyAt('18:00')
     ->name('nwc:tickets-remind-day-before')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// ============================================================
+// === Sprint B — Notifications billetterie ==================
+// ============================================================
+
+// #2 Digest quotidien billetterie — 08:00 chaque matin.
+Schedule::command('nwc:tickets-daily-digest')
+    ->dailyAt('08:00')
+    ->name('nwc:tickets-daily-digest')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// #5 Rappel J-1 (hourly) — cible events avec starts_at entre now+24h et now+25h.
+// Idempotence via flag reminders_j1_sent_at sur Event.
+Schedule::command('nwc:tickets-remind-j1')
+    ->hourly()
+    ->name('nwc:tickets-remind-j1')
     ->onOneServer()
     ->withoutOverlapping();
 

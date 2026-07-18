@@ -79,6 +79,9 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\ContactMessage::observe(\App\Observers\ContactMessageObserver::class);
         \App\Models\Testimonial::observe(\App\Observers\TestimonialObserver::class);
 
+        // Sprint B — #4 Alerte waitlist billetterie.
+        \App\Models\EventTicketWaitlist::observe(\App\Observers\EventTicketWaitlistObserver::class);
+
         // === Étape 3 — Events / Listeners ===
         // En Laravel 11+ l'auto-discovery est possible via les annotations type,
         // mais on enregistre explicitement pour rester lisible et fiable.

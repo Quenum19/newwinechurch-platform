@@ -49,8 +49,15 @@ class RegisterController extends Controller
         // Déclenche l'envoi de l'email de vérification (en queue).
         event(new Registered($user));
 
-        // Envoi de l'email de bienvenue (en queue, non bloquant).
-        \Illuminate\Support\Facades\Mail::to($user->email)->queue(new \App\Mail\WelcomeMail($user));
+        // Sprint B — #6 Bienvenue nouveau membre (Notification queued, mail + database).
+        // Remplace l'ancien WelcomeMail Mailable, tout en gardant la queue non-bloquante.
+        try {
+            $user->notify(new \App\Notifications\Billetterie\BienvenueNouveauMembreNotification($user));
+        } catch (\Throwable $e) {
+            \Log::warning('Bienvenue notif dispatch failed', [
+                'user_id' => $user->id, 'err' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'message' => 'Inscription réussie. Vérifiez votre email pour activer votre compte.',

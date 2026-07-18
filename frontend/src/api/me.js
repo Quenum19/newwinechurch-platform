@@ -65,3 +65,20 @@ export async function getMyStaffAssignments() {
   const { data } = await api.get('/me/staff-assignments')
   return data?.assignments ?? []
 }
+
+// === Sprint B — Préférences notifications ===
+
+/** Liste des préférences notification + état pour l'user connecté. */
+export async function getNotificationPreferences() {
+  const { data } = await api.get('/me/notification-preferences')
+  return data?.data ?? []
+}
+
+/**
+ * Bulk update des préférences.
+ * @param {Array<{key: string, enabled: boolean}>} preferences
+ */
+export async function updateNotificationPreferences(preferences) {
+  const { data } = await api.post('/me/notification-preferences', { preferences })
+  return data
+}

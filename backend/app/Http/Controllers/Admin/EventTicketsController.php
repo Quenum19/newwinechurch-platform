@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\EventTicketResource;
 use App\Models\Event;
 use App\Models\EventTicket;
+use App\Services\BilletterieNotifier;
 use App\Services\QrPayloadService;
 use App\Services\RefundService;
 use App\Services\TicketIssuer;
@@ -218,6 +219,13 @@ class EventTicketsController extends Controller
         }
 
         if (! $ticket) {
+            // Sprint B — #7 Anomalie sécurité : le service compte les scans
+            // invalides par IP et déclenche une alerte superadmin si burst.
+            app(BilletterieNotifier::class)->anomalieSiSeuilAtteint(
+                $scopedEvent,
+                $request->ip(),
+            );
+
             return response()->json([
                 'result'  => 'invalid',
                 'message' => 'Code invalide ou inconnu.',
