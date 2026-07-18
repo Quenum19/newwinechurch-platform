@@ -71,6 +71,7 @@ use App\Http\Controllers\Admin\EventAttendanceController as AdminEventAttendance
 use App\Http\Controllers\Public\GuestScannerAuthController;
 use App\Http\Controllers\Admin\EventTicketTypesController as AdminEventTicketTypesController;
 use App\Http\Controllers\Admin\TicketingAnalyticsController as AdminAnalyticsController;
+use App\Http\Controllers\Admin\TicketingDashboard360Controller as AdminDashboard360Controller;
 use App\Http\Controllers\Admin\EventSeriesController as AdminEventSeriesController;
 use App\Http\Controllers\Public\SettingController;
 use Illuminate\Support\Facades\Route;
@@ -269,6 +270,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/cell',         [MyContextController::class, 'cell']);
     Route::get('/me/departments',  [MyContextController::class, 'departments']);
 
+    // === Sprint B — Préférences notifications utilisateur ===
+    Route::get('/me/notification-preferences',
+               [\App\Http\Controllers\Member\NotificationPreferencesController::class, 'index']);
+    Route::post('/me/notification-preferences',
+               [\App\Http\Controllers\Member\NotificationPreferencesController::class, 'update']);
+
     // === Étape 3 — Inbox notifications (Laravel Notifications database channel) ===
     Route::get('/notifications',                   [\App\Http\Controllers\Member\NotificationsController::class, 'index']);
     Route::get('/notifications/count',             [\App\Http\Controllers\Member\NotificationsController::class, 'count']);
@@ -437,6 +444,21 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::get('/ticketing/pending-orders',                       [AdminAnalyticsController::class, 'allPendingOrders']);
     Route::get('/ticketing/export-overview',                      [AdminAnalyticsController::class, 'exportOverview']);
 
+    // === Sprint C — Dashboard billetterie 360° ===
+    // Permission dédiée `view billetterie dashboard` (admin, admin-site,
+    // pasteur, rh, tresorier, superadmin).
+    Route::middleware('permission:view billetterie dashboard')->prefix('billetterie/dashboard-360')->group(function () {
+        Route::get('/kpis',              [AdminDashboard360Controller::class, 'kpis']);
+        Route::get('/revenue-timeline',  [AdminDashboard360Controller::class, 'revenueTimeline']);
+        Route::get('/payment-breakdown', [AdminDashboard360Controller::class, 'paymentBreakdown']);
+        Route::get('/top-events',        [AdminDashboard360Controller::class, 'topEvents']);
+        Route::get('/alerts',            [AdminDashboard360Controller::class, 'alerts']);
+        Route::get('/segmentation',      [AdminDashboard360Controller::class, 'segmentation']);
+        Route::get('/no-show-rate',      [AdminDashboard360Controller::class, 'noShowRate']);
+        Route::get('/live-scans',        [AdminDashboard360Controller::class, 'liveScans']);
+        Route::get('/export-monthly',    [AdminDashboard360Controller::class, 'exportMonthly']);
+    });
+
     // === Phase 5 — Séries d'événements (admin) ===
     Route::get('/event-series',                                   [AdminEventSeriesController::class, 'index']);
     Route::post('/event-series',                                  [AdminEventSeriesController::class, 'store']);
@@ -574,6 +596,7 @@ Route::middleware(['auth:sanctum'])
     Route::get ('/events/{id}/attendance/export/pdf',     [AdminEventAttendanceController::class, 'exportPdf'])->whereNumber('id');
     Route::get ('/events/{id}/attendance/backup-pdf',     [AdminEventAttendanceController::class, 'backupPdf'])->whereNumber('id');
     Route::post('/events/{id}/attendance/manual',         [AdminEventAttendanceController::class, 'manualCheckIn'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/report',         [AdminEventAttendanceController::class, 'report'])->whereNumber('id');
 
     // Types de tickets (Phase 2)
     Route::get   ('/events/{eventId}/ticket-types',        [AdminEventTicketTypesController::class, 'index'])->whereNumber('eventId');

@@ -46,6 +46,7 @@ import ForceChangePasswordPage from './pages/auth/ForceChangePasswordPage.jsx'
 import MemberLayout from './layouts/MemberLayout.jsx'
 import MyDashboard from './pages/member/MyDashboard.jsx'
 import MyProfile from './pages/member/MyProfile.jsx'
+import MyNotificationPreferences from './pages/member/MyNotificationPreferences.jsx'
 import ChangePasswordPage from './pages/member/ChangePasswordPage.jsx'
 import MyDonations from './pages/member/MyDonations.jsx'
 import MyEvents from './pages/member/MyEvents.jsx'
@@ -116,7 +117,9 @@ const TicketsScannerPage = lazy(() => import('./pages/admin/TicketsScannerPage.j
 const EventTicketsDashboard = lazy(() => import('./pages/admin/EventTicketsDashboard.jsx'))
 const EventAttendancePage   = lazy(() => import('./pages/admin/EventAttendancePage.jsx'))
 const EventAttendanceKioskPage = lazy(() => import('./pages/admin/EventAttendanceKioskPage.jsx'))
+const EventAttendanceReportPage = lazy(() => import('./pages/admin/EventAttendanceReportPage.jsx'))
 const TicketingAnalytics = lazy(() => import('./pages/admin/TicketingAnalytics.jsx'))
+const TicketingDashboard360 = lazy(() => import('./pages/admin/TicketingDashboard360.jsx'))
 const TicketSeriesPage = lazy(() => import('./pages/public/TicketSeriesPage.jsx'))
 const ScannerInvitePage = lazy(() => import('./pages/public/ScannerInvitePage.jsx'))
 const MissionEventPage = lazy(() => import('./pages/mission/MissionEventPage.jsx'))
@@ -246,6 +249,7 @@ export default function App() {
         <Route element={<AuthGuard><MemberLayout /></AuthGuard>}>
           <Route path="/mon-espace"                element={<MyDashboard />} />
           <Route path="/mon-espace/profil"         element={<MyProfile />} />
+          <Route path="/mon-espace/notifications"  element={<MyNotificationPreferences />} />
           <Route path="/mon-espace/mot-de-passe"   element={<ChangePasswordPage />} />
           <Route path="/mon-espace/mes-dons"       element={<MyDonations />} />
           <Route path="/mon-espace/mes-evenements" element={<MyEvents />} />
@@ -354,7 +358,9 @@ export default function App() {
           <Route path="/admin/evenements/:id/billetterie" element={<EventTicketsDashboard />} />
           <Route path="/admin/evenements/:id/presence"    element={<EventAttendancePage />} />
           <Route path="/admin/evenements/:id/presence/kiosque" element={<EventAttendanceKioskPage />} />
+          <Route path="/admin/evenements/:id/presence/rapport"  element={<EventAttendanceReportPage />} />
           <Route path="/admin/billetterie"                element={<TicketingAnalytics />} />
+          <Route path="/admin/billetterie/vue-360"        element={<TicketingDashboard360 />} />
           <Route path="/admin/series"                     element={<SeriesList />} />
           <Route path="/admin/series/nouveau"             element={<SeriesForm />} />
           <Route path="/admin/series/:id"                 element={<SeriesForm />} />
@@ -366,6 +372,7 @@ export default function App() {
           <Route path="/admin/newsletter"                 element={<NewsletterPage />} />
           <Route path="/admin/journal"                    element={<ActivityLogPage />} />
           <Route path="/admin/profil"                     element={<MyProfile />} />
+          <Route path="/admin/profil/notifications"       element={<MyNotificationPreferences />} />
           <Route path="/admin/mot-de-passe"               element={<ChangePasswordPage />} />
         </Route>
 

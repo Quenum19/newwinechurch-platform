@@ -669,10 +669,72 @@
     "col": {
       "name": "Nom",
       "phone": "Téléphone",
+      "email": "Email",
       "type": "Type",
       "code": "Code",
       "time": "Arrivée",
       "by": "Scanné par"
+    },
+    "manual": {
+      "button": "Check-in manuel",
+      "buttonTitle": "Marquer manuellement une personne présente",
+      "title": "Check-in manuel",
+      "desc": "Marque une personne comme présente sans scan (QR perdu, ticket papier…).",
+      "searchPlaceholder": "Nom, téléphone, email, code…",
+      "hint": "Tape un nom, un téléphone, un email ou un code.",
+      "noResult": "Aucun ticket trouvé pour cette recherche.",
+      "searchError": "Erreur de recherche.",
+      "noteLabel": "Note (optionnelle)",
+      "notePlaceholder": "Ex : QR illisible, ticket papier…",
+      "checkInBtn": "Marquer présent",
+      "alreadyPresent": "Présent",
+      "cancelled": "Annulé",
+      "refunded": "Remboursé",
+      "close": "Fermer",
+      "already": "Déjà scanné.",
+      "done": "Personne marquée présente.",
+      "error": "Impossible de marquer présent."
+    },
+    "chart": {
+      "title": "Arrivées par tranche de 15 min",
+      "arrivals": "Arrivées"
+    },
+    "undoRecent": "Scan récent",
+    "undoWindow": "30 s pour annuler",
+    "undoBtn": "Annuler le scan",
+    "undoBusy": "Annulation…",
+    "undoDismiss": "Fermer",
+    "undoConfirm": "Confirmer : annuler le scan de {{name}} ?",
+    "undoDone": "Scan de {{name}} annulé.",
+    "undoError": "Impossible d'annuler le scan.",
+    "vipArrivedToast": "VIP arrivé",
+    "vipArrivedTitle": "🎖 VIP arrivé",
+    "report": {
+      "tag": "Rapport de présence",
+      "btn": "Rapport",
+      "btnTitle": "Voir le rapport post-event",
+      "backLive": "Retour à la liste live",
+      "tooEarly": "Le rapport n'est disponible qu'après le début de l'événement.",
+      "error": "Impossible de charger le rapport.",
+      "onTime": "à l'heure",
+      "punctualityHint": "à l'heure · en avance · en retard",
+      "noNoShows": "Aucun no-show à exporter.",
+      "csvDone": "Export CSV téléchargé.",
+      "exportCsv": "Export CSV",
+      "kpi": {
+        "expected": "Attendus",
+        "arrived": "Présents",
+        "noShows": "No-shows",
+        "rate": "Taux de présence",
+        "avgDelay": "Retard moyen",
+        "medianDelay": "Retard médian",
+        "punctuality": "Ponctualité"
+      },
+      "noShows": {
+        "title": "Absents (no-shows)",
+        "count": "{{n}} personne(s) attendue(s) mais non venue(s)",
+        "empty": "Aucun no-show — 100% de présence 🎉"
+      }
     }
   }
 }

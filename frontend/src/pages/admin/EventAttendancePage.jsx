@@ -20,13 +20,18 @@ import { fr, enUS } from 'date-fns/locale'
 import {
   Search, Download, FileText, Printer, Volume2, VolumeX, Bell, BellOff,
   RefreshCw, Users, TrendingUp, Clock, Filter, MonitorPlay, ChevronDown,
-  CheckCircle2, ArrowLeft, MapPin, Calendar,
+  CheckCircle2, ArrowLeft, MapPin, Calendar, UserPlus, Undo2, Crown, BarChart3,
 } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts'
 
 import BackButton from '@/components/admin/BackButton.jsx'
+import ManualCheckInModal from '@/components/admin/ManualCheckInModal.jsx'
 import { useAttendancePolling } from '@/hooks/useAttendancePolling.js'
 import {
   exportAttendanceXlsx, exportAttendancePdf, exportAttendanceBackupPdf,
+  unscanTicket,
 } from '@/api/attendance.js'
 
 const SINCE_FILTERS = [
@@ -47,8 +52,12 @@ export default function EventAttendancePage() {
   const [soundOn, setSoundOn]       = useState(() => localStorage.getItem('nwc_attend_sound') === '1')
   const [notifOn, setNotifOn]       = useState(() => localStorage.getItem('nwc_attend_notif') === '1')
   const [busy, setBusy]             = useState(false)
+  const [showManualModal, setShowManualModal] = useState(false)
+  const [undoTarget, setUndoTarget] = useState(null)   // { ticketId, fullName, until }
+  const [isUndoing, setIsUndoing]   = useState(false)
 
   const audioRef = useRef(null)
+  const undoTimerRef = useRef(null)
 
   useEffect(() => { localStorage.setItem('nwc_attend_sound', soundOn ? '1' : '0') }, [soundOn])
   useEffect(() => { localStorage.setItem('nwc_attend_notif', notifOn ? '1' : '0') }, [notifOn])
@@ -66,19 +75,75 @@ export default function EventAttendancePage() {
     }
   }, [notifOn])
 
+  // Détecte si le ticket est VIP (case insensitive dans le type)
+  const isVip = (row) =>
+    typeof row?.ticket_type === 'string' &&
+    row.ticket_type.toLowerCase().includes('vip')
+
   const handleNewArrival = (row) => {
+    const vip = isVip(row)
+
+    // Son : 1 bip normal, ou 2 bips espacés si VIP
     if (soundOn && audioRef.current) {
       audioRef.current.currentTime = 0
       audioRef.current.play().catch(() => {})
+      if (vip) {
+        setTimeout(() => {
+          try {
+            audioRef.current.currentTime = 0
+            audioRef.current.play().catch(() => {})
+          } catch (_) {}
+        }, 350)
+      }
     }
+
+    // Toast — normal ou doré VIP
+    if (vip) {
+      toast.success(
+        `${t('attendance.vipArrivedToast', 'VIP arrivé')} : ${row.full_name}`,
+        {
+          icon: '👑',
+          duration: 5000,
+          style: {
+            background: 'linear-gradient(135deg, #C9A961 0%, #B08A3F 100%)',
+            color: '#1F1A14',
+            fontWeight: 700,
+            fontSize: '15px',
+            padding: '14px 18px',
+            border: '2px solid #8B6A2E',
+            boxShadow: '0 10px 30px -8px rgba(139, 106, 46, 0.6)',
+          },
+        },
+      )
+    }
+
+    // Notification browser (titre spécial pour VIP)
     if (notifOn && 'Notification' in window && Notification.permission === 'granted') {
-      new Notification(t('attendance.newArrival', 'Nouvelle arrivée'), {
-        body: `${row.full_name} · ${row.used_at_hm}`,
-        icon: '/logos/logo_newwine.png',
-        tag: 'nwc-attendance',
-      })
+      new Notification(
+        vip
+          ? t('attendance.vipArrivedTitle', '🎖 VIP arrivé')
+          : t('attendance.newArrival', 'Nouvelle arrivée'),
+        {
+          body: `${row.full_name} · ${row.used_at_hm}${row.ticket_type ? ' · ' + row.ticket_type : ''}`,
+          icon: '/logos/logo_newwine.png',
+          tag: 'nwc-attendance',
+        },
+      )
     }
+
+    // Programme l'affichage du bouton "Undo dernier scan" pendant 30 s
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    setUndoTarget({
+      ticketId: row.id,
+      fullName: row.full_name,
+      isVip: vip,
+      until: Date.now() + 30_000,
+    })
+    undoTimerRef.current = setTimeout(() => setUndoTarget(null), 30_000)
   }
+
+  // Nettoyage timer undo au démontage
+  useEffect(() => () => undoTimerRef.current && clearTimeout(undoTimerRef.current), [])
 
   const { data, isLoading, error, refetch, latestArrivalId } = useAttendancePolling(eventId, {
     sinceMinutes,
@@ -127,6 +192,50 @@ export default function EventAttendancePage() {
 
   const stats = data?.stats ?? {}
   const event = data?.event ?? {}
+
+  // Le rapport est disponible seulement si l'event a commencé (starts_at < now)
+  const reportAvailable = useMemo(() => {
+    if (!event.starts_at) return false
+    return new Date(event.starts_at).getTime() <= Date.now()
+  }, [event.starts_at])
+
+  // Data BarChart : convertit stats.buckets_15m {"18:00": 3, "18:15": 5} → array
+  const chartData = useMemo(() => {
+    const b = stats.buckets_15m
+    if (!b || typeof b !== 'object') return []
+    return Object.entries(b)
+      .sort(([a], [b2]) => a.localeCompare(b2))
+      .map(([time, count]) => ({ time, arrivees: count }))
+  }, [stats])
+
+  // Action : annuler le dernier scan
+  const handleUndoScan = async () => {
+    if (!undoTarget) return
+    const confirmed = window.confirm(
+      t('attendance.undoConfirm', 'Confirmer : annuler le scan de {{name}} ?', {
+        name: undoTarget.fullName,
+      }),
+    )
+    if (!confirmed) return
+    setIsUndoing(true)
+    try {
+      await unscanTicket(undoTarget.ticketId)
+      toast.success(
+        t('attendance.undoDone', 'Scan de {{name}} annulé.', { name: undoTarget.fullName }),
+      )
+      setUndoTarget(null)
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+      // Refresh immédiat pour retirer la ligne
+      refetch()
+    } catch (e) {
+      toast.error(
+        e?.response?.data?.message ||
+        t('attendance.undoError', "Impossible d'annuler le scan."),
+      )
+    } finally {
+      setIsUndoing(false)
+    }
+  }
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-7xl">
@@ -200,21 +309,68 @@ export default function EventAttendancePage() {
         <StatCard label={t('attendance.stat.last15', 'Dernière 15 min')} value={stats.last_15_min ?? 0} icon={<TrendingUp size={14} />} />
       </section>
 
-      {/* ── ACTIONS EXPORT ── */}
+      {/* ── ACTIONS EXPORT + CHECK-IN MANUEL + RAPPORT ── */}
       <section className="adm-card p-3 sm:p-4 flex flex-wrap items-center gap-2">
-        <button onClick={() => doExport(exportAttendanceXlsx, 'Excel')} disabled={busy} className="adm-btn adm-btn-primary">
+        <button
+          onClick={() => setShowManualModal(true)}
+          className="adm-btn adm-btn-primary"
+          title={t('attendance.manual.buttonTitle', 'Marquer manuellement une personne présente')}
+        >
+          <UserPlus size={14} /> {t('attendance.manual.button', 'Check-in manuel')}
+        </button>
+        <span className="mx-1 h-5 w-px bg-zinc-300 hidden sm:inline-block" />
+        <button onClick={() => doExport(exportAttendanceXlsx, 'Excel')} disabled={busy} className="adm-btn adm-btn-ghost">
           <Download size={14} /> {t('attendance.exportExcel', 'Excel')}
         </button>
-        <button onClick={() => doExport(exportAttendancePdf, 'PDF')} disabled={busy} className="adm-btn adm-btn-primary">
+        <button onClick={() => doExport(exportAttendancePdf, 'PDF')} disabled={busy} className="adm-btn adm-btn-ghost">
           <FileText size={14} /> {t('attendance.exportPdf', 'PDF')}
         </button>
         <button onClick={() => doExport(exportAttendanceBackupPdf, 'PDF backup')} disabled={busy} className="adm-btn adm-btn-ghost" title={t('attendance.backupHint', 'Liste vierge à cocher — mode dégradé')}>
           <Printer size={14} /> {t('attendance.backupPdf', 'Papier backup')}
         </button>
+        {reportAvailable && (
+          <Link
+            to={`/admin/evenements/${eventId}/presence/rapport`}
+            className="adm-btn adm-btn-ghost inline-flex items-center gap-1.5"
+            title={t('attendance.report.btnTitle', 'Rapport post-event')}
+          >
+            <BarChart3 size={14} /> {t('attendance.report.btn', 'Rapport')}
+          </Link>
+        )}
         <span className="ml-auto text-xs text-zinc-500">
           {t('attendance.total', '{{n}} personne(s) affichée(s)', { n: filteredRows.length })}
         </span>
       </section>
+
+      {/* ── MINI GRAPH : arrivées par 15 min ── */}
+      {chartData.length > 0 && (
+        <section className="adm-card p-3 sm:p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--adm-accent)] mb-2 inline-flex items-center gap-1">
+            <TrendingUp size={12} /> {t('attendance.chart.title', 'Arrivées par tranche de 15 min')}
+          </p>
+          <div style={{ width: '100%', height: 120 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D0" vertical={false} />
+                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#6B5F4E' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#6B5F4E' }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(139, 26, 47, 0.06)' }}
+                  contentStyle={{
+                    background: '#FAF6EE',
+                    border: '1px solid #E8DFC9',
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(value) => [value, t('attendance.chart.arrivals', 'Arrivées')]}
+                  labelStyle={{ color: '#8B1A2F', fontWeight: 700 }}
+                />
+                <Bar dataKey="arrivees" fill="#8B1A2F" radius={[3, 3, 0, 0]} maxBarSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
 
       {/* ── FILTRES ── */}
       <section className="adm-card p-3 sm:p-4 flex flex-wrap items-center gap-3">
@@ -272,18 +428,32 @@ export default function EventAttendancePage() {
               <tbody>
                 {filteredRows.map((row, i) => {
                   const isLatest = row.id === latestArrivalId
+                  const vip = isVip(row)
                   return (
                     <tr
                       key={row.id}
-                      className={`border-b transition-colors ${isLatest ? 'bg-yellow-100/60 animate-flash' : (i % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50')}`}
+                      className={`border-b transition-colors ${
+                        isLatest
+                          ? (vip ? 'bg-amber-100/70 animate-flash-gold' : 'bg-yellow-100/60 animate-flash')
+                          : (i % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50')
+                      }`}
                       style={{ borderColor: 'var(--adm-border)' }}
                     >
                       <td className="p-3 text-center font-bold text-[color:var(--adm-accent)] tabular-nums">{i + 1}</td>
                       <td className="p-3">
-                        <div className="font-semibold" style={{ color: 'var(--adm-text)' }}>
-                          {row.full_name}
+                        <div className="font-semibold inline-flex flex-wrap items-center gap-1.5" style={{ color: 'var(--adm-text)' }}>
+                          {vip && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono uppercase font-bold"
+                              style={{ background: 'linear-gradient(135deg,#C9A961,#B08A3F)', color: '#1F1A14' }}
+                              title="VIP"
+                            >
+                              <Crown size={10}/> VIP
+                            </span>
+                          )}
+                          <span>{row.full_name}</span>
                           {isLatest && (
-                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-yellow-400 text-yellow-900 font-mono uppercase">
+                            <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono uppercase ${vip ? 'bg-amber-500 text-amber-950' : 'bg-yellow-400 text-yellow-900'}`}>
                               <CheckCircle2 size={10}/> {t('attendance.justArrived', 'nouveau')}
                             </span>
                           )}
@@ -312,12 +482,80 @@ export default function EventAttendancePage() {
         </div>
       )}
 
+      {/* ── MODAL Check-in manuel ── */}
+      <ManualCheckInModal
+        open={showManualModal}
+        onClose={() => setShowManualModal(false)}
+        eventId={eventId}
+        onDone={() => refetch()}
+      />
+
+      {/* ── BOUTON FLOTTANT : annuler dernier scan (30 s) ── */}
+      {undoTarget && (
+        <div
+          className="fixed bottom-4 right-4 z-40 max-w-sm animate-slide-up"
+          role="alertdialog"
+          aria-live="polite"
+        >
+          <div className="rounded-xl shadow-2xl border border-[#8B1A2F]/30 bg-white overflow-hidden">
+            <div className="px-4 py-3 flex items-start gap-3 bg-[#FAF6EE]">
+              <div className="w-8 h-8 rounded-full bg-[#8B1A2F]/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Undo2 size={16} className="text-[#8B1A2F]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-[#8B1A2F] font-bold">
+                  {t('attendance.undoRecent', 'Scan récent')}
+                </p>
+                <p className="text-sm font-semibold text-[#1F1A14] truncate">
+                  {undoTarget.fullName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUndoTarget(null)}
+                className="text-[#6B5F4E] hover:text-[#1F1A14] transition"
+                aria-label={t('attendance.undoDismiss', 'Fermer')}
+              >
+                <span className="text-lg leading-none">×</span>
+              </button>
+            </div>
+            <div className="px-4 py-3 border-t border-[#E8DFC9] flex items-center justify-between gap-2">
+              <span className="text-[11px] text-[#6B5F4E] font-mono">
+                {t('attendance.undoWindow', '30 s pour annuler')}
+              </span>
+              <button
+                type="button"
+                onClick={handleUndoScan}
+                disabled={isUndoing}
+                className="px-3 py-1.5 rounded-md bg-[#8B1A2F] text-white text-[12px] font-mono uppercase tracking-wider font-semibold hover:bg-[#6B1422] disabled:opacity-50 transition inline-flex items-center gap-1.5"
+              >
+                <Undo2 size={12} /> {isUndoing
+                  ? t('attendance.undoBusy', 'Annulation…')
+                  : t('attendance.undoBtn', 'Annuler le scan')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes flash-bg {
           0%, 100% { background-color: rgba(251, 191, 36, 0.6); }
           50% { background-color: rgba(251, 191, 36, 0.3); }
         }
         .animate-flash { animation: flash-bg 1.5s ease-in-out 2; }
+
+        @keyframes flash-gold {
+          0%, 100% { background-color: rgba(201, 169, 97, 0.65); }
+          50%      { background-color: rgba(201, 169, 97, 0.35); }
+        }
+        .animate-flash-gold { animation: flash-gold 1.5s ease-in-out 3; }
+
+        @keyframes slide-up {
+          from { transform: translateY(120%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        .animate-slide-up { animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
       `}</style>
     </div>
   )

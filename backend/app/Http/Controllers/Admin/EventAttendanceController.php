@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *  GET  /api/admin/events/{id}/attendance/export/pdf  → export PDF stylé (avec logo)
  *  GET  /api/admin/events/{id}/attendance/backup-pdf  → PDF vierge à cocher (mode dégradé)
  *  POST /api/admin/events/{id}/attendance/manual      → check-in manuel (VIP qui a perdu son QR)
+ *  GET  /api/admin/events/{id}/attendance/report      → rapport post-event (KPI + no-shows)
  *
  * Sécurité : requiert `view attendance` OU `scan tickets` OU manager scoped.
  */
@@ -249,6 +250,110 @@ class EventAttendanceController extends Controller
                 'ticket'  => $this->mapTicket($ticket->fresh(['ticketType', 'usedBy'])),
             ]);
         });
+    }
+
+    /**
+     * Rapport post-event — KPI + arrivées par tranche + no-shows + retards moyens.
+     *
+     * Accessible uniquement si l'événement a commencé (starts_at < now).
+     * Sinon 409 (Conflict) — pas de rapport pour un event futur.
+     */
+    public function report(Request $request, int $eventId): JsonResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorize($request, $event);
+
+        if ($event->starts_at && $event->starts_at->isFuture()) {
+            return response()->json([
+                'message' => "Le rapport n'est disponible qu'après le début de l'événement.",
+                'starts_at' => $event->starts_at,
+            ], 409);
+        }
+
+        // Tous les tickets vendus + utilisés (base commune)
+        $allSold = EventTicket::where('event_id', $eventId)
+            ->whereIn('status', ['confirmed', 'used'])
+            ->with(['ticketType:id,name,name_en,color_hex'])
+            ->get();
+
+        $arrived = $allSold->where('status', 'used')->whereNotNull('used_at');
+        $noShows = $allSold->where('status', 'confirmed')->values();
+
+        // Arrivées par tranche de 15 min (clé "HH:MM")
+        $buckets = [];
+        foreach ($arrived as $t) {
+            if (! $t->used_at) continue;
+            $roundedMin = (int) floor($t->used_at->minute / 15) * 15;
+            $bucketKey = $t->used_at->format('H:') . str_pad((string) $roundedMin, 2, '0', STR_PAD_LEFT);
+            $buckets[$bucketKey] = ($buckets[$bucketKey] ?? 0) + 1;
+        }
+        ksort($buckets);
+
+        // Retard moyen : écart signé entre starts_at et used_at, en minutes.
+        //  - Négatif = arrivée en avance
+        //  - Positif = arrivée en retard
+        // On calcule aussi retard médian pour éviter outliers.
+        $delaysMinutes = [];
+        if ($event->starts_at) {
+            foreach ($arrived as $t) {
+                if (! $t->used_at) continue;
+                $delaysMinutes[] = $event->starts_at->diffInMinutes($t->used_at, false);
+            }
+        }
+        $avgDelay = count($delaysMinutes) > 0 ? round(array_sum($delaysMinutes) / count($delaysMinutes), 1) : null;
+        $medianDelay = null;
+        if (count($delaysMinutes) > 0) {
+            $sorted = $delaysMinutes;
+            sort($sorted);
+            $mid = (int) floor(count($sorted) / 2);
+            $medianDelay = count($sorted) % 2 === 0
+                ? round(($sorted[$mid - 1] + $sorted[$mid]) / 2, 1)
+                : (float) $sorted[$mid];
+        }
+        $lateCount   = count(array_filter($delaysMinutes, fn ($d) => $d > 5));   // > 5 min de retard
+        $onTimeCount = count(array_filter($delaysMinutes, fn ($d) => $d >= -15 && $d <= 5));
+        $earlyCount  = count(array_filter($delaysMinutes, fn ($d) => $d < -15));
+
+        $totalExpected = $allSold->count();
+        $totalArrived  = $arrived->count();
+        $noShowsCount  = $noShows->count();
+        $tauxPresence  = $totalExpected > 0
+            ? round($totalArrived / $totalExpected * 100, 1)
+            : 0.0;
+
+        return response()->json([
+            'event' => [
+                'id'        => $event->id,
+                'title'     => $event->display_title ?? $event->title,
+                'slug'      => $event->slug,
+                'starts_at' => $event->starts_at,
+                'ends_at'   => $event->ends_at,
+                'location'  => $event->display_location ?? $event->location,
+            ],
+            'kpi' => [
+                'total_expected'   => $totalExpected,
+                'total_arrived'    => $totalArrived,
+                'no_shows_count'   => $noShowsCount,
+                'taux_presence'    => $tauxPresence,
+                'avg_delay_min'    => $avgDelay,
+                'median_delay_min' => $medianDelay,
+                'late_count'       => $lateCount,
+                'on_time_count'    => $onTimeCount,
+                'early_count'      => $earlyCount,
+            ],
+            'buckets_15m' => $buckets,
+            'no_shows' => $noShows->map(fn (EventTicket $t) => [
+                'id'          => $t->id,
+                'full_name'   => trim($t->first_name . ' ' . $t->last_name),
+                'first_name'  => $t->first_name,
+                'last_name'   => $t->last_name,
+                'phone'       => $t->phone,
+                'email'       => $t->email,
+                'short_code'  => $t->short_code,
+                'ticket_type' => $t->ticketType?->name,
+            ])->values(),
+            'generated_at' => now()->toIso8601String(),
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────

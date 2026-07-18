@@ -669,10 +669,72 @@
     "col": {
       "name": "Name",
       "phone": "Phone",
+      "email": "Email",
       "type": "Type",
       "code": "Code",
       "time": "Arrival",
       "by": "Scanned by"
+    },
+    "manual": {
+      "button": "Manual check-in",
+      "buttonTitle": "Manually mark someone as present",
+      "title": "Manual check-in",
+      "desc": "Mark someone as present without a scan (lost QR, paper ticket…).",
+      "searchPlaceholder": "Name, phone, email, code…",
+      "hint": "Type a name, phone, email or code.",
+      "noResult": "No ticket found for this search.",
+      "searchError": "Search error.",
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "E.g. Unreadable QR, paper ticket…",
+      "checkInBtn": "Mark present",
+      "alreadyPresent": "Present",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded",
+      "close": "Close",
+      "already": "Already scanned.",
+      "done": "Person marked present.",
+      "error": "Unable to mark present."
+    },
+    "chart": {
+      "title": "Arrivals by 15-min slot",
+      "arrivals": "Arrivals"
+    },
+    "undoRecent": "Recent scan",
+    "undoWindow": "30 s to undo",
+    "undoBtn": "Undo scan",
+    "undoBusy": "Undoing…",
+    "undoDismiss": "Dismiss",
+    "undoConfirm": "Confirm: undo scan for {{name}}?",
+    "undoDone": "Scan of {{name}} undone.",
+    "undoError": "Unable to undo scan.",
+    "vipArrivedToast": "VIP arrived",
+    "vipArrivedTitle": "🎖 VIP arrived",
+    "report": {
+      "tag": "Attendance report",
+      "btn": "Report",
+      "btnTitle": "View post-event report",
+      "backLive": "Back to live list",
+      "tooEarly": "Report only available after the event has started.",
+      "error": "Unable to load the report.",
+      "onTime": "on time",
+      "punctualityHint": "on time · early · late",
+      "noNoShows": "No no-shows to export.",
+      "csvDone": "CSV export downloaded.",
+      "exportCsv": "Export CSV",
+      "kpi": {
+        "expected": "Expected",
+        "arrived": "Arrived",
+        "noShows": "No-shows",
+        "rate": "Attendance rate",
+        "avgDelay": "Average delay",
+        "medianDelay": "Median delay",
+        "punctuality": "Punctuality"
+      },
+      "noShows": {
+        "title": "No-shows",
+        "count": "{{n}} expected but did not arrive",
+        "empty": "No no-show — 100% attendance 🎉"
+      }
     }
   }
 }

@@ -42,6 +42,29 @@ export async function manualCheckIn(eventId, ticketId, note = null) {
   return data
 }
 
+/**
+ * Recherche de tickets pour check-in manuel : réutilise le endpoint tickets
+ * paginé de l'event et récupère les 20 premiers résultats matchant la query.
+ */
+export async function searchTicketsForCheckin(eventId, query) {
+  const params = { per_page: 20 }
+  if (query) params.search = query
+  const { data } = await api.get(`/admin/events/${eventId}/tickets`, { params })
+  return data?.data ?? []
+}
+
+/** Annule le scan d'un ticket (bouton Undo dernier scan). */
+export async function unscanTicket(ticketId) {
+  const { data } = await api.post(`/admin/tickets/${ticketId}/unscan`)
+  return data
+}
+
+/** Récupère le rapport post-event (KPI + no-shows + tranches). */
+export async function fetchAttendanceReport(eventId) {
+  const { data } = await api.get(`/admin/events/${eventId}/attendance/report`)
+  return data
+}
+
 /** Télécharge un blob (xlsx ou pdf) — force le download côté navigateur. */
 async function downloadBlob(url, defaultName) {
   const res = await api.get(url, { responseType: 'blob' })
