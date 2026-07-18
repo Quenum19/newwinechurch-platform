@@ -70,7 +70,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'delete events', 'publish events', 'manage event registrations',
             // Billetterie
             'manage event tickets', 'scan tickets', 'validate ticket payments',
-            'refund tickets', 'view attendance',
+            'refund tickets', 'view attendance', 'view billetterie dashboard',
 
             // Dons
             'view donations', 'confirm donations', 'export donations',
@@ -139,6 +139,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'refund tickets',
             // Liste de présence (accès accueil temps réel + exports).
             'view attendance',
+            // Vue 360° billetterie (supervision globale sans gestion technique).
+            'view billetterie dashboard',
         ]);
 
         // RH ADMIN — pilote les personnes : membres, gouverneurs, rapports liés
@@ -159,6 +161,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'export department reports',
             'view cell reports', 'export cell reports', 'view cell analytics',
             'view activity log',
+            // Liste de présence + vue globale billetterie (supervision RH).
+            'view attendance', 'view billetterie dashboard',
         ]);
 
         // ADMIN — gestion contenu et membres au quotidien.
@@ -180,6 +184,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view events', 'create events', 'edit events',
             'publish events', 'manage event registrations',
             'manage event tickets', 'scan tickets', 'view attendance',
+            'view billetterie dashboard',
             'view donations', 'confirm donations', 'export donations',
             'view posts', 'create posts', 'edit posts', 'publish posts',
             'view gallery', // peut consulter mais pas uploader
@@ -209,7 +214,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view events', 'create events', 'edit events', 'delete events',
             'publish events', 'manage event registrations',
             'manage event tickets', 'scan tickets', 'validate ticket payments',
-            'refund tickets', 'view attendance',
+            'refund tickets', 'view attendance', 'view billetterie dashboard',
             'view posts', 'create posts', 'edit posts', 'delete posts', 'publish posts',
             // Médias & galerie : peut uploader et organiser.
             'view gallery', 'upload media', 'delete media',
@@ -284,8 +289,18 @@ class RolesAndPermissionsSeeder extends Seeder
             'access admin panel', 'view dashboard',
             'view events',
             'manage event tickets', 'validate ticket payments', 'refund tickets',
-            'view attendance',
+            'view attendance', 'view billetterie dashboard',
             'view donations', 'export donations',
+        ]);
+
+        // ACCUEIL — équipe accueil événements. Ciblage étroit :
+        // liste de présence + check-in manuel + accès panel admin léger.
+        // Pas de gestion contenu, membres, dashboard billetterie global.
+        $accueil = Role::firstOrCreate(['name' => 'accueil', 'guard_name' => 'web']);
+        $accueil->syncPermissions([
+            'access admin panel', 'view dashboard',
+            'view events',
+            'view attendance', 'scan tickets',
         ]);
 
         // === 3. Compatibilité legacy : alias capitaine = gouverneur ===
@@ -295,7 +310,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $capitaine = Role::firstOrCreate(['name' => 'capitaine', 'guard_name' => 'web']);
         $capitaine->syncPermissions($gouverneur->permissions);
 
-        $this->command->info('  ✓ 10 rôles créés (superadmin, pasteur, rh, admin, admin-site, gouverneur, leader, membre, controleur, tresorier)');
+        $this->command->info('  ✓ 11 rôles créés (superadmin, pasteur, rh, admin, admin-site, gouverneur, leader, membre, controleur, tresorier, accueil)');
         $this->command->info('  ✓ '.count($permissions).' permissions créées');
     }
 }
