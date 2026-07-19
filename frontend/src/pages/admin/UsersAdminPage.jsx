@@ -22,13 +22,17 @@ import { cn } from '@/utils/cn'
 
 /** Définition des rôles (gardée alignée avec RolesAndPermissionsSeeder). */
 const ROLES = [
-  { value: 'superadmin', label: 'Superadmin', sensitive: true,  badgeCls: 'adm-badge-danger' },
-  { value: 'pasteur',    label: 'Pasteur',    sensitive: true,  badgeCls: 'adm-badge-accent' },
-  { value: 'rh',         label: 'RH',         sensitive: false, badgeCls: 'adm-badge-info' },
-  { value: 'admin',      label: 'Admin',      sensitive: false, badgeCls: 'adm-badge-warning' },
-  { value: 'gouverneur', label: 'Gouverneur', sensitive: false, badgeCls: 'adm-badge-info' },
-  { value: 'leader',     label: 'Leader',     sensitive: false, badgeCls: 'adm-badge-accent' },
-  { value: 'membre',     label: 'Membre',     sensitive: false, badgeCls: 'adm-badge' },
+  { value: 'superadmin', label: 'Superadmin',       sensitive: true,  badgeCls: 'adm-badge-danger' },
+  { value: 'pasteur',    label: 'Pasteur',          sensitive: true,  badgeCls: 'adm-badge-accent' },
+  { value: 'rh',         label: 'RH',               sensitive: false, badgeCls: 'adm-badge-info' },
+  { value: 'admin',      label: 'Admin',            sensitive: false, badgeCls: 'adm-badge-warning' },
+  { value: 'admin-site', label: 'Admin site',       sensitive: false, badgeCls: 'adm-badge-warning' },
+  { value: 'tresorier',  label: 'Trésorier',        sensitive: false, badgeCls: 'adm-badge-info' },
+  { value: 'accueil',    label: 'Service Accueil',  sensitive: false, badgeCls: 'adm-badge-accent' },
+  { value: 'controleur', label: 'Contrôleur (scan)',sensitive: false, badgeCls: 'adm-badge' },
+  { value: 'gouverneur', label: 'Gouverneur',       sensitive: false, badgeCls: 'adm-badge-info' },
+  { value: 'leader',     label: 'Leader',           sensitive: false, badgeCls: 'adm-badge-accent' },
+  { value: 'membre',     label: 'Membre',           sensitive: false, badgeCls: 'adm-badge' },
 ]
 
 export default function UsersAdminPage() {
