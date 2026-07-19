@@ -408,8 +408,18 @@ export default function EventTicketsDashboard() {
                         <p className="font-medium">{t.full_name}</p>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell text-xs">
-                        <p className="inline-flex items-center gap-1"><Mail size={10}/> {t.email}</p>
-                        {t.phone && <p className="inline-flex items-center gap-1 mt-0.5"><Phone size={10}/> {t.phone}</p>}
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <p className="flex items-center gap-1.5 min-w-0">
+                            <Mail size={11} className="shrink-0 text-public-flame/70"/>
+                            <span className="truncate">{t.email}</span>
+                          </p>
+                          {t.phone && (
+                            <p className="flex items-center gap-1.5">
+                              <Phone size={11} className="shrink-0 text-public-flame/70"/>
+                              <span className="font-mono">{t.phone}</span>
+                            </p>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell font-mono text-xs opacity-70">{t.order_code}</td>
                       <td className="px-4 py-3">
@@ -542,15 +552,19 @@ function PaymentsToValidate({ orders, onValidated }) {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-2 text-sm mb-3 pt-3 border-t border-public-ink/10">
+          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 text-sm mb-3 pt-3 border-t border-public-ink/10">
             <p><strong>{o.full_name}</strong></p>
-            <p className="text-right inline-flex items-center justify-end gap-1">
-              <Mail size={11}/> {o.email}
+            <p className="text-right text-public-ink/60">{o.tickets_count} ticket(s)</p>
+            <p className="flex items-center gap-1.5 min-w-0">
+              <Mail size={12} className="shrink-0 text-public-flame/70"/>
+              <span className="truncate">{o.email}</span>
             </p>
-            <p className="inline-flex items-center gap-1"><Phone size={11}/> {o.phone}</p>
-            <p className="text-right text-public-ink/60">
-              {o.tickets_count} ticket(s)
-            </p>
+            {o.phone && (
+              <p className="flex items-center gap-1.5 sm:justify-end">
+                <Phone size={12} className="shrink-0 text-public-flame/70"/>
+                <span className="font-mono">{o.phone}</span>
+              </p>
+            )}
           </div>
 
           <div className="bg-public-bone/40 p-3 mb-3 text-sm space-y-1">
@@ -656,8 +670,18 @@ function WaitlistPanel({ eventId, entries, onRefresh }) {
                 </td>
                 <td className="px-4 py-3 font-medium">{w.full_name}</td>
                 <td className="px-4 py-3 hidden sm:table-cell text-xs">
-                  <p className="inline-flex items-center gap-1"><Mail size={10}/> {w.email}</p>
-                  {w.phone && <p className="inline-flex items-center gap-1 mt-0.5"><Phone size={10}/> {w.phone}</p>}
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <p className="flex items-center gap-1.5 min-w-0">
+                      <Mail size={11} className="shrink-0 text-public-flame/70"/>
+                      <span className="truncate">{w.email}</span>
+                    </p>
+                    {w.phone && (
+                      <p className="flex items-center gap-1.5">
+                        <Phone size={11} className="shrink-0 text-public-flame/70"/>
+                        <span className="font-mono">{w.phone}</span>
+                      </p>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-center">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-public-flame/10 text-public-flame">
