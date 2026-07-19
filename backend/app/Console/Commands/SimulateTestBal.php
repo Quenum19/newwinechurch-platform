@@ -9,29 +9,30 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Simulation Bal — crée un event "🧪 TEST · A Dark Night in Elegance"
- * jumeau de l'event principal, avec N tickets fictifs prêts à être scannés.
+ * Duplique un événement en version TEST — clone vide (0 tickets vendus).
  *
  * Utilisation :
  *   php artisan nwc:simulate-test-bal
- *   php artisan nwc:simulate-test-bal --tickets=30
- *   php artisan nwc:simulate-test-bal --reset  (supprime tout + recrée)
+ *   php artisan nwc:simulate-test-bal --tickets=10  (optionnel : ajoute N faux tickets)
+ *   php artisan nwc:simulate-test-bal --reset       (supprime + recrée)
  *
  * Après création :
- *  - L'event apparaît dans /admin/evenements avec badge "TEST"
- *  - N tickets confirmed prêts pour le scan (utilise n'importe quel short_code)
- *  - Testable : liste présence, dashboard 360, exports, notifs cap 80/95%
+ *  - Nouvel event "🧪 TEST · <titre>" dans /admin/evenements
+ *  - Billetterie active mais VIDE : 0 tickets vendus
+ *  - Ton équipe s'inscrit via /billetterie/<slug> comme des vrais utilisateurs
+ *  - Tout le système fonctionne normalement (mail, QR, scan, présence, dashboard)
  *
- * Aucun vrai email n'est envoyé (les emails générés sont @test.nwc.local).
+ * L'option --tickets reste dispo pour pré-remplir des tickets fictifs
+ * si tu veux tester des scénarios spécifiques (alerte 80% etc.).
  */
 class SimulateTestBal extends Command
 {
     protected $signature = 'nwc:simulate-test-bal
-                            {--tickets=30 : Nombre de tickets fictifs à générer}
+                            {--tickets=0 : Nombre de tickets fictifs à pré-générer (0 = vide, laisser vos users s\'inscrire)}
                             {--source= : Slug de l\'event à cloner (défaut: premier event ticketed)}
                             {--reset : Supprime l\'event test existant + tickets avant de recréer}';
 
-    protected $description = 'Simule un event Bal avec tickets fictifs pour tester la billetterie';
+    protected $description = 'Duplique un événement en version TEST (vide par défaut, prêt pour vraies inscriptions)';
 
     /** Prénoms/noms/téléphones fictifs — mix ivoirien réaliste. */
     private array $firstNames = [
@@ -50,8 +51,8 @@ class SimulateTestBal extends Command
     public function handle(): int
     {
         $count = (int) $this->option('tickets');
-        if ($count < 1 || $count > 300) {
-            $this->error("--tickets doit être entre 1 et 300 (reçu: {$count})");
+        if ($count < 0 || $count > 300) {
+            $this->error("--tickets doit être entre 0 et 300 (reçu: {$count})");
             return self::FAILURE;
         }
 
@@ -88,7 +89,8 @@ class SimulateTestBal extends Command
         $testEvent->slug        = $testSlug;
         $testEvent->description = "⚠️ ÉVÉNEMENT DE TEST — pour simuler la billetterie.\n\n"
                                 . $source->description;
-        $testEvent->tickets_capacity = max(50, $count + 10);
+        // Garde la capacity source (vraies conditions de test).
+        // Note : tickets_sold reste à 0, ce sont vos vraies inscriptions qui l'incrémentent.
         $testEvent->save();
 
         // Clone les types de tickets si présents
@@ -104,89 +106,107 @@ class SimulateTestBal extends Command
         $this->info("  ✓ Slug: {$testEvent->slug}");
         $this->info("  ✓ Capacity: {$testEvent->tickets_capacity}");
 
-        // 4. Génération de N tickets fictifs
-        $this->info("→ Génération de {$count} tickets fictifs…");
-        $bar = $this->output->createProgressBar($count);
-        $bar->start();
+        // 4. Génération OPTIONNELLE de tickets fictifs
+        if ($count > 0) {
+            $this->info("→ Génération de {$count} tickets fictifs (optionnel, pour tests spécifiques)…");
+            $bar = $this->output->createProgressBar($count);
+            $bar->start();
 
-        $ticketTypeIds = $testEvent->ticketTypes()->pluck('id')->toArray();
+            $ticketTypeIds = $testEvent->ticketTypes()->pluck('id')->toArray();
 
-        DB::transaction(function () use ($testEvent, $count, $bar, $ticketTypeIds) {
-            for ($i = 1; $i <= $count; $i++) {
-                $firstName = $this->firstNames[array_rand($this->firstNames)];
-                $lastName  = $this->lastNames[array_rand($this->lastNames)];
-                $shortCode = 'TEST' . strtoupper(Str::random(4));
-                $orderCode = 'TEST-' . strtoupper(Str::random(8));
+            DB::transaction(function () use ($testEvent, $count, $bar, $ticketTypeIds) {
+                for ($i = 1; $i <= $count; $i++) {
+                    $firstName = $this->firstNames[array_rand($this->firstNames)];
+                    $lastName  = $this->lastNames[array_rand($this->lastNames)];
+                    $shortCode = 'TEST' . strtoupper(Str::random(4));
+                    $orderCode = 'TEST-' . strtoupper(Str::random(8));
 
-                $type = $this->ticketTypesSample[array_rand($this->ticketTypesSample)];
-                $isVip = $type === 'VIP';
+                    $type = $this->ticketTypesSample[array_rand($this->ticketTypesSample)];
+                    $isVip = $type === 'VIP';
 
-                EventTicket::create([
-                    'event_id'       => $testEvent->id,
-                    'ticket_type_id' => $ticketTypeIds ? $ticketTypeIds[array_rand($ticketTypeIds)] : null,
-                    'order_code'     => $orderCode,
-                    'ticket_number'  => (string) random_int(100000000000, 999999999999),
-                    'short_code'     => $shortCode,
-                    'qr_payload'     => base64_encode(json_encode([
-                        'ticket_id' => 0,
-                        'event_id'  => $testEvent->id,
-                        'ts'        => time(),
-                        'sig'       => Str::random(16),
-                    ])),
-                    'access_token'   => Str::random(32),
-                    'first_name'     => $firstName,
-                    'last_name'      => $lastName,
-                    'email'          => strtolower("{$firstName}.{$lastName}.{$i}@test.nwc.local"),
-                    'phone'          => '05' . random_int(10000000, 99999999),
-                    'status'         => 'confirmed',
-                    'payment_status' => $isVip ? 'paid' : 'free',
-                    'price_fcfa'     => $isVip ? 15000 : 0,
-                    'whatsapp_opt_in'=> false,
-                ]);
-                $bar->advance();
-            }
-        });
+                    EventTicket::create([
+                        'event_id'       => $testEvent->id,
+                        'ticket_type_id' => $ticketTypeIds ? $ticketTypeIds[array_rand($ticketTypeIds)] : null,
+                        'order_code'     => $orderCode,
+                        'ticket_number'  => (string) random_int(100000000000, 999999999999),
+                        'short_code'     => $shortCode,
+                        'qr_payload'     => base64_encode(json_encode([
+                            'ticket_id' => 0,
+                            'event_id'  => $testEvent->id,
+                            'ts'        => time(),
+                            'sig'       => Str::random(16),
+                        ])),
+                        'access_token'   => Str::random(32),
+                        'first_name'     => $firstName,
+                        'last_name'      => $lastName,
+                        'email'          => strtolower("{$firstName}.{$lastName}.{$i}@test.nwc.local"),
+                        'phone'          => '05' . random_int(10000000, 99999999),
+                        'status'         => 'confirmed',
+                        'payment_status' => $isVip ? 'paid' : 'free',
+                        'price_fcfa'     => $isVip ? 15000 : 0,
+                        'whatsapp_opt_in'=> false,
+                    ]);
+                    $bar->advance();
+                }
+            });
 
-        $bar->finish();
-        $this->newLine(2);
+            $bar->finish();
+            $this->newLine(2);
+        }
 
         // 5. Récap
+        $this->newLine();
         $this->info('═══════════════════════════════════════════════════════');
-        $this->info('  ✅ SIMULATION PRÊTE');
+        $this->info('  ✅ ÉVÉNEMENT TEST PRÊT — VIDE (0 tickets)');
         $this->info('═══════════════════════════════════════════════════════');
-        $this->line("  Event test    : {$testEvent->title}");
+        $this->line("  Event         : {$testEvent->title}");
         $this->line("  ID            : {$testEvent->id}");
         $this->line("  Slug          : {$testEvent->slug}");
-        $this->line("  Tickets créés : {$count}");
-        $this->newLine();
-        $this->info('  📱 Pour tester le SCAN :');
-        $this->line("     → Ouvre /scan?event={$testEvent->id}");
-        $this->line("     → Scanne un des tickets par son short_code (ex: TESTXXXX)");
-        $this->newLine();
-        $this->info('  📊 Pour tester la LISTE DE PRÉSENCE :');
-        $this->line("     → /admin/evenements/{$testEvent->id}/presence");
-        $this->line("     → /admin/evenements/{$testEvent->id}/presence/kiosque");
-        $this->newLine();
-        $this->info('  🎫 Pour tester la BILLETTERIE :');
-        $this->line("     → /admin/evenements/{$testEvent->id}/billetterie");
-        $this->newLine();
-        $this->info('  📈 Pour tester le DASHBOARD 360 :');
-        $this->line('     → /admin/billetterie/vue-360 (les stats incluent maintenant l\'event test)');
+        $this->line("  Capacity      : {$testEvent->tickets_capacity} places");
+        $this->line("  Tickets vendus: " . ($count > 0 ? "{$count} (fictifs)" : '0 — prêt pour vraies inscriptions'));
         $this->newLine();
 
-        // 6. Sample des short codes pour scan rapide
-        $samples = EventTicket::where('event_id', $testEvent->id)
-            ->inRandomOrder()
-            ->limit(5)
-            ->pluck('short_code');
-        $this->info('  🎯 Short codes à essayer pour le scan :');
-        foreach ($samples as $code) {
-            $this->line("     • {$code}");
-        }
+        $this->info('  🎫 INSCRIPTION DEPUIS TON ÉQUIPE :');
+        $this->line("     → Chaque personne va sur : /billetterie/{$testEvent->slug}");
+        $this->line("     → Remplit son nom/email/téléphone comme en vrai");
+        $this->line("     → Reçoit son ticket avec QR par email (adresse @test.nwc.local ignorée par SMTP)");
+        $this->line("     → Note : utilise ta VRAIE adresse email pour recevoir le ticket");
         $this->newLine();
+
+        $this->info('  📱 SCAN À L\'ENTRÉE :');
+        $this->line("     → /scan?event={$testEvent->id}");
+        $this->line('     → Scanne le QR reçu par email OU tape le short_code');
+        $this->newLine();
+
+        $this->info('  📊 SUIVI TEMPS RÉEL :');
+        $this->line("     → Liste présence   : /admin/evenements/{$testEvent->id}/presence");
+        $this->line("     → Vue kiosque      : /admin/evenements/{$testEvent->id}/presence/kiosque");
+        $this->line("     → Dashboard event  : /admin/evenements/{$testEvent->id}/billetterie");
+        $this->line("     → Dashboard 360°   : /admin/billetterie/vue-360");
+        $this->newLine();
+
+        $this->info('  🔔 CE QUI SE DÉCLENCHE AUTO PENDANT LE TEST :');
+        $this->line('     - Chaque inscription → mail avec ticket QR');
+        $this->line('     - À 80% de la capacity → alerte email admins');
+        $this->line('     - À 95% de la capacity → alerte email admins');
+        $this->line('     - Waitlist si complet → alerte email admins');
+        $this->newLine();
+
+        // Samples des short codes uniquement si tickets créés
+        if ($count > 0) {
+            $samples = EventTicket::where('event_id', $testEvent->id)
+                ->inRandomOrder()
+                ->limit(5)
+                ->pluck('short_code');
+            $this->info('  🎯 Short codes à essayer pour scan rapide :');
+            foreach ($samples as $code) {
+                $this->line("     • {$code}");
+            }
+            $this->newLine();
+        }
 
         $this->info('  🗑  Pour supprimer et recommencer :');
-        $this->line('     php artisan nwc:simulate-test-bal --reset --tickets=' . $count);
+        $this->line('     php artisan nwc:simulate-test-bal --reset');
         $this->newLine();
 
         return self::SUCCESS;
