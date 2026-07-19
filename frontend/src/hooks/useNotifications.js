@@ -33,7 +33,6 @@ export function useNotificationBootstrap() {
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount)
   const setList        = useNotificationStore((s) => s.setList)
   const addRealtime    = useNotificationStore((s) => s.addRealtime)
-  const currentList    = useNotificationStore((s) => s.list)
 
   // Sync initial via TanStack Query.
   const { data: countData } = useNotificationsCount()
@@ -47,9 +46,11 @@ export function useNotificationBootstrap() {
     if (!listData?.data) return
 
     // Merge intelligent : les updates locaux (is_read=true fait par un clic
-    // optimistic) NE DOIVENT PAS être écrasés par le refetch serveur. On garde
-    // is_read=true si soit le serveur soit le local l'a marqué. Empêche
-    // "la notif que je viens de lire réapparaît non-lue quand je rouvre".
+    // optimistic) NE DOIVENT PAS être écrasés par le refetch serveur.
+    // ⚠️ On accède au store via getState() (accès direct, PAS de souscription)
+    // pour ÉVITER que le changement de la liste re-déclenche cet effet.
+    // Sans ça : setList → currentList change → re-run effet → setList → boucle infinie.
+    const currentList = useNotificationStore.getState().list
     const localById = new Map(currentList.map((n) => [n.id, n]))
     const merged = listData.data.map((serverN) => {
       const localN = localById.get(serverN.id)
@@ -58,7 +59,7 @@ export function useNotificationBootstrap() {
       return { ...serverN, is_read }
     })
     setList(merged)
-  }, [listData, setList, currentList])
+  }, [listData, setList])
 
   // Subscribe Echo (canal privé personnel — broadcastings Laravel par défaut).
   useEffect(() => {
