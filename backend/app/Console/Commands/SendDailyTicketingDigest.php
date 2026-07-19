@@ -25,6 +25,15 @@ class SendDailyTicketingDigest extends Command
 
     public function handle(): int
     {
+        // Kill-switch : désactivé par défaut car `tickets:weekly-recap` (lundi 08:00)
+        // fait déjà le récap. Réactiver via NWC_NOTIF_DAILY_DIGEST_ENABLED=true.
+        if (! config('notifications.enabled.digest_quotidien', false)) {
+            $this->info('Digest quotidien désactivé (config notifications.enabled.digest_quotidien=false).');
+            $this->line('  → Le récap hebdomadaire (tickets:weekly-recap, lundi 08:00) le remplace.');
+            $this->line('  → Pour réactiver : NWC_NOTIF_DAILY_DIGEST_ENABLED=true dans .env');
+            return self::SUCCESS;
+        }
+
         $yesterday    = now()->copy()->subDay();
         $yesterdayStart = $yesterday->copy()->startOfDay();
         $yesterdayEnd   = $yesterday->copy()->endOfDay();

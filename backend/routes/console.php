@@ -65,12 +65,16 @@ Schedule::command('tickets:remind-day-before')
 // === Sprint B — Notifications billetterie ==================
 // ============================================================
 
-// #2 Digest quotidien billetterie — 08:00 chaque matin.
-Schedule::command('nwc:tickets-daily-digest')
-    ->dailyAt('08:00')
-    ->name('nwc:tickets-daily-digest')
-    ->onOneServer()
-    ->withoutOverlapping();
+// #2 Digest quotidien billetterie — DÉSACTIVÉ.
+// Le récap hebdomadaire `tickets:weekly-recap` (lundi 08:00, cf. plus bas)
+// donne déjà la vue d'ensemble. La command reste disponible pour test manuel
+// (`php artisan nwc:tickets-daily-digest`) mais n'est plus planifiée.
+// Pour la réactiver : décommenter + mettre NWC_NOTIF_DAILY_DIGEST_ENABLED=true.
+// Schedule::command('nwc:tickets-daily-digest')
+//     ->dailyAt('08:00')
+//     ->name('nwc:tickets-daily-digest')
+//     ->onOneServer()
+//     ->withoutOverlapping();
 
 // #5 Rappel J-1 (hourly) — cible events avec starts_at entre now+24h et now+25h.
 // Idempotence via flag reminders_j1_sent_at sur Event.

@@ -14,6 +14,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Notifications activées / désactivées
+    |--------------------------------------------------------------------------
+    | Les notifications désactivées ici NE SONT PAS ENVOYÉES du tout, même
+    | si un utilisateur les a activées dans ses préférences. À utiliser pour
+    | couper un canal en prod sans redéploiement (via .env).
+    */
+    'enabled' => [
+        // Mail à chaque nouvelle inscription billetterie — désactivé par
+        // défaut car verbeux ; l'admin voit tout dans le récap hebdo.
+        'nouvelle_inscription' => (bool) env('NWC_NOTIF_NEW_TICKET_ENABLED', false),
+
+        // Digest QUOTIDIEN 08:00 — désactivé car `tickets:weekly-recap`
+        // (lundi 08:00) fait déjà le récap. Réactiver via .env si besoin.
+        'digest_quotidien'     => (bool) env('NWC_NOTIF_DAILY_DIGEST_ENABLED', false),
+
+        // Alertes qui restent utiles
+        'alerte_capacite'      => (bool) env('NWC_NOTIF_CAPACITY_ENABLED', true),
+        'alerte_waitlist'      => (bool) env('NWC_NOTIF_WAITLIST_ENABLED', true),
+        'rappel_j1'            => (bool) env('NWC_NOTIF_REMINDER_J1_ENABLED', true),
+        'bienvenue'            => (bool) env('NWC_NOTIF_WELCOME_ENABLED', true),
+        'anomalie_securite'    => (bool) env('NWC_NOTIF_SECURITY_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Throttles — anti-spam
     |--------------------------------------------------------------------------
     */

@@ -33,6 +33,11 @@ class BilletterieNotifier
 
     public function nouvelleInscription(Event $event, EventTicket $ticket): void
     {
+        // Kill-switch global : ce mail est verbeux, désactivé par défaut.
+        // Le récap hebdo (tickets:weekly-recap, lundi 8h) donne la vue d'ensemble.
+        // Pour réactiver ponctuellement : NWC_NOTIF_NEW_TICKET_ENABLED=true dans .env
+        if (! config('notifications.enabled.nouvelle_inscription', false)) return;
+
         try {
             $throttleKey = "nwc_notif_new_ticket_e{$event->id}";
             $minutes = (int) config('notifications.throttle.nouvelle_inscription_minutes', 5);
