@@ -35,11 +35,22 @@ class GovernorDashboardResource extends JsonResource
                 'attendance_avg_last_4_weeks' => (float) ($d['attendance_avg_last_4_weeks'] ?? 0),
             ],
             'trends' => [
-                'members_trend'    => $d['members_trend']    ?? [],
-                'attendance_trend' => $d['attendance_trend'] ?? [],
+                'members_trend'    => $this->asArray($d['members_trend']    ?? []),
+                'attendance_trend' => $this->asArray($d['attendance_trend'] ?? []),
             ],
-            'cells_health' => $d['cells_health'] ?? [],
+            // Force array : le cache peut désérialiser une Collection Eloquent
+            // comme objet non-itérable côté JSON. `values()` garantit un tableau indexé.
+            'cells_health' => $this->asArray($d['cells_health'] ?? []),
             'cached_until' => $d['cached_until'] ?? null,
         ];
+    }
+
+    /** Convertit toute Collection Laravel/objet itérable en array indexé simple. */
+    private function asArray($value): array
+    {
+        if (is_array($value)) return array_values($value);
+        if ($value instanceof \Illuminate\Support\Collection) return $value->values()->all();
+        if (is_iterable($value)) return array_values(iterator_to_array($value));
+        return [];
     }
 }

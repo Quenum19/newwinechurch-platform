@@ -78,13 +78,22 @@ export default function GovDashboard() {
     )
   }
 
-  const { department, kpis, trends, cells_health: cellsHealth } = data
+  const { department, kpis: rawKpis, trends: rawTrends, cells_health: rawCellsHealth } = data
+  // Defensive : le cache Laravel peut désérialiser certaines Collections comme
+  // objets non-array. On normalise toujours en array/objet safe.
+  const kpis = rawKpis ?? {}
+  const trends = rawTrends ?? {}
+  const cellsHealth = Array.isArray(rawCellsHealth)
+    ? rawCellsHealth
+    : (rawCellsHealth && typeof rawCellsHealth === 'object'
+        ? Object.values(rawCellsHealth)
+        : [])
   const reportsExpected = 1
   const alerts = []
-  if (kpis.reports_late_count > 0) {
+  if ((kpis.reports_late_count ?? 0) > 0) {
     alerts.push({ label: `${kpis.reports_late_count} rapport(s) département en retard`, link: '/gouverneur/rapports' })
   }
-  const criticalCells = (cellsHealth ?? []).filter((c) => c.status === 'critical')
+  const criticalCells = cellsHealth.filter((c) => c?.status === 'critical')
   if (criticalCells.length > 0) {
     alerts.push({ label: `${criticalCells.length} cellule(s) critique(s)`, link: '/gouverneur/cellules' })
   }
