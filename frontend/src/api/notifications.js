@@ -32,8 +32,11 @@ export function useMarkNotificationRead() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id) => api.post(`/notifications/${id}/mark-read`).then((r) => r.data),
+    // Silent : le store Zustand a déjà fait l'optimistic update.
+    // On invalide seulement le compteur (pas la liste) pour éviter que
+    // le refetch de la liste écrase les updates locaux visuels.
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['notifications'] })
+      qc.invalidateQueries({ queryKey: ['notifications', 'count'] })
     },
   })
 }

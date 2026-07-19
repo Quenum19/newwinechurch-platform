@@ -104,6 +104,7 @@ const MediaGalleryPage  = lazy(() => import('./pages/admin/MediaGalleryPage.jsx'
 const PrayersList       = lazy(() => import('./pages/admin/PrayersList.jsx'))
 const NewsletterPage    = lazy(() => import('./pages/admin/NewsletterPage.jsx'))
 const ActivityLogPage   = lazy(() => import('./pages/admin/ActivityLogPage.jsx'))
+const NotificationsInboxPage = lazy(() => import('./pages/shared/NotificationsInboxPage.jsx'))
 const AdminReportsList  = lazy(() => import('./pages/admin/AdminReportsList.jsx'))
 const AdminReportDetail = lazy(() => import('./pages/admin/AdminReportDetail.jsx'))
 const ReportTemplateBuilder = lazy(() => import('./pages/admin/ReportTemplateBuilder.jsx'))
@@ -371,6 +372,7 @@ export default function App() {
           <Route path="/admin/prieres"                    element={<PrayersList />} />
           <Route path="/admin/newsletter"                 element={<NewsletterPage />} />
           <Route path="/admin/journal"                    element={<ActivityLogPage />} />
+          <Route path="/admin/notifications"              element={<NotificationsInboxPage />} />
           <Route path="/admin/profil"                     element={<MyProfile />} />
           <Route path="/admin/profil/notifications"       element={<MyNotificationPreferences />} />
           <Route path="/admin/mot-de-passe"               element={<ChangePasswordPage />} />

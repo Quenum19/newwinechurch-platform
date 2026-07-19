@@ -140,7 +140,9 @@ function buildNotifLink(notif, roles) {
       if (isLeader)   return '/leader'
       return '/mon-espace'
     default:
-      return null
+      // Fallback : au moins ouvrir l'inbox complète (jamais null-click).
+      if (isStaff) return '/admin/notifications'
+      return '/mon-espace'
   }
 }
 
@@ -156,6 +158,7 @@ export default function NotificationCenter() {
 
   const unreadCount = useNotificationStore((s) => s.unreadCount)
   const list        = useNotificationStore((s) => s.list)
+  const markReadLocal     = useNotificationStore((s) => s.markRead)
   const markAllReadLocal  = useNotificationStore((s) => s.markAllRead)
   const removeLocal       = useNotificationStore((s) => s.remove)
 
@@ -175,17 +178,21 @@ export default function NotificationCenter() {
   }, [open])
 
   /**
-   * Clic sur une notif : marquer comme lu + navigation si lien + retrait
-   * automatique de la pile locale (UX demandée — pas besoin de "tout marquer
-   * comme lu" pour faire disparaître l'item consulté).
+   * Clic sur une notif :
+   *  1. Marquer comme lue (optimistic local + API async)
+   *  2. Naviguer vers la page cible (buildNotifLink garantit toujours une cible)
+   *  3. NE PAS retirer de la pile — la notif doit rester visible pour history
+   *     (l'utilisateur peut supprimer via l'icône corbeille s'il veut vraiment).
    */
   const handleClick = (n) => {
-    const link = buildNotifLink(n, roles)
+    // Optimistic update local (décrémente immédiatement le badge)
     if (!n.is_read) {
-      markRead.mutate(n.id)
+      markReadLocal(n.id)     // store Zustand : is_read=true + unreadCount--
+      markRead.mutate(n.id)   // API : persist en BDD (async)
     }
-    // Auto-retrait de la pile locale.
-    removeLocal(n.id)
+
+    // Navigation systématique (buildNotifLink garantit toujours une cible)
+    const link = buildNotifLink(n, roles)
     if (link) {
       setOpen(false)
       navigate(link)
@@ -321,16 +328,32 @@ export default function NotificationCenter() {
               )}
             </div>
 
-            {/* Footer */}
-            {list.length > 0 && unreadCount > 0 && (
-              <div className="border-t border-[#E8DFC9] bg-[#F5EFE2] px-4 py-2.5">
+            {/* Footer : "Voir toutes" (toujours visible) + "Tout marquer lu" (si non-lues) */}
+            {list.length > 0 && (
+              <div className="border-t border-[#E8DFC9] bg-[#F5EFE2] px-4 py-2.5 flex items-center gap-3">
                 <button
-                  onClick={handleMarkAll}
-                  className="w-full text-[13px] font-medium text-[#B0273A] hover:text-[#6E1424] transition flex items-center justify-center gap-1.5"
+                  onClick={() => {
+                    setOpen(false)
+                    // Staff → inbox admin, sinon dashboard perso
+                    const isStaff = roles.includes('superadmin') || roles.includes('pasteur') ||
+                                    roles.includes('admin') || roles.includes('admin-site') ||
+                                    roles.includes('rh') || roles.includes('tresorier') ||
+                                    roles.includes('accueil') || roles.includes('admin-site')
+                    navigate(isStaff ? '/admin/notifications' : '/mon-espace')
+                  }}
+                  className="text-[13px] font-medium text-[#6B5F4E] hover:text-[#1F1A14] transition inline-flex items-center gap-1.5"
                 >
-                  <Check size={14} />
-                  {t('notifications.markAllRead', 'Tout marquer comme lu')}
+                  {t('notifications.viewAll', 'Voir toutes')} <ChevronRight size={13}/>
                 </button>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAll}
+                    className="ml-auto text-[13px] font-medium text-[#B0273A] hover:text-[#6E1424] transition inline-flex items-center gap-1.5"
+                  >
+                    <Check size={14} />
+                    {t('notifications.markAllRead', 'Tout marquer comme lu')}
+                  </button>
+                )}
               </div>
             )}
           </motion.div>

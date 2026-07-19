@@ -33,6 +33,7 @@ export function useNotificationBootstrap() {
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount)
   const setList        = useNotificationStore((s) => s.setList)
   const addRealtime    = useNotificationStore((s) => s.addRealtime)
+  const currentList    = useNotificationStore((s) => s.list)
 
   // Sync initial via TanStack Query.
   const { data: countData } = useNotificationsCount()
@@ -43,8 +44,21 @@ export function useNotificationBootstrap() {
   }, [countData, setUnreadCount])
 
   useEffect(() => {
-    if (listData?.data) setList(listData.data)
-  }, [listData, setList])
+    if (!listData?.data) return
+
+    // Merge intelligent : les updates locaux (is_read=true fait par un clic
+    // optimistic) NE DOIVENT PAS être écrasés par le refetch serveur. On garde
+    // is_read=true si soit le serveur soit le local l'a marqué. Empêche
+    // "la notif que je viens de lire réapparaît non-lue quand je rouvre".
+    const localById = new Map(currentList.map((n) => [n.id, n]))
+    const merged = listData.data.map((serverN) => {
+      const localN = localById.get(serverN.id)
+      // Si local a is_read=true, on garde ; sinon on prend le serveur.
+      const is_read = (localN?.is_read === true) || (serverN.is_read === true)
+      return { ...serverN, is_read }
+    })
+    setList(merged)
+  }, [listData, setList, currentList])
 
   // Subscribe Echo (canal privé personnel — broadcastings Laravel par défaut).
   useEffect(() => {
