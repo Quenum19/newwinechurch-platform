@@ -18,6 +18,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell, Check, Trash2, FileText, AlertTriangle, Award, Users,
   CalendarClock, X, ChevronRight,
+  Ticket, TrendingUp, Clock, ShieldAlert, Sparkles, ListOrdered,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { fr, enUS } from 'date-fns/locale'
@@ -33,6 +34,7 @@ import { cn } from '@/utils/cn'
 
 function buildTypeMeta(t) {
   return {
+    // ============ Rapports & cellules (existant) ============
     DepartmentReportSubmittedNotification: { icon: FileText,      color: 'text-[#B0273A]', bg: 'bg-[#FCE7EB]', label: t('notifications.types.deptReportSubmitted', 'Rapport département') },
     DepartmentReportReviewedNotification:  { icon: Check,         color: 'text-emerald-700', bg: 'bg-emerald-100', label: t('notifications.types.deptReportReviewed', 'Rapport revu') },
     CellReportSubmittedNotification:       { icon: FileText,      color: 'text-[#B0273A]', bg: 'bg-[#FCE7EB]', label: t('notifications.types.cellReportSubmitted', 'Rapport cellule') },
@@ -41,16 +43,31 @@ function buildTypeMeta(t) {
     GovernorAppointedNotification:         { icon: Award,         color: 'text-[#B79358]', bg: 'bg-[#F5EFE2]',  label: t('notifications.types.governorAppointed', 'Nomination') },
     CellLeaderAppointedNotification:       { icon: Users,         color: 'text-[#B79358]', bg: 'bg-[#F5EFE2]',  label: t('notifications.types.cellLeaderAppointed', 'Nomination') },
     WeeklyDigestNotification:              { icon: CalendarClock, color: 'text-blue-700',   bg: 'bg-blue-100',    label: t('notifications.types.weeklyDigest', 'Digest hebdo') },
+
+    // ============ Billetterie (Sprint B) ============
+    NouvelleInscriptionAdminNotification:  { icon: Ticket,       color: 'text-[#B0273A]',  bg: 'bg-[#FCE7EB]',  label: t('notifications.types.newTicket', 'Nouvelle inscription') },
+    DigestQuotidienBilletterieNotification:{ icon: CalendarClock, color: 'text-blue-700',  bg: 'bg-blue-100',    label: t('notifications.types.dailyDigest', 'Digest billetterie') },
+    AlerteCapaciteNotification:            { icon: TrendingUp,   color: 'text-orange-700',  bg: 'bg-orange-100',  label: t('notifications.types.capacityAlert', 'Alerte capacité') },
+    AlerteWaitlistNotification:            { icon: ListOrdered,  color: 'text-purple-700',  bg: 'bg-purple-100',  label: t('notifications.types.waitlistAlert', 'Liste d\'attente') },
+    RappelJourJ1Notification:              { icon: Clock,        color: 'text-emerald-700', bg: 'bg-emerald-100', label: t('notifications.types.j1Reminder', 'Rappel J-1') },
+    BienvenueNouveauMembreNotification:    { icon: Sparkles,     color: 'text-[#B79358]',  bg: 'bg-[#F5EFE2]',   label: t('notifications.types.welcome', 'Bienvenue') },
+    AlerteAnomalieSecuriteNotification:    { icon: ShieldAlert,  color: 'text-red-700',    bg: 'bg-red-100',      label: t('notifications.types.securityAlert', 'Alerte sécurité') },
   }
 }
 
 function buildNotifTitle(t, typeMeta, notif) {
+  const d = notif.data?.data ?? notif.data ?? {}
+  // Format Sprint B : le payload embarque déjà un titre custom (plus riche
+  // que le label générique du type). On l'utilise en priorité.
+  if (d.title && typeof d.title === 'string') return d.title
   const meta = typeMeta[notif.type] ?? { label: t('notifications.defaultTitle', 'Notification') }
   return meta.label
 }
 
 function buildNotifMessage(t, notif) {
   const d = notif.data?.data ?? notif.data ?? {}
+  // Format Sprint B : payload avec body pré-formaté (contexte complet).
+  if (d.body && typeof d.body === 'string') return d.body
   const dash = '—'
   switch (notif.type) {
     case 'DepartmentReportSubmittedNotification':
@@ -85,6 +102,11 @@ function buildNotifMessage(t, notif) {
  */
 function buildNotifLink(notif, roles) {
   const d = notif.data?.data ?? notif.data ?? {}
+
+  // Format Sprint B : URL directement dans le payload (déjà validée serveur).
+  // Le rôle n'a pas d'impact car les endpoints backend gèrent leur permission.
+  if (d.url && typeof d.url === 'string' && d.url.startsWith('/')) return d.url
+
   const isStaff = roles.includes('superadmin') || roles.includes('pasteur') ||
                   roles.includes('admin') || roles.includes('admin-site') ||
                   roles.includes('rh')
