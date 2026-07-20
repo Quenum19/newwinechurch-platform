@@ -285,15 +285,6 @@
           Document généré le {{ $generatedAt->locale('fr')->isoFormat('LL [à] HH[h]mm') }}
         </div>
       </td>
-      <td class="header-badge-cell">
-        <span class="mode-badge mode-{{ $mode }}">
-          @if($mode === 'backup')
-            À cocher
-          @else
-            Temps réel
-          @endif
-        </span>
-      </td>
     </tr>
   </table>
 </div>
