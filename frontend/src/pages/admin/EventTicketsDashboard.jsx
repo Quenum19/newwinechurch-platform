@@ -16,7 +16,7 @@ import {
   Calendar, Users, Ticket, Send, Download, ScanLine, CheckCircle2,
   XCircle, AlertCircle, Mail, Phone, Search, RotateCcw, Loader2,
   CreditCard, Check, X, Clock, FileImage, TrendingUp, PieChart as PieIcon,
-  RefreshCw, Ban, ListOrdered, ArrowRightCircle, Trash2, ShieldCheck,
+  RefreshCw, Ban, ListOrdered, ArrowRightCircle, Trash2, ShieldCheck, Copy,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -28,6 +28,7 @@ import {
 import BackButton from '@/components/admin/BackButton.jsx'
 import RefundModal from '@/components/admin/RefundModal.jsx'
 import StaffPanel from '@/components/admin/StaffPanel.jsx'
+import DuplicatesPanel from '@/components/admin/DuplicatesPanel.jsx'
 import { events } from '@/api/admin'
 
 const PALETTE = ['#8B1A2F', '#C9A961', '#0A0908', '#6F4F2C', '#A36C3B', '#3D2A1E']
@@ -260,6 +261,12 @@ export default function EventTicketsDashboard() {
             label="Analytics"
           />
           <TabButton
+            active={tab === 'duplicates'}
+            onClick={() => setTab('duplicates')}
+            icon={Copy}
+            label="Doublons"
+          />
+          <TabButton
             active={tab === 'staff'}
             onClick={() => setTab('staff')}
             icon={ShieldCheck}
@@ -270,6 +277,9 @@ export default function EventTicketsDashboard() {
 
       {/* Étape B — Onglet Staff (rôles scopés + scanners externes) */}
       {tab === 'staff' && <StaffPanel eventId={id}/>}
+
+      {/* Onglet Doublons — détection nom/email/téléphone identiques ou similaires */}
+      {tab === 'duplicates' && <DuplicatesPanel eventId={id} event={event}/>}
 
       {/* Onglet Liste d'attente */}
       {tab === 'waitlist' && (

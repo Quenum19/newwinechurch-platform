@@ -32,6 +32,7 @@ class EventTicketsController extends Controller
         private TicketIssuer $issuer,
         private TicketPaymentService $payments,
         private RefundService $refunds,
+        private \App\Services\TicketDuplicateDetector $duplicateDetector,
     ) {}
 
     /**
@@ -684,5 +685,79 @@ class EventTicketsController extends Controller
             'message' => "Paiement refusé — {$count} ticket(s) annulés et inscrit notifié.",
             'count'   => $count,
         ]);
+    }
+
+    // ================================================================
+    // === Détection doublons =========================================
+    // ================================================================
+
+    /** Liste des groupes de doublons potentiels (certain + probable). */
+    public function duplicates(Request $request, int $eventId): JsonResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeRead($request, $event);
+
+        $groups = $this->duplicateDetector->forEvent($eventId);
+
+        $counts = [
+            'certain'  => $groups->where('confidence', 'certain')->count(),
+            'probable' => $groups->where('confidence', 'probable')->count(),
+            'total'    => $groups->count(),
+        ];
+
+        return response()->json([
+            'event' => [
+                'id'    => $event->id,
+                'title' => $event->display_title ?? $event->title,
+            ],
+            'counts' => $counts,
+            'groups' => $groups->values()->toArray(),
+        ]);
+    }
+
+    /** Marque un groupe comme "vérifié — pas un doublon". */
+    public function verifyDuplicateGroup(Request $request, int $eventId): JsonResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeManage($request, $event);
+
+        $data = $request->validate([
+            'ticket_ids'   => ['required', 'array', 'min:2'],
+            'ticket_ids.*' => ['integer', 'exists:event_tickets,id'],
+            'note'         => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $ids = collect($data['ticket_ids'])->sort()->values()->toArray();
+        $hash = sha1(implode(',', $ids));
+
+        \DB::table('event_ticket_duplicate_verifications')->updateOrInsert(
+            ['event_id' => $eventId, 'group_hash' => $hash],
+            [
+                'ticket_ids'  => json_encode($ids),
+                'verified_by' => $request->user()->id,
+                'verified_at' => now(),
+                'note'        => $data['note'] ?? null,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ],
+        );
+
+        return response()->json([
+            'message' => 'Groupe marqué comme vérifié (pas un doublon).',
+            'hash'    => $hash,
+        ]);
+    }
+
+    /** Export Excel des doublons pour vérification hors ligne. */
+    public function duplicatesExport(Request $request, int $eventId): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeRead($request, $event);
+
+        $filename = 'doublons-' . \Illuminate\Support\Str::slug($event->title) . '-' . now()->format('Ymd-Hi') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TicketDuplicatesExport($event, $this->duplicateDetector),
+            $filename,
+        );
     }
 }

@@ -365,6 +365,16 @@ export const events = {
   ticketsBulk:  async (eventId, action, ids) =>
     (await api.post(`/admin/events/${eventId}/tickets/bulk`, { action, ids })).data,
 
+  // === Doublons — détection + vérification manuelle + export ===
+  ticketsDuplicates: async (eventId) =>
+    (await api.get(`/admin/events/${eventId}/tickets/duplicates`)).data,
+  ticketsDuplicatesExport: (eventId) =>
+    downloadExcel(`/admin/events/${eventId}/tickets/duplicates/export`),
+  ticketsDuplicatesVerify: async (eventId, ticketIds, note = null) =>
+    (await api.post(`/admin/events/${eventId}/tickets/duplicates/verify`, {
+      ticket_ids: ticketIds, note,
+    })).data,
+
   // === Phase 2 — Types de tickets ===
   ticketTypesList:   async (eventId) => (await api.get(`/admin/events/${eventId}/ticket-types`)).data,
   ticketTypeCreate:  async (eventId, data) => (await api.post(`/admin/events/${eventId}/ticket-types`, data)).data,

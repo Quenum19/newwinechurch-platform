@@ -583,6 +583,10 @@ Route::middleware(['auth:sanctum'])
     Route::get('/events/{id}/tickets',                   [AdminEventTicketsController::class, 'index'])->whereNumber('id');
     Route::get('/events/{id}/tickets/stats',             [AdminEventTicketsController::class, 'stats'])->whereNumber('id');
     Route::get('/events/{id}/tickets/export',            [AdminEventTicketsController::class, 'export'])->whereNumber('id');
+    // Doublons potentiels — détection + vérification manuelle + export.
+    Route::get ('/events/{id}/tickets/duplicates',        [AdminEventTicketsController::class, 'duplicates'])->whereNumber('id');
+    Route::get ('/events/{id}/tickets/duplicates/export', [AdminEventTicketsController::class, 'duplicatesExport'])->whereNumber('id');
+    Route::post('/events/{id}/tickets/duplicates/verify', [AdminEventTicketsController::class, 'verifyDuplicateGroup'])->whereNumber('id');
     Route::post('/events/{id}/tickets/{tid}/resend',     [AdminEventTicketsController::class, 'resend'])
          ->whereNumber('id')->whereNumber('tid');
     // Sécurité #H7 audit : rate limit sur scan (anti brute-force short_code)
