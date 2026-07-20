@@ -32,21 +32,27 @@
     background: #FFFFFF;
   }
 
-  /* ─── HEADER ─── */
-  .header {
-    padding-bottom: 12px;
-    margin-bottom: 14px;
+  /* ─── HEADER + BANDEAU CÔTE À CÔTE (économie verticale en paysage) ─── */
+  .top-band {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
     border-bottom: 3px solid #8B1A2F;
+    padding-bottom: 10px;
   }
+  .top-band > tbody > tr > td { vertical-align: middle; }
+  .top-band .header-cell { width: 55%; padding-right: 15px; }
+  .top-band .countdown-cell { width: 45%; padding-left: 10px; }
+
   .header-table { width: 100%; border-collapse: collapse; }
   .header-table td { vertical-align: middle; }
-  .header-logo-cell { width: 70px; padding-right: 12px; }
-  .header-logo { width: 60px; height: 60px; object-fit: contain; }
+  .header-logo-cell { width: 65px; padding-right: 12px; }
+  .header-logo { width: 55px; height: 55px; object-fit: contain; }
   .header-logo-placeholder {
-    width: 60px; height: 60px;
+    width: 55px; height: 55px;
     background: #8B1A2F; color: #FFFFFF;
-    text-align: center; line-height: 60px;
-    font-size: 20px; font-weight: bold;
+    text-align: center; line-height: 55px;
+    font-size: 18px; font-weight: bold;
     border-radius: 6px;
   }
   .brand-name {
@@ -74,16 +80,15 @@
     color: #FFFFFF;
     padding: 10px 14px;
     border-radius: 5px;
-    margin-bottom: 14px;
     text-align: center;
     font-weight: bold;
   }
   .countdown-banner .big {
-    font-size: 18px;
+    font-size: 16px;
     letter-spacing: 1px;
   }
   .countdown-banner .small {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: normal;
     opacity: 0.95;
     margin-top: 3px;
@@ -166,24 +171,24 @@
   }
   table.calls thead { display: table-header-group; }
   table.calls tbody td {
-    padding: 6px 4px;
+    padding: 8px 5px;
     border: 1px solid #D5CBB7;
     vertical-align: middle;
-    font-size: 9.5px;
+    font-size: 10px;
     background: #FFFFFF;
-    height: 34px;
+    height: 44px;
   }
   table.calls tbody tr { page-break-inside: avoid; }
   table.calls tbody tr:nth-child(even) td { background: #FAF6EE; }
 
-  .col-num       { width: 26px; text-align: center; font-family: DejaVu Sans Mono, monospace; color: #6B5F4E; font-weight: bold; }
-  .col-name      { width: 120px; text-align: left; padding-left: 8px !important; }
+  .col-num       { width: 32px; text-align: center; font-family: DejaVu Sans Mono, monospace; color: #6B5F4E; font-weight: bold; }
+  .col-name      { width: 180px; text-align: left; padding-left: 10px !important; }
   .col-name .last  { font-weight: bold; text-transform: uppercase; }
   .col-name .first { color: #4A3D2A; }
-  .col-phone     { width: 78px; text-align: center; font-family: DejaVu Sans Mono, monospace; font-weight: bold; color: #4A3D2A; }
-  .col-presence  { width: 78px; text-align: center; }
-  .col-guests    { width: 32px; text-align: center; }
-  .col-enreg     { width: 50px; text-align: center; }
+  .col-phone     { width: 110px; text-align: center; font-family: DejaVu Sans Mono, monospace; font-weight: bold; color: #4A3D2A; font-size: 11px; }
+  .col-presence  { width: 100px; text-align: center; }
+  .col-guests    { width: 45px; text-align: center; }
+  .col-enreg     { width: 70px; text-align: center; }
   .col-notes     { width: auto; }
 
   /* Triple case Oui/Non/Attente en ligne */
@@ -199,11 +204,11 @@
   }
   .tri-choice .box, .duo-choice .box {
     display: inline-block;
-    width: 11px; height: 11px;
+    width: 13px; height: 13px;
     border: 1.5px solid #6B5F4E;
     border-radius: 2px;
     vertical-align: middle;
-    margin-right: 2px;
+    margin-right: 3px;
   }
   .tri-choice .lbl, .duo-choice .lbl {
     font-weight: bold;
@@ -222,9 +227,9 @@
   }
   .guests-input {
     display: inline-block;
-    width: 22px;
+    width: 32px;
     border-bottom: 1.5px solid #6B5F4E;
-    height: 14px;
+    height: 16px;
     vertical-align: middle;
   }
 
@@ -260,47 +265,51 @@
 </head>
 <body>
 
-{{-- ═══════════════════════ HEADER ═══════════════════════ --}}
-<div class="header">
-  <table class="header-table">
-    <tr>
-      <td class="header-logo-cell">
-        @if($logoDataUri)
-          <img src="{{ $logoDataUri }}" alt="NWC" class="header-logo">
-        @else
-          <div class="header-logo-placeholder">NWC</div>
-        @endif
-      </td>
-      <td>
-        <div class="brand-name">New Wine Church</div>
-        <div class="brand-tagline">Service Accueil · Call Center</div>
-        <div class="doc-title">Fiche de suivi appels</div>
-        <div class="doc-generated">
-          Générée le {{ $generatedAt->locale('fr')->isoFormat('LL [à] HH[h]mm') }}
+{{-- ═══════════════ HEADER + J−N côte à côte (paysage) ═══════════════ --}}
+<table class="top-band">
+  <tr>
+    <td class="header-cell">
+      <table class="header-table">
+        <tr>
+          <td class="header-logo-cell">
+            @if($logoDataUri)
+              <img src="{{ $logoDataUri }}" alt="NWC" class="header-logo">
+            @else
+              <div class="header-logo-placeholder">NWC</div>
+            @endif
+          </td>
+          <td>
+            <div class="brand-name">New Wine Church</div>
+            <div class="brand-tagline">Service Accueil · Call Center</div>
+            <div class="doc-title">Fiche de suivi appels</div>
+            <div class="doc-generated">
+              Générée le {{ $generatedAt->locale('fr')->isoFormat('LL [à] HH[h]mm') }}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+    <td class="countdown-cell">
+      <div class="countdown-banner">
+        <div class="big">
+          @if($daysUntil > 0)
+            J − {{ $daysUntil }}   ·   {{ $event->title }}
+          @elseif($daysUntil === 0)
+            C'EST AUJOURD'HUI   ·   {{ $event->title }}
+          @else
+            Événement passé   ·   {{ $event->title }}
+          @endif
         </div>
-      </td>
-    </tr>
-  </table>
-</div>
-
-{{-- ═══════════════════════ BANDEAU J-N ═══════════════════════ --}}
-<div class="countdown-banner">
-  <div class="big">
-    @if($daysUntil > 0)
-      J − {{ $daysUntil }}   ·   {{ $event->title }}
-    @elseif($daysUntil === 0)
-      C'EST AUJOURD'HUI   ·   {{ $event->title }}
-    @else
-      Événement passé   ·   {{ $event->title }}
-    @endif
-  </div>
-  <div class="small">
-    @if($event->starts_at)
-      {{ $event->starts_at->locale('fr')->isoFormat('dddd LL [·] HH[h]mm') }}
-      @if($event->location) · {{ $event->location }} @endif
-    @endif
-  </div>
-</div>
+        <div class="small">
+          @if($event->starts_at)
+            {{ $event->starts_at->locale('fr')->isoFormat('dddd LL [·] HH[h]mm') }}
+            @if($event->location) · {{ $event->location }} @endif
+          @endif
+        </div>
+      </div>
+    </td>
+  </tr>
+</table>
 
 {{-- ═══════════════════════ SCRIPT D'APPEL ═══════════════════════ --}}
 <div class="script">
@@ -332,6 +341,11 @@
     <li>
       <strong>Accompagnants enregistrés ?</strong> — « Ces personnes ont-elles déjà leur ticket via la billetterie ? »
       Cocher <strong>O</strong> ou <strong>N</strong>. Si Non, les inscrire manuellement en aval.
+    </li>
+    <li>
+      <strong>Informer du scan à l'entrée</strong> — « <em>À l'arrivée, votre ticket sera scanné à l'entrée
+      (QR code reçu par email). Pensez à l'avoir avec vous sur votre téléphone ou imprimé.
+      Chaque accompagnant doit aussi avoir son propre ticket.</em> »
     </li>
     <li>
       <strong>Questions / Commentaires</strong> — noter les questions, besoins particuliers,

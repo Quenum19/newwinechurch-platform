@@ -795,7 +795,7 @@ class EventTicketsController extends Controller
             'logoDataUri' => $logoDataUri,
             'generatedAt' => now(),
             'daysUntil'   => $daysUntil,
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
         $filename = 'fiche-callcenter-' . \Illuminate\Support\Str::slug($event->title) . '-' . now()->format('Ymd-Hi') . '.pdf';
         return $pdf->stream($filename);
