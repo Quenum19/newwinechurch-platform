@@ -7,7 +7,7 @@ import GoldParticles from '../components/GoldParticles.jsx'
 export default function BonAppetitSlide() {
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, #1a0f14 0%, #0A0A0A 75%)', overflow: 'hidden' }}>
-      <GoldParticles count={40} />
+      <GoldParticles count={22} intensity={0.7}/>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>
         <motion.p
           initial={{ opacity: 0, letterSpacing: '0.1em' }}

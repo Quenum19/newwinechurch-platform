@@ -7,7 +7,7 @@ import GoldParticles from '../components/GoldParticles.jsx'
 export default function OuvertureBalSlide() {
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%)', overflow: 'hidden' }}>
-      <GoldParticles count={120} />
+      <GoldParticles count={55} intensity={1}/>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 3, textAlign: 'center' }}>
         <motion.p
           initial={{ opacity: 0, letterSpacing: '0.2em' }}

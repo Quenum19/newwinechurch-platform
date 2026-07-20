@@ -32,7 +32,7 @@ export default function VoteSlide({ state }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%)', overflow: 'hidden' }}>
-      <GoldParticles count={40} />
+      <GoldParticles count={22} intensity={0.7}/>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4vw', padding: '5vh 5vw', zIndex: 3, alignItems: 'center' }}>
         {/* Colonne gauche — carrousel candidats + titre */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '2rem' }}>

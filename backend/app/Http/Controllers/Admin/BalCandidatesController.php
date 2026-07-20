@@ -42,9 +42,27 @@ class BalCandidatesController extends Controller
             ->orderBy('role')
             ->orderBy('display_order')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(fn ($c) => $this->serialize($c));
 
         return response()->json(['candidates' => $items]);
+    }
+
+    /** Sérialise un candidat avec photo_url absolue. */
+    private function serialize(BalCandidate $c): array
+    {
+        return [
+            'id'            => $c->id,
+            'event_id'      => $c->event_id,
+            'role'          => $c->role,
+            'first_name'    => $c->first_name,
+            'last_name'     => $c->last_name,
+            'photo_path'    => $c->photo_path,
+            'photo_url'     => $c->photo_path ? asset('storage/' . $c->photo_path) : null,
+            'display_order' => $c->display_order,
+            'is_active'     => (bool) $c->is_active,
+            'created_at'    => $c->created_at?->toIso8601String(),
+        ];
     }
 
     /** POST /admin/events/{id}/bal/candidates — création avec upload photo. */
@@ -57,7 +75,7 @@ class BalCandidatesController extends Controller
             'role'          => ['required', Rule::in(['roi', 'reine'])],
             'first_name'    => ['required', 'string', 'max:80'],
             'last_name'     => ['required', 'string', 'max:80'],
-            'photo'         => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photo'         => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:30720'],
             'display_order' => ['nullable', 'integer', 'min:0'],
             'is_active'     => ['nullable', 'boolean'],
         ]);
@@ -80,7 +98,7 @@ class BalCandidatesController extends Controller
 
         return response()->json([
             'message'   => 'Candidat créé.',
-            'candidate' => $candidate->fresh(),
+            'candidate' => $this->serialize($candidate->fresh()),
         ], 201);
     }
 
@@ -95,7 +113,7 @@ class BalCandidatesController extends Controller
             'role'          => ['sometimes', 'required', Rule::in(['roi', 'reine'])],
             'first_name'    => ['sometimes', 'required', 'string', 'max:80'],
             'last_name'     => ['sometimes', 'required', 'string', 'max:80'],
-            'photo'         => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photo'         => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:30720'],
             'display_order' => ['sometimes', 'integer', 'min:0'],
             'is_active'     => ['sometimes', 'boolean'],
         ]);
@@ -114,7 +132,7 @@ class BalCandidatesController extends Controller
 
         return response()->json([
             'message'   => 'Candidat mis à jour.',
-            'candidate' => $candidate->fresh(),
+            'candidate' => $this->serialize($candidate->fresh()),
         ]);
     }
 

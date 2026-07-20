@@ -119,10 +119,11 @@ class BalScreenPublicController extends Controller
             'candidates' => $candidates,
             'photos'     => $photos,
             'event' => [
-                'id'        => $event->id,
-                'title'     => $event->title,
-                'starts_at' => $event->starts_at?->toIso8601String(),
-                'location'  => $event->location,
+                'id'          => $event->id,
+                'title'       => $event->title,
+                'starts_at'   => $event->starts_at?->toIso8601String(),
+                'location'    => $event->location,
+                'cover_image' => $this->resolveCoverImageUrl($event->cover_image),
             ],
             'now' => now()->toIso8601String(),
         ];
@@ -167,5 +168,17 @@ class BalScreenPublicController extends Controller
             'photo_url'  => $c->photo_path ? asset('storage/' . $c->photo_path) : null,
             'votes'      => $votes,
         ];
+    }
+
+    /** Résout l'URL de la cover_image : nullable + gère URL absolue OU chemin. */
+    private function resolveCoverImageUrl(?string $cover): ?string
+    {
+        if (! $cover) return null;
+        // Déjà URL absolue → renvoie tel quel
+        if (str_starts_with($cover, 'http://') || str_starts_with($cover, 'https://')) {
+            return $cover;
+        }
+        // Sinon chemin relatif → préfixe storage/
+        return asset('storage/' . ltrim($cover, '/'));
     }
 }

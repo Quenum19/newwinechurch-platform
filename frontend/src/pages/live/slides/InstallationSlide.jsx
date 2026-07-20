@@ -19,7 +19,7 @@ export default function InstallationSlide() {
         position: 'absolute', inset: 0,
         background: 'linear-gradient(135deg, #1a0f14 0%, #0A0A0A 100%)',
       }} />
-      <GoldParticles count={35} />
+      <GoldParticles count={22} intensity={0.7}/>
 
       <div style={{
         position: 'absolute', inset: 0,

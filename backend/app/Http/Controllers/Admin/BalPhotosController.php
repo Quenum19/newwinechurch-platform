@@ -42,7 +42,20 @@ class BalPhotosController extends Controller
             ->with('uploader:id,name,first_name,last_name')
             ->orderBy('display_order')
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id'            => $p->id,
+                'path'          => $p->path,
+                'url'           => asset('storage/' . $p->path),
+                'caption'       => $p->caption,
+                'display_order' => $p->display_order,
+                'is_visible'    => (bool) $p->is_visible,
+                'uploader'      => $p->uploader ? [
+                    'id'         => $p->uploader->id,
+                    'first_name' => $p->uploader->first_name,
+                    'last_name'  => $p->uploader->last_name,
+                ] : null,
+            ]);
 
         return response()->json(['photos' => $photos]);
     }
@@ -68,8 +81,8 @@ class BalPhotosController extends Controller
 
         $request->validate([
             'photos'   => ['sometimes', 'array'],
-            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'photo'    => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:30720'],
+            'photo'    => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:30720'],
             'caption'  => ['nullable', 'string', 'max:255'],
         ]);
 

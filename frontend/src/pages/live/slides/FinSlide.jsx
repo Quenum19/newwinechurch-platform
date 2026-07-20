@@ -17,7 +17,7 @@ export default function FinSlide({ state }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, #1a0f14 0%, #0A0A0A 75%)', overflow: 'hidden' }}>
-      <GoldParticles count={35} />
+      <GoldParticles count={22} intensity={0.7}/>
 
       {/* Photo en fond si dispo */}
       {photos.length > 0 && (

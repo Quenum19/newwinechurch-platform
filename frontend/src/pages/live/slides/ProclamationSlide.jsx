@@ -18,7 +18,7 @@ export default function ProclamationSlide({ state }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%)', overflow: 'hidden' }}>
-      <GoldParticles count={100} />
+      <GoldParticles count={50} intensity={1}/>
 
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, padding: '4vh 4vw' }}>
         <AnimatePresence mode="wait">

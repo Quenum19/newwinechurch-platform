@@ -98,9 +98,9 @@ function CandidateSection({ title, list, role, onAdd, onEdit, onDelete }) {
         <ul className="space-y-2">
           {list.map((c) => (
             <li key={c.id} className="flex items-center gap-3 p-2 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
-              {c.photo_path ? (
+              {c.photo_url ? (
                 <img
-                  src={`/storage/${c.photo_path}`}
+                  src={c.photo_url}
                   alt={c.first_name}
                   className="w-14 h-14 rounded-full object-cover border-2 border-[color:var(--adm-accent)]"
                 />
@@ -131,7 +131,7 @@ function CandidateModal({ eventId, mode, role, candidate, onClose, onSaved }) {
   const [firstName, setFirstName] = useState(candidate?.first_name ?? '')
   const [lastName, setLastName]   = useState(candidate?.last_name ?? '')
   const [photo, setPhoto]         = useState(null)
-  const [preview, setPreview]     = useState(candidate?.photo_path ? `/storage/${candidate.photo_path}` : null)
+  const [preview, setPreview]     = useState(candidate?.photo_url ?? null)
   const [busy, setBusy]           = useState(false)
 
   const handleFile = (e) => {
@@ -181,7 +181,7 @@ function CandidateModal({ eventId, mode, role, candidate, onClose, onSaved }) {
             <input required value={lastName} onChange={(e) => setLastName(e.target.value)} className="adm-input w-full"/>
           </div>
           <div>
-            <label className="text-sm font-semibold block mb-1">Photo (max 2 Mo)</label>
+            <label className="text-sm font-semibold block mb-1">Photo (max 30 Mo)</label>
             {preview && (
               <img src={preview} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-[color:var(--adm-accent)] mb-2"/>
             )}

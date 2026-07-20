@@ -14,7 +14,7 @@ export default function MurStarsSlide({ state }) {
         position: 'absolute', inset: 0,
         background: 'radial-gradient(ellipse at center, #1F1610 0%, #0A0A0A 80%)',
       }} />
-      <GoldParticles count={60} intensity={1.3} />
+      <GoldParticles count={35} intensity={0.9} />
 
       <div style={{
         position: 'absolute', inset: 0,

@@ -43,7 +43,7 @@ export default function ArriveeSlide({ state }) {
         background: 'linear-gradient(135deg, rgba(139,26,47,0.35) 0%, rgba(0,0,0,0.8) 100%)',
       }} />
 
-      <GoldParticles count={35} />
+      <GoldParticles count={22} intensity={0.7}/>
 
       <div style={{
         position: 'absolute', inset: 0,

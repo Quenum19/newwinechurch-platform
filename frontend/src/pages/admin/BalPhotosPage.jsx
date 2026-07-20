@@ -114,7 +114,7 @@ export default function BalPhotosPage() {
           {photos.map((p) => (
             <div key={p.id} className="relative group rounded overflow-hidden bg-zinc-100">
               <img
-                src={`/storage/${p.path}`}
+                src={p.url}
                 alt=""
                 className={`w-full aspect-square object-cover ${!p.is_visible ? 'opacity-40' : ''}`}
               />
