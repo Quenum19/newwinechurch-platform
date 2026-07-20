@@ -375,6 +375,24 @@ export const events = {
       ticket_ids: ticketIds, note,
     })).data,
 
+  // === Fiche call center (PDF prêt à imprimer) ===
+  ticketsCallcenterSheet: async (eventId) => {
+    const res = await api.get(`/admin/events/${eventId}/tickets/callcenter-sheet`, {
+      responseType: 'blob',
+    })
+    const cd = res.headers['content-disposition'] || ''
+    const match = cd.match(/filename="?([^";]+)"?/i)
+    const filename = match?.[1] || `fiche-callcenter-${eventId}.pdf`
+    const blob = new Blob([res.data], { type: 'application/pdf' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(link.href)
+  },
+
   // === Phase 2 — Types de tickets ===
   ticketTypesList:   async (eventId) => (await api.get(`/admin/events/${eventId}/ticket-types`)).data,
   ticketTypeCreate:  async (eventId, data) => (await api.post(`/admin/events/${eventId}/ticket-types`, data)).data,

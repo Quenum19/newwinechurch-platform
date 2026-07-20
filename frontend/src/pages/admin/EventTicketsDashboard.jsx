@@ -111,6 +111,12 @@ export default function EventTicketsDashboard() {
     onError: () => toast.error('Export échoué.'),
   })
 
+  const callcenterMutation = useMutation({
+    mutationFn: () => events.ticketsCallcenterSheet(id),
+    onSuccess: () => toast.success('Fiche call center téléchargée.'),
+    onError: () => toast.error('Génération de la fiche échouée.'),
+  })
+
   const bulkMutation = useMutation({
     mutationFn: ({ action, ids }) => events.ticketsBulk(id, action, ids),
     onSuccess: (r) => {
@@ -173,6 +179,14 @@ export default function EventTicketsDashboard() {
                 title="Liste de présence temps réel + exports">
             <Users size={13}/> Présence
           </Link>
+          <button onClick={() => callcenterMutation.mutate()}
+                  disabled={callcenterMutation.isPending}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] sm:text-xs uppercase tracking-wider font-mono bg-white border-2 border-public-ink/15 hover:border-public-flame hover:text-public-flame transition disabled:opacity-50"
+                  title="PDF fiche de suivi call center — script d'appel + tableau prêt à annoter">
+            {callcenterMutation.isPending ? <Loader2 size={13} className="animate-spin"/> : <Phone size={13}/>}
+            <span className="hidden xs:inline sm:hidden">Call center</span>
+            <span className="xs:hidden sm:inline">Fiche call center</span>
+          </button>
           <button onClick={() => exportMutation.mutate()}
                   disabled={exportMutation.isPending}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] sm:text-xs uppercase tracking-wider font-mono bg-white border-2 border-public-ink/15 hover:border-public-flame hover:text-public-flame transition disabled:opacity-50">

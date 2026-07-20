@@ -587,6 +587,8 @@ Route::middleware(['auth:sanctum'])
     Route::get ('/events/{id}/tickets/duplicates',        [AdminEventTicketsController::class, 'duplicates'])->whereNumber('id');
     Route::get ('/events/{id}/tickets/duplicates/export', [AdminEventTicketsController::class, 'duplicatesExport'])->whereNumber('id');
     Route::post('/events/{id}/tickets/duplicates/verify', [AdminEventTicketsController::class, 'verifyDuplicateGroup'])->whereNumber('id');
+    // Fiche call center — PDF pré-rempli avec script d'appel pour l'équipe accueil.
+    Route::get ('/events/{id}/tickets/callcenter-sheet',  [AdminEventTicketsController::class, 'callcenterSheet'])->whereNumber('id');
     Route::post('/events/{id}/tickets/{tid}/resend',     [AdminEventTicketsController::class, 'resend'])
          ->whereNumber('id')->whereNumber('tid');
     // Sécurité #H7 audit : rate limit sur scan (anti brute-force short_code)

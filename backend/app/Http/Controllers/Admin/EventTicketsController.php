@@ -760,4 +760,71 @@ class EventTicketsController extends Controller
             $filename,
         );
     }
+
+    /**
+     * PDF fiche de suivi call center — script d'appel + tableau prêt à annoter.
+     * Génère 1 ligne par inscrit avec cases à cocher Oui/Non/Attente.
+     */
+    public function callcenterSheet(Request $request, int $eventId): \Illuminate\Http\Response
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeRead($request, $event);
+
+        // Tickets vendus (confirmed + used, exclus remboursés/annulés) triés par nom
+        $tickets = EventTicket::where('event_id', $eventId)
+            ->whereIn('status', ['confirmed', 'used'])
+            ->where(function ($q) {
+                $q->whereNull('payment_status')
+                  ->orWhereNotIn('payment_status', ['refunded']);
+            })
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        // Résolution logo (data URI)
+        $logoDataUri = $this->resolveLogoDataUri();
+
+        // J-N jusqu'à l'event (arrondi vers le bas)
+        $daysUntil = $event->starts_at
+            ? (int) floor(now()->diffInHours($event->starts_at, false) / 24)
+            : 0;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.callcenter-sheet', [
+            'event'       => $event,
+            'tickets'     => $tickets,
+            'logoDataUri' => $logoDataUri,
+            'generatedAt' => now(),
+            'daysUntil'   => $daysUntil,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = 'fiche-callcenter-' . \Illuminate\Support\Str::slug($event->title) . '-' . now()->format('Ymd-Hi') . '.pdf';
+        return $pdf->stream($filename);
+    }
+
+    /** Résout le chemin logo NWC en data URI base64. Nullable si absent. */
+    protected function resolveLogoDataUri(): ?string
+    {
+        $candidates = [
+            public_path('logos/logo_newwine.png'),
+            base_path('public/logos/logo_newwine.png'),
+            dirname(base_path()) . '/public_html/logos/logo_newwine.png',
+        ];
+        $path = null;
+        foreach ($candidates as $c) {
+            if (@file_exists($c)) { $path = $c; break; }
+        }
+        if (! $path) {
+            $cached = storage_path('app/exports-logo-cache/logo_newwine.png');
+            if (@file_exists($cached) && filesize($cached) > 500) $path = $cached;
+        }
+        if (! $path) return null;
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = match ($ext) {
+            'svg' => 'image/svg+xml',
+            'jpg', 'jpeg' => 'image/jpeg',
+            default => 'image/png',
+        };
+        return 'data:' . $mime . ';base64,' . base64_encode(@file_get_contents($path));
+    }
 }
