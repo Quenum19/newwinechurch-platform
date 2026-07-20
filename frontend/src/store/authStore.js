@@ -48,8 +48,15 @@ export const useAuthStore = create(
        *  propre espace dédié /gouverneur ou /leader. */
       isStaff: () => {
         const r = get().roles
-        return r.includes('superadmin') || r.includes('pasteur') ||
-               r.includes('admin') || r.includes('admin-site') || r.includes('rh')
+        // Tous les rôles qui ont accès à /admin/* (permission access admin panel).
+        // Doit correspondre aux rôles seedés dans RolesAndPermissionsSeeder.
+        return r.includes('superadmin')
+            || r.includes('pasteur')
+            || r.includes('admin')
+            || r.includes('admin-site')
+            || r.includes('rh')
+            || r.includes('tresorier')
+            || r.includes('accueil')
       },
     }),
     {
