@@ -64,19 +64,49 @@ class BalSupportsController extends Controller
         return 'data:image/svg+xml;base64,' . base64_encode($svg);
     }
 
-    /** Résout le logo NWC en data URI. */
+    /**
+     * Résout le logo NWC en data URI base64.
+     *
+     * Cherche localement puis fallback : télécharge depuis frontend public
+     * et cache le résultat pour les prochains exports. Identique au pattern
+     * MembersExport (robuste sur Hostinger où le logo est côté public_html).
+     */
     private function resolveLogoDataUri(): ?string
     {
+        // 1. Chemins locaux probables
         $candidates = [
             public_path('logos/logo_newwine.png'),
             base_path('public/logos/logo_newwine.png'),
             dirname(base_path()) . '/public_html/logos/logo_newwine.png',
+            dirname(base_path()) . '/domains/newinechurch.org/public_html/logos/logo_newwine.png',
         ];
         foreach ($candidates as $path) {
             if ($path && @file_exists($path)) {
                 return 'data:image/png;base64,' . base64_encode(@file_get_contents($path));
             }
         }
+
+        // 2. Cache local (téléchargé une fois puis réutilisé)
+        $cached = storage_path('app/exports-logo-cache/logo_newwine.png');
+        if (@file_exists($cached) && filesize($cached) > 500) {
+            return 'data:image/png;base64,' . base64_encode(@file_get_contents($cached));
+        }
+
+        // 3. Fallback : télécharge depuis le frontend public + cache
+        $url = rtrim(config('app.frontend_url', 'https://newinechurch.org'), '/')
+             . '/logos/logo_newwine.png';
+        try {
+            $ctx = stream_context_create(['http' => ['timeout' => 5, 'follow_location' => 1]]);
+            $content = @file_get_contents($url, false, $ctx);
+            if ($content && strlen($content) > 500) {
+                @mkdir(dirname($cached), 0775, true);
+                @file_put_contents($cached, $content);
+                return 'data:image/png;base64,' . base64_encode($content);
+            }
+        } catch (\Throwable $e) {
+            // silencieux — fallback placeholder utilisé côté template
+        }
+
         return null;
     }
 }

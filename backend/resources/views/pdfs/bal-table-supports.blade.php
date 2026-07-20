@@ -1,6 +1,6 @@
 {{--
   Support de table imprimable — recto (QR vote) + verso (QR follow us).
-  Format A5 portrait, design NWC noir/or.
+  Format A5 portrait, design NWC noir/or, layout fixé (footer collé).
 --}}
 <!DOCTYPE html>
 <html lang="fr">
@@ -8,204 +8,252 @@
 <meta charset="UTF-8">
 <title>Supports de table — {{ $event->title }}</title>
 <style>
-  @page { margin: 0; }
+  @page {
+    margin: 0;
+    size: A5 portrait;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 148mm; }
   body {
-    font-family: DejaVu Sans, sans-serif;
+    font-family: "DejaVu Sans", sans-serif;
     color: #F5E6C8;
     background: #0A0A0A;
   }
 
+  /* Chaque page = A5 fixé sur 148x210 mm, pas de scroll ni débord */
   .page {
     width: 148mm;
     height: 210mm;
-    padding: 12mm 10mm;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    text-align: center;
-    background: linear-gradient(180deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%);
     position: relative;
+    background: linear-gradient(180deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%);
     overflow: hidden;
     page-break-after: always;
   }
   .page:last-child { page-break-after: auto; }
 
+  /* Cadre décoratif */
   .frame {
     position: absolute;
-    inset: 6mm;
-    border: 2px solid #C9A961;
-    pointer-events: none;
+    top: 6mm; left: 6mm; right: 6mm; bottom: 6mm;
+    border: 1.5pt solid #C9A961;
   }
   .frame-inner {
     position: absolute;
-    inset: 8mm;
-    border: 1px solid rgba(201, 169, 97, 0.4);
-    pointer-events: none;
+    top: 8mm; left: 8mm; right: 8mm; bottom: 8mm;
+    border: 0.5pt solid rgba(201, 169, 97, 0.4);
   }
 
+  /* Container central pour tous les éléments */
+  .content {
+    position: absolute;
+    top: 14mm; left: 14mm; right: 14mm;
+    text-align: center;
+  }
+
+  /* Ligne brand top */
   .brand {
     font-size: 8pt;
-    letter-spacing: 4pt;
+    letter-spacing: 3pt;
     color: #C9A961;
     text-transform: uppercase;
     font-weight: bold;
-    margin-top: 6mm;
-    z-index: 2;
   }
 
+  /* Logo */
   .logo {
-    width: 30mm;
-    height: 30mm;
+    display: block;
+    margin: 6mm auto 0;
+    width: 32mm;
+    height: 32mm;
     object-fit: contain;
-    filter: brightness(0) invert(1);
-    margin-top: 4mm;
-    z-index: 2;
   }
   .logo-placeholder {
-    width: 30mm;
-    height: 30mm;
+    display: block;
+    margin: 6mm auto 0;
+    width: 32mm;
+    height: 32mm;
     background: #8B1A2F;
     color: #F5E6C8;
     text-align: center;
-    line-height: 30mm;
+    line-height: 32mm;
     font-size: 20pt;
     font-weight: bold;
     border-radius: 4mm;
-    margin-top: 4mm;
-    z-index: 2;
   }
 
+  /* Titre principal */
   h1 {
     font-family: "DejaVu Serif", serif;
-    font-size: 26pt;
+    font-style: italic;
+    font-size: 28pt;
     color: #F5E6C8;
     margin-top: 6mm;
     line-height: 1;
-    letter-spacing: 1pt;
-    font-style: italic;
-    z-index: 2;
+    letter-spacing: 0.5pt;
   }
-  h1 .emoji { font-size: 24pt; }
 
   .subtitle {
-    font-size: 10pt;
+    font-size: 9pt;
     color: #C9A961;
-    letter-spacing: 2pt;
+    letter-spacing: 1.5pt;
     text-transform: uppercase;
-    margin-top: 3mm;
-    z-index: 2;
-  }
-
-  .qr-wrap {
-    background: #F5E6C8;
-    padding: 5mm;
-    border-radius: 3mm;
-    box-shadow: 0 0 30pt rgba(201, 169, 97, 0.4);
-    z-index: 2;
-    margin: 6mm 0;
-  }
-  .qr-wrap img { display: block; width: 62mm; height: 62mm; }
-
-  .cta {
-    font-size: 12pt;
-    color: #F5E6C8;
-    font-weight: bold;
-    margin-bottom: 3mm;
-    z-index: 2;
-    font-style: italic;
-    line-height: 1.3;
-  }
-  .cta-small {
-    font-size: 8pt;
-    color: #C9A961;
-    letter-spacing: 1pt;
-    text-transform: uppercase;
-    z-index: 2;
-    margin-bottom: 4mm;
+    margin-top: 4mm;
   }
 
   .divider {
     color: #C9A961;
-    letter-spacing: 6pt;
-    font-size: 10pt;
-    margin: 3mm 0;
-    z-index: 2;
+    letter-spacing: 5pt;
+    font-size: 12pt;
+    margin: 5mm 0;
   }
 
-  .footer-tag {
+  .cta {
+    font-family: "DejaVu Serif", serif;
+    font-style: italic;
+    font-size: 12pt;
+    color: #F5E6C8;
+    font-weight: bold;
+    margin: 3mm 0 4mm;
+    line-height: 1.4;
+  }
+
+  /* QR code — centré, encart ivoire chaud */
+  .qr-wrap {
+    display: inline-block;
+    background: #F5E6C8;
+    padding: 4mm;
+    border-radius: 3mm;
+    margin-top: 3mm;
+  }
+  .qr-wrap img {
+    display: block;
+    width: 58mm;
+    height: 58mm;
+  }
+
+  /* Ligne "tip" sous le QR */
+  .tip {
+    margin-top: 4mm;
+    font-size: 10pt;
+    color: #C9A961;
+    letter-spacing: 1pt;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+
+  /* FOOTER : absolument positionné en bas de la .page (jamais de saut de page) */
+  .foot {
+    position: absolute;
+    left: 0; right: 0; bottom: 12mm;
+    text-align: center;
+  }
+  .foot-line {
+    font-size: 9pt;
+    color: #C9A961;
+    letter-spacing: 2pt;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  .foot-tag {
+    margin-top: 3mm;
     font-size: 7pt;
     color: #8B7960;
     letter-spacing: 2pt;
     text-transform: uppercase;
-    z-index: 2;
-    margin-bottom: 2mm;
+  }
+
+  /* Petite touche : code ticket rappel (recto vote uniquement) */
+  .ticket-hint {
+    margin-top: 3mm;
+    padding: 2mm 4mm;
+    display: inline-block;
+    border: 0.8pt dashed #C9A961;
+    border-radius: 2mm;
+    font-size: 9pt;
+    color: #F5E6C8;
+    line-height: 1.3;
+  }
+  .ticket-hint strong {
+    color: #C9A961;
   }
 </style>
 </head>
 <body>
 
-{{-- ══════════════════ RECTO — Vote Roi & Reine ══════════════════ --}}
+{{-- ═══════════════════ RECTO — Vote Roi & Reine ═══════════════════ --}}
 <div class="page">
   <div class="frame"></div>
   <div class="frame-inner"></div>
 
-  <div class="brand">New Wine Church · Abidjan</div>
+  <div class="content">
+    <div class="brand">New Wine Church &middot; Abidjan</div>
 
-  @if($logoDataUri)
-    <img src="{{ $logoDataUri }}" alt="NWC" class="logo">
-  @else
-    <div class="logo-placeholder">NWC</div>
-  @endif
+    @if($logoDataUri)
+      <img src="{{ $logoDataUri }}" alt="NWC" class="logo">
+    @else
+      <div class="logo-placeholder">NWC</div>
+    @endif
 
-  <h1><span class="emoji">👑</span> Roi &amp; Reine</h1>
-  <div class="subtitle">Bal 2026 — A Dark Night in Elegance</div>
+    <h1>Roi &amp; Reine</h1>
+    <div class="subtitle">BAL 2026 &mdash; A Dark Night in Elegance</div>
 
-  <div class="divider">★ ★ ★</div>
+    <div class="divider">&#9733; &#9733; &#9733;</div>
 
-  <div class="cta">
-    Scanne pour voter<br/>ton Roi &amp; ta Reine
+    <div class="cta">
+      Scanne pour voter<br/>ton Roi &amp; ta Reine
+    </div>
+
+    <div class="qr-wrap">
+      <img src="{{ $voteQr }}" alt="QR Vote">
+    </div>
+
+    <div class="ticket-hint">
+      &Agrave; l'ouverture du vote, saisis ton <strong>code ticket</strong>
+      re&ccedil;u par email (ex&nbsp;: <strong>NWC-EBXB</strong>).<br/>
+      1 ticket = 1 vote unique.
+    </div>
   </div>
 
-  <div class="qr-wrap">
-    <img src="{{ $voteQr }}" alt="QR Vote">
+  <div class="foot">
+    <div class="foot-line">Un vote max par ticket</div>
+    <div class="foot-tag">Recto &middot; Vote</div>
   </div>
-
-  <div class="cta-small">Un vote max par téléphone</div>
-
-  <div class="footer-tag">Recto</div>
 </div>
 
-{{-- ══════════════════ VERSO — Follow us ══════════════════ --}}
+{{-- ═══════════════════ VERSO — Follow us ═══════════════════ --}}
 <div class="page">
   <div class="frame"></div>
   <div class="frame-inner"></div>
 
-  <div class="brand">New Wine Church · Abidjan</div>
+  <div class="content">
+    <div class="brand">New Wine Church &middot; Abidjan</div>
 
-  @if($logoDataUri)
-    <img src="{{ $logoDataUri }}" alt="NWC" class="logo">
-  @else
-    <div class="logo-placeholder">NWC</div>
-  @endif
+    @if($logoDataUri)
+      <img src="{{ $logoDataUri }}" alt="NWC" class="logo">
+    @else
+      <div class="logo-placeholder">NWC</div>
+    @endif
 
-  <h1><span class="emoji">✨</span> Suis-nous</h1>
-  <div class="subtitle">Restons en contact</div>
+    <h1>Suis-nous</h1>
+    <div class="subtitle">Restons en contact</div>
 
-  <div class="divider">★ ★ ★</div>
+    <div class="divider">&#9733; &#9733; &#9733;</div>
 
-  <div class="cta">
-    Retrouve-nous sur<br/>nos réseaux sociaux
+    <div class="cta">
+      Retrouve-nous sur<br/>nos r&eacute;seaux sociaux
+    </div>
+
+    <div class="qr-wrap">
+      <img src="{{ $followQr }}" alt="QR Follow us">
+    </div>
+
+    <div class="tip">Instagram &middot; Facebook &middot; TikTok &middot; YouTube</div>
   </div>
 
-  <div class="qr-wrap">
-    <img src="{{ $followQr }}" alt="QR Follow us">
+  <div class="foot">
+    <div class="foot-line">Rejoins la famille NWC</div>
+    <div class="foot-tag">Verso &middot; R&eacute;seaux</div>
   </div>
-
-  <div class="cta-small">Instagram · Facebook · TikTok · YouTube</div>
-
-  <div class="footer-tag">Verso</div>
 </div>
 
 </body>
