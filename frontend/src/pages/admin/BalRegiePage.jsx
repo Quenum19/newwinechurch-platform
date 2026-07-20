@@ -281,7 +281,7 @@ export default function BalRegiePage() {
           <ImageIcon size={13}/> Photos ambiance
         </Link>
         <a
-          href={`/api/admin/events/${eventId}/bal/table-supports.pdf`}
+          href={`${import.meta.env.VITE_API_URL || '/api'}/admin/events/${eventId}/bal/table-supports`}
           target="_blank" rel="noopener"
           className="adm-btn adm-btn-ghost"
         >

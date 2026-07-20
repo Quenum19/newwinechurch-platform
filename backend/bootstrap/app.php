@@ -49,6 +49,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // La whitelist interne du middleware autorise /me et /me/password.
         $middleware->appendToGroup('api', \App\Http\Middleware\EnforcePasswordChange::class);
 
+        // Routes publiques exclues du CSRF token check.
+        // Nécessaire pour les endpoints POST publics qui n'ont pas de session
+        // stateful côté client (ex: vote public via QR code depuis un tel).
+        $middleware->validateCsrfTokens(except: [
+            'api/public/events/*/bal/vote',
+        ]);
+
         // Lit Accept-Language envoyé par axios → règle app()->getLocale() (fr/en).
         // Les Models utilisent ensuite cette locale pour renvoyer name_en si EN.
         $middleware->prependToGroup('api', \App\Http\Middleware\SetLocaleFromHeader::class);

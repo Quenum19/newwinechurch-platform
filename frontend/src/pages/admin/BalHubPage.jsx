@@ -133,7 +133,7 @@ function EventCard({ event }) {
           <Camera size={13}/> Photos
         </Link>
         <a
-          href={`/api/admin/events/${event.id}/bal/table-supports.pdf`}
+          href={`${import.meta.env.VITE_API_URL || '/api'}/admin/events/${event.id}/bal/table-supports`}
           target="_blank"
           rel="noopener noreferrer"
           className="col-span-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider bg-white border border-zinc-300 text-zinc-700 rounded hover:bg-zinc-50 transition"

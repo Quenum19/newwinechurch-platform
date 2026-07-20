@@ -634,7 +634,7 @@ Route::middleware(['auth:sanctum'])
     Route::patch ('/events/{id}/bal/photos/{pid}/visibility',[\App\Http\Controllers\Admin\BalPhotosController::class, 'toggleVisibility'])->whereNumber('id')->whereNumber('pid');
     Route::delete('/events/{id}/bal/photos/{pid}',          [\App\Http\Controllers\Admin\BalPhotosController::class, 'destroy'])->whereNumber('id')->whereNumber('pid');
     // PDF supports de table imprimables
-    Route::get   ('/events/{id}/bal/table-supports.pdf',    [\App\Http\Controllers\Admin\BalSupportsController::class, 'tableSupportsPdf'])->whereNumber('id');
+    Route::get   ('/events/{id}/bal/table-supports',        [\App\Http\Controllers\Admin\BalSupportsController::class, 'tableSupportsPdf'])->whereNumber('id');
     Route::get ('/events/{id}/attendance/report',         [AdminEventAttendanceController::class, 'report'])->whereNumber('id');
 
     // Types de tickets (Phase 2)
