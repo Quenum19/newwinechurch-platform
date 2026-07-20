@@ -187,6 +187,18 @@ Route::get('/donation-methods',       [DonationMethodController::class, 'index']
 // Image hero aléatoire pour les pages auth (connexion / inscription).
 Route::get('/auth-images/random',     [AuthImageController::class, 'random']);
 
+// === Bal 2026 — endpoints publics (écran live + vote) ===
+Route::get ('/public/events/{id}/bal/state', [\App\Http\Controllers\Public\BalScreenPublicController::class, 'state'])
+    ->whereNumber('id');
+Route::get ('/public/events/{id}/bal/vote',  [\App\Http\Controllers\Public\BalVoteController::class, 'show'])
+    ->whereNumber('id');
+Route::post('/public/events/{id}/bal/vote',  [\App\Http\Controllers\Public\BalVoteController::class, 'submit'])
+    ->whereNumber('id')
+    ->middleware('throttle:10,1');
+
+// Follow us — liens réseaux sociaux NWC
+Route::get('/public/nwc/social-links', [\App\Http\Controllers\Public\NwcSocialLinksController::class, 'index']);
+
 // === DONS PUBLIQUES (membres connectés ou anonymes) ===
 Route::middleware('throttle:10,1')->group(function () {
     Route::post('/prayer-requests',        [PrayerRequestController::class, 'store']);
@@ -602,6 +614,27 @@ Route::middleware(['auth:sanctum'])
     Route::get ('/events/{id}/attendance/export/pdf',     [AdminEventAttendanceController::class, 'exportPdf'])->whereNumber('id');
     Route::get ('/events/{id}/attendance/backup-pdf',     [AdminEventAttendanceController::class, 'backupPdf'])->whereNumber('id');
     Route::post('/events/{id}/attendance/manual',         [AdminEventAttendanceController::class, 'manualCheckIn'])->whereNumber('id');
+
+    // === Bal 2026 — Régie de l'écran live + candidats + photos ambiance ===
+    Route::get ('/events/{id}/bal/state',                 [\App\Http\Controllers\Admin\BalScreenController::class, 'state'])->whereNumber('id');
+    Route::post('/events/{id}/bal/slide',                 [\App\Http\Controllers\Admin\BalScreenController::class, 'setSlide'])->whereNumber('id');
+    Route::post('/events/{id}/bal/vote/open',             [\App\Http\Controllers\Admin\BalScreenController::class, 'openVote'])->whereNumber('id');
+    Route::post('/events/{id}/bal/vote/close',            [\App\Http\Controllers\Admin\BalScreenController::class, 'closeVote'])->whereNumber('id');
+    Route::post('/events/{id}/bal/proclamer',             [\App\Http\Controllers\Admin\BalScreenController::class, 'proclamer'])->whereNumber('id');
+    Route::get ('/events/{id}/bal/results',               [\App\Http\Controllers\Admin\BalResultsController::class, 'results'])->whereNumber('id');
+    // CRUD candidats
+    Route::get   ('/events/{id}/bal/candidates',            [\App\Http\Controllers\Admin\BalCandidatesController::class, 'index'])->whereNumber('id');
+    Route::post  ('/events/{id}/bal/candidates',            [\App\Http\Controllers\Admin\BalCandidatesController::class, 'store'])->whereNumber('id');
+    Route::post  ('/events/{id}/bal/candidates/{cid}',      [\App\Http\Controllers\Admin\BalCandidatesController::class, 'update'])->whereNumber('id')->whereNumber('cid');
+    Route::delete('/events/{id}/bal/candidates/{cid}',      [\App\Http\Controllers\Admin\BalCandidatesController::class, 'destroy'])->whereNumber('id')->whereNumber('cid');
+    Route::post  ('/events/{id}/bal/candidates/reorder',    [\App\Http\Controllers\Admin\BalCandidatesController::class, 'reorder'])->whereNumber('id');
+    // Photos ambiance
+    Route::get   ('/events/{id}/bal/photos',                [\App\Http\Controllers\Admin\BalPhotosController::class, 'index'])->whereNumber('id');
+    Route::post  ('/events/{id}/bal/photos',                [\App\Http\Controllers\Admin\BalPhotosController::class, 'store'])->whereNumber('id');
+    Route::patch ('/events/{id}/bal/photos/{pid}/visibility',[\App\Http\Controllers\Admin\BalPhotosController::class, 'toggleVisibility'])->whereNumber('id')->whereNumber('pid');
+    Route::delete('/events/{id}/bal/photos/{pid}',          [\App\Http\Controllers\Admin\BalPhotosController::class, 'destroy'])->whereNumber('id')->whereNumber('pid');
+    // PDF supports de table imprimables
+    Route::get   ('/events/{id}/bal/table-supports.pdf',    [\App\Http\Controllers\Admin\BalSupportsController::class, 'tableSupportsPdf'])->whereNumber('id');
     Route::get ('/events/{id}/attendance/report',         [AdminEventAttendanceController::class, 'report'])->whereNumber('id');
 
     // Types de tickets (Phase 2)

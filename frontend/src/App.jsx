@@ -106,6 +106,12 @@ const NewsletterPage    = lazy(() => import('./pages/admin/NewsletterPage.jsx'))
 const ActivityLogPage   = lazy(() => import('./pages/admin/ActivityLogPage.jsx'))
 const NotificationsInboxPage = lazy(() => import('./pages/shared/NotificationsInboxPage.jsx'))
 const AttendanceHubPage      = lazy(() => import('./pages/admin/AttendanceHubPage.jsx'))
+const BalLiveScreen          = lazy(() => import('./pages/live/BalLiveScreen.jsx'))
+const BalRegiePage           = lazy(() => import('./pages/admin/BalRegiePage.jsx'))
+const BalCandidatesPage      = lazy(() => import('./pages/admin/BalCandidatesPage.jsx'))
+const BalPhotosPage          = lazy(() => import('./pages/admin/BalPhotosPage.jsx'))
+const BalVotePage            = lazy(() => import('./pages/public/BalVotePage.jsx'))
+const FollowUsPage           = lazy(() => import('./pages/public/FollowUsPage.jsx'))
 const AdminReportsList  = lazy(() => import('./pages/admin/AdminReportsList.jsx'))
 const AdminReportDetail = lazy(() => import('./pages/admin/AdminReportDetail.jsx'))
 const ReportTemplateBuilder = lazy(() => import('./pages/admin/ReportTemplateBuilder.jsx'))
@@ -203,6 +209,22 @@ export default function App() {
         <Route
           path="/scanner-invite/:token"
           element={<Suspense fallback={<FullPageSpinner />}><ScannerInvitePage /></Suspense>}
+        />
+
+        {/* === Écran live du Bal (fullscreen sur TV via F11, hors layout) === */}
+        <Route
+          path="/live/bal/:eventId"
+          element={<Suspense fallback={<FullPageSpinner />}><BalLiveScreen /></Suspense>}
+        />
+
+        {/* === Bal — pages publiques (vote + follow us, hors layout) === */}
+        <Route
+          path="/bal/vote/:eventId"
+          element={<Suspense fallback={<FullPageSpinner />}><BalVotePage /></Suspense>}
+        />
+        <Route
+          path="/nwc/follow"
+          element={<Suspense fallback={<FullPageSpinner />}><FollowUsPage /></Suspense>}
         />
 
         {/* === Étape F — Mission scopée à 1 event (grant event_staff) ===
@@ -375,6 +397,9 @@ export default function App() {
           <Route path="/admin/journal"                    element={<ActivityLogPage />} />
           <Route path="/admin/notifications"              element={<NotificationsInboxPage />} />
           <Route path="/admin/presence"                   element={<AttendanceHubPage />} />
+          <Route path="/admin/bal/:eventId/regie"         element={<BalRegiePage />} />
+          <Route path="/admin/bal/:eventId/candidats"     element={<BalCandidatesPage />} />
+          <Route path="/admin/bal/:eventId/photos"        element={<BalPhotosPage />} />
           <Route path="/admin/profil"                     element={<MyProfile />} />
           <Route path="/admin/profil/notifications"       element={<MyNotificationPreferences />} />
           <Route path="/admin/mot-de-passe"               element={<ChangePasswordPage />} />
