@@ -94,10 +94,37 @@ export default function MemberLayout() {
   const isLeader   = hasRole('leader')
   const area = detectArea(location.pathname, isGovernor, isLeader)
 
+  // Détecte les permissions admin léger (accueil, tresorier, etc.) — pour
+  // afficher un accès à /admin dans le switcher même si l'user est
+  // principalement gouverneur/leader.
+  const can = useAuthStore((s) => s.can)
+  const hasAttendance = can?.('view attendance') ?? false
+  const hasScan       = can?.('scan tickets') ?? false
+  const hasBilletDash = can?.('view billetterie dashboard') ?? false
+  const hasAdminPanel = can?.('access admin panel') ?? false
+
   const rawNav =
     area === 'governor' ? buildGovernorNav(t) :
     area === 'leader'   ? buildLeaderNav(t) :
     buildMemberNav(t)
+
+  // Ajoute une section "Autres accès" avec les liens admin si l'user a
+  // les permissions correspondantes (rôle secondaire accueil/tresorier/etc.).
+  if (hasAttendance || hasScan || hasBilletDash) {
+    rawNav.push({ section: t('member.nav.section.otherAccess', 'Autres accès') })
+    if (hasAttendance) {
+      rawNav.push({ to: '/admin/presence', icon: ClipboardList, label: t('member.nav.attendance', 'Présence billetterie') })
+    }
+    if (hasBilletDash) {
+      rawNav.push({ to: '/admin/billetterie/vue-360', icon: BarChart3, label: t('member.nav.billetterieDashboard', 'Vue 360° billetterie') })
+    }
+    if (hasScan) {
+      rawNav.push({ to: '/scan', icon: UserCheck, label: t('member.nav.scan', 'Scanner billets'), target: '_blank' })
+    }
+    if (hasAdminPanel) {
+      rawNav.push({ to: '/admin', icon: LayoutDashboard, label: t('member.nav.adminPanel', 'Panel admin complet') })
+    }
+  }
 
   const visibleItems = (() => {
     const cleaned = []
