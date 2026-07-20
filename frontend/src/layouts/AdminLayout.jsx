@@ -45,7 +45,6 @@ function buildNavItems(t) {
     { to: '/admin/evenements',        icon: Calendar,       label: t('admin.sidebar.events'),     perm: 'view events' },
     { to: '/admin/series',            icon: Layers,         label: t('admin.sidebar.series', 'Séries'),         perm: 'create events' },
     { to: '/admin/billetterie',       icon: Ticket,         label: t('admin.sidebar.ticketing', 'Billetterie'), perm: 'manage event tickets' },
-    { to: '/admin/billetterie/vue-360', icon: Radio,        label: t('admin.sidebar.ticketingDashboard360', 'Vue 360°'), perm: 'view billetterie dashboard' },
     { to: '/admin/presence',          icon: ClipboardList,  label: t('admin.sidebar.attendance', 'Présence'), perm: 'view attendance' },
     { to: '/admin/bal',               icon: Sparkles,       label: t('admin.sidebar.balLive', 'Bal live · Régie'), perm: 'view attendance' },
     { to: '/scan',                    icon: ScanLine,       label: t('admin.sidebar.scan', 'Scanner billets'), perm: 'scan tickets', target: '_blank' },
