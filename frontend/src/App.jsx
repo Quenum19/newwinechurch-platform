@@ -110,6 +110,7 @@ const BalLiveScreen          = lazy(() => import('./pages/live/BalLiveScreen.jsx
 const BalRegiePage           = lazy(() => import('./pages/admin/BalRegiePage.jsx'))
 const BalCandidatesPage      = lazy(() => import('./pages/admin/BalCandidatesPage.jsx'))
 const BalPhotosPage          = lazy(() => import('./pages/admin/BalPhotosPage.jsx'))
+const BalHubPage             = lazy(() => import('./pages/admin/BalHubPage.jsx'))
 const BalVotePage            = lazy(() => import('./pages/public/BalVotePage.jsx'))
 const FollowUsPage           = lazy(() => import('./pages/public/FollowUsPage.jsx'))
 const AdminReportsList  = lazy(() => import('./pages/admin/AdminReportsList.jsx'))
@@ -397,6 +398,7 @@ export default function App() {
           <Route path="/admin/journal"                    element={<ActivityLogPage />} />
           <Route path="/admin/notifications"              element={<NotificationsInboxPage />} />
           <Route path="/admin/presence"                   element={<AttendanceHubPage />} />
+          <Route path="/admin/bal"                        element={<BalHubPage />} />
           <Route path="/admin/bal/:eventId/regie"         element={<BalRegiePage />} />
           <Route path="/admin/bal/:eventId/candidats"     element={<BalCandidatesPage />} />
           <Route path="/admin/bal/:eventId/photos"        element={<BalPhotosPage />} />
