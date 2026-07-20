@@ -11,19 +11,25 @@ const baseURL = import.meta.env.VITE_API_URL || '/api'
 export default function BalVotePage() {
   const { eventId } = useParams()
   const [data, setData] = useState(null)
+  const [ticketCode, setTicketCode] = useState('')
   const [selectedRoi, setSelectedRoi] = useState(null)
   const [selectedReine, setSelectedReine] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    axios.get(`${baseURL}/public/events/${eventId}/bal/vote`, { withCredentials: true })
+    axios.get(`${baseURL}/public/events/${eventId}/bal/vote`)
       .then((r) => setData(r.data))
       .catch(() => setError('Impossible de charger le vote.'))
   }, [eventId])
 
   const submit = async () => {
+    if (!ticketCode.trim()) {
+      setError('Ton code ticket est obligatoire (reçu par email).')
+      return
+    }
     if (!selectedRoi && !selectedReine) {
       setError('Sélectionne au moins un candidat.')
       return
@@ -31,11 +37,15 @@ export default function BalVotePage() {
     setSubmitting(true)
     setError(null)
     try {
-      await axios.post(
+      const res = await axios.post(
         `${baseURL}/public/events/${eventId}/bal/vote`,
-        { roi_id: selectedRoi, reine_id: selectedReine },
-        { withCredentials: true }
+        {
+          ticket_code: ticketCode.trim(),
+          roi_id: selectedRoi,
+          reine_id: selectedReine,
+        }
       )
+      setSuccessMessage(res.data?.message || 'Ton vote a été enregistré.')
       setSuccess(true)
     } catch (err) {
       setError(err?.response?.data?.message || 'Erreur lors du vote.')
@@ -50,7 +60,7 @@ export default function BalVotePage() {
     </FullPageBg>
   }
 
-  if (success || data.already_voted) {
+  if (success) {
     return <FullPageBg>
       <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem' }}>
         <CheckCircle2 size={80} color="#C9A961" style={{ margin: '0 auto 1.5rem' }}/>
@@ -58,7 +68,7 @@ export default function BalVotePage() {
           Merci !
         </h1>
         <p style={{ color: '#C9A961', fontSize: '1.1rem' }}>
-          {success ? 'Ton vote a été enregistré.' : 'Tu as déjà voté depuis cet appareil.'}
+          {successMessage}
         </p>
         <p style={{ color: '#F5E6C8', opacity: 0.7, marginTop: '2rem', fontSize: '0.9rem' }}>
           Les résultats seront annoncés à 00h40 en salle.
@@ -100,6 +110,58 @@ export default function BalVotePage() {
           </h1>
           <p style={{ color: '#C9A961', fontSize: '0.85rem', letterSpacing: '0.3em', textTransform: 'uppercase', marginTop: '0.5rem' }}>
             A Dark Night in Elegance
+          </p>
+        </div>
+
+        {/* Champ code ticket — OBLIGATOIRE (1 ticket = 1 vote max) */}
+        <div style={{
+          background: 'rgba(201, 169, 97, 0.08)',
+          border: '2px solid #C9A961',
+          borderRadius: '12px',
+          padding: '1.2rem',
+          marginBottom: '2rem',
+        }}>
+          <label style={{
+            display: 'block',
+            fontSize: '0.85rem',
+            color: '#C9A961',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            marginBottom: '0.6rem',
+            fontWeight: 700,
+          }}>
+            🎫 Ton code ticket
+          </label>
+          <input
+            type="text"
+            value={ticketCode}
+            onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
+            placeholder="Ex : NWC-EBXB"
+            autoComplete="off"
+            style={{
+              width: '100%',
+              padding: '1rem',
+              background: 'rgba(0, 0, 0, 0.4)',
+              border: '1.5px solid rgba(201, 169, 97, 0.5)',
+              borderRadius: '8px',
+              color: '#F5E6C8',
+              fontSize: '1.3rem',
+              fontFamily: '"Courier New", monospace',
+              fontWeight: 700,
+              letterSpacing: '0.2em',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+            }}
+          />
+          <p style={{
+            fontSize: '0.8rem',
+            color: '#F5E6C8',
+            opacity: 0.7,
+            marginTop: '0.6rem',
+            fontStyle: 'italic',
+            textAlign: 'center',
+          }}>
+            Reçu par email avec ton ticket. Un ticket = un vote unique.
           </p>
         </div>
 

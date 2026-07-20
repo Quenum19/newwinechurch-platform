@@ -57,12 +57,6 @@ class BalVoteController extends Controller
             'photo_url'  => $c->photo_path ? asset('storage/' . $c->photo_path) : null,
         ]);
 
-        // Vérifie si ce navigateur a déjà voté
-        $fingerprint = $this->computeFingerprint($request);
-        $alreadyVoted = BalVote::where('event_id', $eventId)
-            ->where('voter_fingerprint', $fingerprint)
-            ->exists();
-
         return response()->json([
             'event' => [
                 'id'       => $event->id,
@@ -70,19 +64,16 @@ class BalVoteController extends Controller
                 'starts_at'=> $event->starts_at?->toIso8601String(),
             ],
             'vote_status'   => $state->vote_status,
-            'already_voted' => $alreadyVoted,
             'rois'          => $rois,
             'reines'        => $reines,
-        ])->cookie(
-            // Cookie set/refresh pour l'anti-triche (10h suffisant pour un event)
-            'nwc_vote_id',
-            $this->getOrCreateCookieId($request),
-            60 * 10,
-            null, null, false, false
-        );
+        ]);
     }
 
-    /** Enregistre un vote (roi + reine possibles séparément). */
+    /**
+     * Enregistre un vote — anti-triche fort via CODE TICKET obligatoire.
+     * 1 ticket = 1 vote max (contrainte DB unique), impossible de contourner
+     * en vidant cookies/navigant en privé/changeant de tel.
+     */
     public function submit(Request $request, int $eventId): JsonResponse
     {
         $event = Event::find($eventId);
@@ -102,48 +93,71 @@ class BalVoteController extends Controller
         }
 
         $data = $request->validate([
-            'roi_id'   => ['nullable', 'integer', 'exists:bal_candidates,id'],
-            'reine_id' => ['nullable', 'integer', 'exists:bal_candidates,id'],
+            'ticket_code' => ['required', 'string', 'min:4', 'max:20'],
+            'roi_id'      => ['nullable', 'integer', 'exists:bal_candidates,id'],
+            'reine_id'    => ['nullable', 'integer', 'exists:bal_candidates,id'],
         ]);
 
         // Au moins un vote
-        if (! $data['roi_id'] && ! $data['reine_id']) {
+        if (! ($data['roi_id'] ?? null) && ! ($data['reine_id'] ?? null)) {
             return response()->json([
                 'message' => 'Sélectionne au moins un candidat.',
             ], 422);
         }
 
+        // Normalise le code ticket : uppercase, supprime les tirets/espaces
+        // → accepte "NWC-EBXB", "nwc ebxb", "EBXB", etc.
+        $rawCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $data['ticket_code']));
+        // Retire préfixe NWC si présent
+        $normalizedCode = preg_replace('/^NWC/', '', $rawCode);
+
+        // Cherche le ticket par short_code (avec ou sans préfixe NWC-)
+        $ticket = \App\Models\EventTicket::where('event_id', $eventId)
+            ->where(function ($q) use ($rawCode, $normalizedCode) {
+                $q->where('short_code', $rawCode)
+                  ->orWhere('short_code', $normalizedCode)
+                  ->orWhere('short_code', 'NWC-' . $normalizedCode)
+                  ->orWhere('short_code', 'NWC' . $normalizedCode);
+            })
+            ->whereIn('status', ['confirmed', 'used'])
+            ->first();
+
+        if (! $ticket) {
+            return response()->json([
+                'message' => 'Code ticket introuvable. Vérifie le code reçu par email (ex : NWC-EBXB).',
+            ], 422);
+        }
+
+        // Ce ticket a-t-il déjà voté ?
+        $existing = BalVote::where('event_id', $eventId)
+            ->where('event_ticket_id', $ticket->id)
+            ->first();
+        if ($existing) {
+            return response()->json([
+                'message' => 'Ce ticket a déjà servi pour voter. Un ticket = un seul vote.',
+                'already_voted' => true,
+            ], 422);
+        }
+
         // Vérifie que les candidats appartiennent à cet event + bon rôle
-        if ($data['roi_id']) {
+        if (($data['roi_id'] ?? null)) {
             $roi = BalCandidate::find($data['roi_id']);
             if (! $roi || $roi->event_id !== $eventId || $roi->role !== 'roi') {
                 return response()->json(['message' => 'Candidat Roi invalide.'], 422);
             }
         }
-        if ($data['reine_id']) {
+        if (($data['reine_id'] ?? null)) {
             $reine = BalCandidate::find($data['reine_id']);
             if (! $reine || $reine->event_id !== $eventId || $reine->role !== 'reine') {
                 return response()->json(['message' => 'Candidat Reine invalide.'], 422);
             }
         }
 
-        // Fingerprint anti-triche
+        // Enregistre le vote (fingerprint conservé pour audit)
         $fingerprint = $this->computeFingerprint($request);
-
-        // Déjà voté ?
-        $existing = BalVote::where('event_id', $eventId)
-            ->where('voter_fingerprint', $fingerprint)
-            ->first();
-        if ($existing) {
-            return response()->json([
-                'message' => 'Tu as déjà voté depuis cet appareil.',
-                'already_voted' => true,
-            ], 422);
-        }
-
-        // Enregistre le vote
         BalVote::create([
             'event_id'           => $eventId,
+            'event_ticket_id'    => $ticket->id,
             'roi_candidate_id'   => $data['roi_id'] ?? null,
             'reine_candidate_id' => $data['reine_id'] ?? null,
             'voter_fingerprint'  => $fingerprint,
@@ -152,14 +166,9 @@ class BalVoteController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Merci ! Ton vote a été enregistré.',
+            'message' => 'Merci ' . trim($ticket->first_name . ' ' . $ticket->last_name) . ' ! Ton vote a été enregistré.',
             'success' => true,
-        ])->cookie(
-            'nwc_vote_id',
-            $this->getOrCreateCookieId($request),
-            60 * 10,
-            null, null, false, false
-        );
+        ]);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────

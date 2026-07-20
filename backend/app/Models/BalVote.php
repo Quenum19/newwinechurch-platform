@@ -19,6 +19,7 @@ class BalVote extends Model
 
     protected $fillable = [
         'event_id',
+        'event_ticket_id',
         'roi_candidate_id',
         'reine_candidate_id',
         'voter_fingerprint',
