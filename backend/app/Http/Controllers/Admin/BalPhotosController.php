@@ -38,27 +38,36 @@ class BalPhotosController extends Controller
         $this->ensureAuthorized($request);
         Event::findOrFail($eventId);
 
+        // Défensif : vérifie que les colonnes existent (au cas où la migration
+        // n'a pas encore été appliquée en prod). Fallback sur path uniquement.
+        $hasBranded = \Schema::hasColumn('bal_photos', 'landscape_path');
+
         $photos = BalPhoto::where('event_id', $eventId)
             ->with('uploader:id,name,first_name,last_name')
             ->orderBy('display_order')
             ->orderByDesc('id')
             ->get()
-            ->map(fn ($p) => [
-                'id'                 => $p->id,
-                'path'               => $p->path,
-                'url'                => asset('storage/' . $p->path),
-                'landscape_url'      => $p->landscape_path ? asset('storage/' . $p->landscape_path) : null,
-                'square_url'         => $p->square_path ? asset('storage/' . $p->square_path) : null,
-                'has_branded'        => (bool) $p->landscape_path,
-                'caption'            => $p->caption,
-                'display_order'      => $p->display_order,
-                'is_visible'         => (bool) $p->is_visible,
-                'uploader'           => $p->uploader ? [
-                    'id'         => $p->uploader->id,
-                    'first_name' => $p->uploader->first_name,
-                    'last_name'  => $p->uploader->last_name,
-                ] : null,
-            ]);
+            ->map(function ($p) use ($hasBranded) {
+                $landscapePath = $hasBranded ? ($p->landscape_path ?? null) : null;
+                $squarePath    = $hasBranded ? ($p->square_path ?? null) : null;
+
+                return [
+                    'id'            => $p->id,
+                    'path'          => $p->path,
+                    'url'           => $p->path ? asset('storage/' . $p->path) : null,
+                    'landscape_url' => $landscapePath ? asset('storage/' . $landscapePath) : null,
+                    'square_url'    => $squarePath ? asset('storage/' . $squarePath) : null,
+                    'has_branded'   => (bool) $landscapePath,
+                    'caption'       => $p->caption,
+                    'display_order' => $p->display_order,
+                    'is_visible'    => (bool) $p->is_visible,
+                    'uploader'      => $p->uploader ? [
+                        'id'         => $p->uploader->id,
+                        'first_name' => $p->uploader->first_name,
+                        'last_name'  => $p->uploader->last_name,
+                    ] : null,
+                ];
+            });
 
         return response()->json(['photos' => $photos]);
     }
@@ -101,40 +110,51 @@ class BalPhotosController extends Controller
         $failed     = 0;
 
         $event = Event::findOrFail($eventId);
-        $composer = app(\App\Services\BalPhotoComposer::class);
+        $hasBrandedCols = \Schema::hasColumn('bal_photos', 'landscape_path');
 
         foreach ($files as $file) {
-            try {
-                // Compose les 3 versions (original + landscape 16:9 + carré 1:1)
-                $paths = $composer->process($file, $event);
-                $photo = BalPhoto::create([
-                    'event_id'       => $eventId,
-                    'path'           => $paths['original'],
-                    'landscape_path' => $paths['landscape'],
-                    'square_path'    => $paths['square'],
-                    'caption'        => $caption,
-                    'uploaded_by'    => $uploaderId,
-                    'display_order'  => 0,
-                    'is_visible'     => true,
-                ]);
-                $created[] = $photo->fresh();
-            } catch (\Throwable $e) {
-                \Log::warning('BalPhoto compose failed, fallback plain upload', [
-                    'event' => $eventId, 'err' => $e->getMessage(),
-                ]);
-                // Fallback : sauve au moins l'original sans branding
-                $path  = $file->store('bal-photos', 'public');
-                $photo = BalPhoto::create([
-                    'event_id'      => $eventId,
-                    'path'          => $path,
-                    'caption'       => $caption,
-                    'uploaded_by'   => $uploaderId,
-                    'display_order' => 0,
-                    'is_visible'    => true,
-                ]);
-                $created[] = $photo->fresh();
-                $failed++;
+            // ÉTAPE 1 (obligatoire) : sauve l'original tel quel — jamais un échec ici
+            $originalPath = $file->store('bal-photos', 'public');
+            $created_attributes = [
+                'event_id'      => $eventId,
+                'path'          => $originalPath,
+                'caption'       => $caption,
+                'uploaded_by'   => $uploaderId,
+                'display_order' => 0,
+                'is_visible'    => true,
+            ];
+
+            // ÉTAPE 2 (optionnelle) : compose branded si migration appliquée
+            if ($hasBrandedCols) {
+                try {
+                    $composer = app(\App\Services\BalPhotoComposer::class);
+                    $absOriginal = \Storage::disk('public')->path($originalPath);
+
+                    // Landscape 16:9
+                    $landscape = $composer->composeLandscapePublic($absOriginal, $event);
+                    if ($landscape) {
+                        $landscapePath = 'bal-photos/branded/l_' . uniqid() . '.jpg';
+                        \Storage::disk('public')->put($landscapePath, $landscape);
+                        $created_attributes['landscape_path'] = $landscapePath;
+                    }
+
+                    // Carré 1:1
+                    $square = $composer->composeSquarePublic($absOriginal, $event);
+                    if ($square) {
+                        $squarePath = 'bal-photos/branded/s_' . uniqid() . '.jpg';
+                        \Storage::disk('public')->put($squarePath, $square);
+                        $created_attributes['square_path'] = $squarePath;
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('BalPhoto compose failed', [
+                        'event' => $eventId, 'err' => $e->getMessage(),
+                    ]);
+                    $failed++;
+                }
             }
+
+            $photo = BalPhoto::create($created_attributes);
+            $created[] = $photo->fresh();
         }
 
         return response()->json([
