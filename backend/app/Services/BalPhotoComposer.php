@@ -38,7 +38,8 @@ class BalPhotoComposer
             $W = 1920;
             $H = 1080;
 
-            $canvas = $this->manager->createImage($W, $H)->fill(self::BLACK);
+            // Fond = photo agrandie + floutée (couvre TOUTE la zone, style Instagram stories)
+            $canvas = $this->manager->decodePath($sourcePath)->cover($W, $H)->blur(35);
 
             $topBand    = 90;
             $bottomBand = 110;
@@ -46,8 +47,11 @@ class BalPhotoComposer
             $photoW = $W - (2 * $sideMargin);
             $photoH = $H - $topBand - $bottomBand - 40;
 
-            $photo = $this->manager->decodePath($sourcePath)->cover($photoW, $photoH);
-            $canvas->insert($photo, $sideMargin, $topBand);
+            // Photo NETTE centrée en "contain" → jamais de coupe de tête ni de bord
+            $photo = $this->manager->decodePath($sourcePath)->contain($photoW, $photoH);
+            $x = $sideMargin + intval(($photoW - $photo->width()) / 2);
+            $y = $topBand + intval(($photoH - $photo->height()) / 2);
+            $canvas->insert($photo, $x, $y);
 
             $this->drawBands($canvas, $event, $W, $H, $topBand, $bottomBand);
 
