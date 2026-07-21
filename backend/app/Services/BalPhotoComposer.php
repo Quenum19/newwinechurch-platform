@@ -47,11 +47,11 @@ class BalPhotoComposer
             $photoH = $H - $topBand - $bottomBand - 40;
 
             $photo = $this->manager->decodePath($sourcePath)->cover($photoW, $photoH);
-            $canvas->place($photo, 'top-left', $sideMargin, $topBand);
+            $canvas->insert($photo, 'top-left', $sideMargin, $topBand);
 
             $this->drawBands($canvas, $event, $W, $H, $topBand, $bottomBand);
 
-            return (string) $canvas->encodeByExtension('jpg', quality: 90);
+            return (string) $canvas->encodeUsingFileExtension('jpg', quality: 90);
         } catch (\Throwable $e) {
             \Log::warning('composeLandscape failed', [
                 'err'  => $e->getMessage(),
@@ -78,11 +78,11 @@ class BalPhotoComposer
             $photo = $this->manager->decodePath($sourcePath)->contain($maxW, $maxH);
             $x = intval(($S - $photo->width()) / 2);
             $y = $topBand + intval(($maxH - $photo->height()) / 2);
-            $canvas->place($photo, 'top-left', $x, $y);
+            $canvas->insert($photo, 'top-left', $x, $y);
 
             $this->drawBands($canvas, $event, $S, $S, $topBand, $bottomBand);
 
-            return (string) $canvas->encodeByExtension('jpg', quality: 90);
+            return (string) $canvas->encodeUsingFileExtension('jpg', quality: 90);
         } catch (\Throwable $e) {
             \Log::warning('composeSquare failed', [
                 'err'  => $e->getMessage(),
@@ -101,10 +101,10 @@ class BalPhotoComposer
         // Bandeaux noirs semi-opaques
         try {
             $topStrip = $this->manager->createImage($W, $topBand)->fill('#0a0a0a');
-            $canvas->place($topStrip, 'top-left', 0, 0, opacity: 90);
+            $canvas->insert($topStrip, 'top-left', 0, 0, opacity: 90);
 
             $bottomStrip = $this->manager->createImage($W, $bottomBand)->fill('#0a0a0a');
-            $canvas->place($bottomStrip, 'top-left', 0, $H - $bottomBand, opacity: 92);
+            $canvas->insert($bottomStrip, 'top-left', 0, $H - $bottomBand, opacity: 92);
         } catch (\Throwable $e) {
             \Log::warning('drawBands strips failed', ['err' => $e->getMessage()]);
         }
@@ -114,7 +114,7 @@ class BalPhotoComposer
             $logo = $this->resolveLogoPath();
             if ($logo) {
                 $logoImg = $this->manager->decodePath($logo)->scale(70, 70);
-                $canvas->place($logoImg, 'top-left', 30, 10);
+                $canvas->insert($logoImg, 'top-left', 30, 10);
             }
         } catch (\Throwable $e) {
             \Log::warning('drawBands logo failed', ['err' => $e->getMessage()]);
