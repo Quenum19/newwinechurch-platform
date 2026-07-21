@@ -5,7 +5,7 @@ import { useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Camera, Upload, Trash2, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
+import { Camera, Upload, Trash2, Eye, EyeOff, Loader2, ArrowLeft, Download, Sparkles } from 'lucide-react'
 import api from '@/api/axios'
 
 export default function BalPhotosPage() {
@@ -113,23 +113,53 @@ export default function BalPhotosPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {photos.map((p) => (
             <div key={p.id} className="relative group rounded overflow-hidden bg-zinc-100">
+              {/* Aperçu : version brandée si dispo, sinon originale */}
               <img
-                src={p.url}
+                src={p.landscape_url || p.url}
                 alt=""
                 className={`w-full aspect-square object-cover ${!p.is_visible ? 'opacity-40' : ''}`}
               />
-              <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition bg-gradient-to-t from-black/60 to-transparent">
+
+              {/* Badge "Brandé" en haut à gauche */}
+              {p.has_branded && (
+                <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[color:var(--adm-accent)] text-white text-[9px] font-mono uppercase tracking-widest">
+                  <Sparkles size={9}/> brandé
+                </span>
+              )}
+
+              {/* Actions au survol */}
+              <div className="absolute inset-0 flex flex-col items-center justify-end p-2 opacity-0 group-hover:opacity-100 transition bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                {p.has_branded && (
+                  <div className="flex gap-1 mb-1">
+                    <a
+                      href={p.landscape_url}
+                      target="_blank" rel="noopener noreferrer"
+                      download
+                      className="px-2 py-1 bg-white/95 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-white inline-flex items-center gap-1"
+                    >
+                      <Download size={10}/> 16:9
+                    </a>
+                    <a
+                      href={p.square_url}
+                      target="_blank" rel="noopener noreferrer"
+                      download
+                      className="px-2 py-1 bg-white/95 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-white inline-flex items-center gap-1"
+                    >
+                      <Download size={10}/> 1:1
+                    </a>
+                  </div>
+                )}
                 <div className="flex gap-1">
                   <button
                     onClick={() => toggleMutation.mutate(p.id)}
-                    className="p-2 bg-white/90 rounded hover:bg-white"
+                    className="p-2 bg-white/95 rounded hover:bg-white"
                     title={p.is_visible ? 'Masquer' : 'Afficher'}
                   >
                     {p.is_visible ? <Eye size={14}/> : <EyeOff size={14}/>}
                   </button>
                   <button
                     onClick={() => confirm('Supprimer cette photo ?') && deleteMutation.mutate(p.id)}
-                    className="p-2 bg-white/90 rounded hover:bg-white hover:text-red-600"
+                    className="p-2 bg-white/95 rounded hover:bg-white hover:text-red-600"
                   >
                     <Trash2 size={14}/>
                   </button>

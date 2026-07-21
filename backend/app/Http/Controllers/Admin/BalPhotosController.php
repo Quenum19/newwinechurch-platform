@@ -44,13 +44,16 @@ class BalPhotosController extends Controller
             ->orderByDesc('id')
             ->get()
             ->map(fn ($p) => [
-                'id'            => $p->id,
-                'path'          => $p->path,
-                'url'           => asset('storage/' . $p->path),
-                'caption'       => $p->caption,
-                'display_order' => $p->display_order,
-                'is_visible'    => (bool) $p->is_visible,
-                'uploader'      => $p->uploader ? [
+                'id'                 => $p->id,
+                'path'               => $p->path,
+                'url'                => asset('storage/' . $p->path),
+                'landscape_url'      => $p->landscape_path ? asset('storage/' . $p->landscape_path) : null,
+                'square_url'         => $p->square_path ? asset('storage/' . $p->square_path) : null,
+                'has_branded'        => (bool) $p->landscape_path,
+                'caption'            => $p->caption,
+                'display_order'      => $p->display_order,
+                'is_visible'         => (bool) $p->is_visible,
+                'uploader'           => $p->uploader ? [
                     'id'         => $p->uploader->id,
                     'first_name' => $p->uploader->first_name,
                     'last_name'  => $p->uploader->last_name,
@@ -95,18 +98,43 @@ class BalPhotosController extends Controller
         $caption    = $request->input('caption');
         $uploaderId = $request->user()->id;
         $created    = [];
+        $failed     = 0;
+
+        $event = Event::findOrFail($eventId);
+        $composer = app(\App\Services\BalPhotoComposer::class);
 
         foreach ($files as $file) {
-            $path  = $file->store('bal-photos', 'public');
-            $photo = BalPhoto::create([
-                'event_id'      => $eventId,
-                'path'          => $path,
-                'caption'       => $caption,
-                'uploaded_by'   => $uploaderId,
-                'display_order' => 0,
-                'is_visible'    => true,
-            ]);
-            $created[] = $photo->fresh();
+            try {
+                // Compose les 3 versions (original + landscape 16:9 + carré 1:1)
+                $paths = $composer->process($file, $event);
+                $photo = BalPhoto::create([
+                    'event_id'       => $eventId,
+                    'path'           => $paths['original'],
+                    'landscape_path' => $paths['landscape'],
+                    'square_path'    => $paths['square'],
+                    'caption'        => $caption,
+                    'uploaded_by'    => $uploaderId,
+                    'display_order'  => 0,
+                    'is_visible'     => true,
+                ]);
+                $created[] = $photo->fresh();
+            } catch (\Throwable $e) {
+                \Log::warning('BalPhoto compose failed, fallback plain upload', [
+                    'event' => $eventId, 'err' => $e->getMessage(),
+                ]);
+                // Fallback : sauve au moins l'original sans branding
+                $path  = $file->store('bal-photos', 'public');
+                $photo = BalPhoto::create([
+                    'event_id'      => $eventId,
+                    'path'          => $path,
+                    'caption'       => $caption,
+                    'uploaded_by'   => $uploaderId,
+                    'display_order' => 0,
+                    'is_visible'    => true,
+                ]);
+                $created[] = $photo->fresh();
+                $failed++;
+            }
         }
 
         return response()->json([

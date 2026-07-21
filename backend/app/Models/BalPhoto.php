@@ -19,6 +19,8 @@ class BalPhoto extends Model
     protected $fillable = [
         'event_id',
         'path',
+        'landscape_path',
+        'square_path',
         'caption',
         'uploaded_by',
         'display_order',

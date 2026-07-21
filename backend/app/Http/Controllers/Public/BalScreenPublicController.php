@@ -95,14 +95,14 @@ class BalScreenPublicController extends Controller
             $results = $this->computeResults($event->id);
         }
 
-        // Photos ambiance visibles
+        // Photos ambiance visibles — priorité à la version brandée (landscape) si dispo
         $photos = BalPhoto::where('event_id', $event->id)
             ->where('is_visible', true)
             ->orderBy('display_order')
             ->orderByDesc('id')
             ->limit(30)
-            ->pluck('path')
-            ->map(fn ($p) => asset('storage/' . $p))
+            ->get(['path', 'landscape_path'])
+            ->map(fn ($p) => asset('storage/' . ($p->landscape_path ?? $p->path)))
             ->toArray();
 
         return [
