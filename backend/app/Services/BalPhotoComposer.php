@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Event;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Typography\FontFactory;
 
@@ -25,9 +27,8 @@ class BalPhotoComposer
     public function __construct()
     {
         // Imagick prioritaire (meilleur rendu texte + qualité), GD en fallback
-        $this->manager = extension_loaded('imagick')
-            ? ImageManager::imagick()
-            : ImageManager::gd();
+        $driver = extension_loaded('imagick') ? new ImagickDriver() : new GdDriver();
+        $this->manager = new ImageManager($driver);
     }
 
     /** Compose l'image paysage 1920x1080. Retourne le binaire JPEG ou null si échec. */
