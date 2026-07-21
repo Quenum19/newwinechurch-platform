@@ -38,7 +38,7 @@ class BalPhotoComposer
             $W = 1920;
             $H = 1080;
 
-            $canvas = $this->manager->create($W, $H)->fill(self::BLACK);
+            $canvas = $this->manager->createImage($W, $H)->fill(self::BLACK);
 
             $topBand    = 90;
             $bottomBand = 110;
@@ -46,7 +46,7 @@ class BalPhotoComposer
             $photoW = $W - (2 * $sideMargin);
             $photoH = $H - $topBand - $bottomBand - 40;
 
-            $photo = $this->manager->read($sourcePath)->cover($photoW, $photoH);
+            $photo = $this->manager->decodePath($sourcePath)->cover($photoW, $photoH);
             $canvas->place($photo, 'top-left', $sideMargin, $topBand);
 
             $this->drawBands($canvas, $event, $W, $H, $topBand, $bottomBand);
@@ -67,7 +67,7 @@ class BalPhotoComposer
         try {
             $S = 2048;
 
-            $canvas = $this->manager->read($sourcePath)->cover($S, $S)->blur(35);
+            $canvas = $this->manager->decodePath($sourcePath)->cover($S, $S)->blur(35);
 
             $topBand    = 90;
             $bottomBand = 110;
@@ -75,7 +75,7 @@ class BalPhotoComposer
             $maxW = $S - (2 * $sideMargin);
             $maxH = $S - $topBand - $bottomBand - 40;
 
-            $photo = $this->manager->read($sourcePath)->contain($maxW, $maxH);
+            $photo = $this->manager->decodePath($sourcePath)->contain($maxW, $maxH);
             $x = intval(($S - $photo->width()) / 2);
             $y = $topBand + intval(($maxH - $photo->height()) / 2);
             $canvas->place($photo, 'top-left', $x, $y);
@@ -100,10 +100,10 @@ class BalPhotoComposer
     {
         // Bandeaux noirs semi-opaques
         try {
-            $topStrip = $this->manager->create($W, $topBand)->fill('#0a0a0a');
+            $topStrip = $this->manager->createImage($W, $topBand)->fill('#0a0a0a');
             $canvas->place($topStrip, 'top-left', 0, 0, opacity: 90);
 
-            $bottomStrip = $this->manager->create($W, $bottomBand)->fill('#0a0a0a');
+            $bottomStrip = $this->manager->createImage($W, $bottomBand)->fill('#0a0a0a');
             $canvas->place($bottomStrip, 'top-left', 0, $H - $bottomBand, opacity: 92);
         } catch (\Throwable $e) {
             \Log::warning('drawBands strips failed', ['err' => $e->getMessage()]);
@@ -113,7 +113,7 @@ class BalPhotoComposer
         try {
             $logo = $this->resolveLogoPath();
             if ($logo) {
-                $logoImg = $this->manager->read($logo)->scale(70, 70);
+                $logoImg = $this->manager->decodePath($logo)->scale(70, 70);
                 $canvas->place($logoImg, 'top-left', 30, 10);
             }
         } catch (\Throwable $e) {
