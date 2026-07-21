@@ -42,8 +42,9 @@ class BalPhotosController extends Controller
         // n'a pas encore été appliquée en prod). Fallback sur path uniquement.
         $hasBranded = \Schema::hasColumn('bal_photos', 'landscape_path');
 
+        // Note : la table users a `name` + `first_name` mais PAS `last_name` — on ne le sélectionne donc pas.
         $photos = BalPhoto::where('event_id', $eventId)
-            ->with('uploader:id,name,first_name,last_name')
+            ->with('uploader:id,name,first_name')
             ->orderBy('display_order')
             ->orderByDesc('id')
             ->get()
@@ -63,8 +64,7 @@ class BalPhotosController extends Controller
                     'is_visible'    => (bool) $p->is_visible,
                     'uploader'      => $p->uploader ? [
                         'id'         => $p->uploader->id,
-                        'first_name' => $p->uploader->first_name,
-                        'last_name'  => $p->uploader->last_name,
+                        'name'       => $p->uploader->first_name ?: $p->uploader->name,
                     ] : null,
                 ];
             });
