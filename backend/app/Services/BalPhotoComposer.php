@@ -47,7 +47,7 @@ class BalPhotoComposer
             $photoH = $H - $topBand - $bottomBand - 40;
 
             $photo = $this->manager->decodePath($sourcePath)->cover($photoW, $photoH);
-            $canvas->insert($photo, 'top-left', $sideMargin, $topBand);
+            $canvas->insert($photo, $sideMargin, $topBand);
 
             $this->drawBands($canvas, $event, $W, $H, $topBand, $bottomBand);
 
@@ -78,7 +78,7 @@ class BalPhotoComposer
             $photo = $this->manager->decodePath($sourcePath)->contain($maxW, $maxH);
             $x = intval(($S - $photo->width()) / 2);
             $y = $topBand + intval(($maxH - $photo->height()) / 2);
-            $canvas->insert($photo, 'top-left', $x, $y);
+            $canvas->insert($photo, $x, $y);
 
             $this->drawBands($canvas, $event, $S, $S, $topBand, $bottomBand);
 
@@ -101,10 +101,10 @@ class BalPhotoComposer
         // Bandeaux noirs semi-opaques
         try {
             $topStrip = $this->manager->createImage($W, $topBand)->fill('#0a0a0a');
-            $canvas->insert($topStrip, 'top-left', 0, 0, opacity: 90);
+            $canvas->insert($topStrip, 0, 0);
 
             $bottomStrip = $this->manager->createImage($W, $bottomBand)->fill('#0a0a0a');
-            $canvas->insert($bottomStrip, 'top-left', 0, $H - $bottomBand, opacity: 92);
+            $canvas->insert($bottomStrip, 0, $H - $bottomBand);
         } catch (\Throwable $e) {
             \Log::warning('drawBands strips failed', ['err' => $e->getMessage()]);
         }
@@ -114,7 +114,7 @@ class BalPhotoComposer
             $logo = $this->resolveLogoPath();
             if ($logo) {
                 $logoImg = $this->manager->decodePath($logo)->scale(70, 70);
-                $canvas->insert($logoImg, 'top-left', 30, 10);
+                $canvas->insert($logoImg, 30, 10);
             }
         } catch (\Throwable $e) {
             \Log::warning('drawBands logo failed', ['err' => $e->getMessage()]);
