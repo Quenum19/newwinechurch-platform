@@ -34,6 +34,7 @@ import ProclamationSlide from './slides/ProclamationSlide.jsx'
 import OuvertureBalSlide from './slides/OuvertureBalSlide.jsx'
 import FinSlide          from './slides/FinSlide.jsx'
 import NoirSlide         from './slides/NoirSlide.jsx'
+import PhotosAmbianceSlide from './slides/PhotosAmbianceSlide.jsx'
 
 // Table de correspondance slide → composant
 const SLIDES = {
@@ -53,6 +54,7 @@ const SLIDES = {
   'ouverture-bal':OuvertureBalSlide,
   fin:            FinSlide,
   noir:           NoirSlide,
+  'photos-ambiance': PhotosAmbianceSlide,
 }
 
 export default function BalLiveScreen() {

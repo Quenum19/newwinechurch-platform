@@ -15,6 +15,7 @@ import {
   Monitor, Image as ImageIcon, MoonStar, UserPlus, PartyPopper, DoorOpen,
   MessageCircle, Utensils, ClipboardList, Sparkles, Music, Mic2, Crown,
   Vote, PlayCircle, Users, ChevronRight, Loader2, RefreshCw, ExternalLink,
+  Camera,
 } from 'lucide-react'
 
 const SLIDES = [
@@ -23,6 +24,7 @@ const SLIDES = [
 
   { key: 'arrivee',        label: 'Arrivée LIVE',       icon: UserPlus,      section: 'preshow' },
   { key: 'mur-stars',      label: 'Mur des stars',      icon: Sparkles,      section: 'preshow' },
+  { key: 'photos-ambiance',label: 'Photos ambiance',    icon: Camera,        section: 'preshow' },
   { key: 'installation',   label: 'Installation',       icon: DoorOpen,      section: 'preshow' },
 
   { key: 'dancing-stars',  label: 'Dancing Stars',      icon: Music,         section: 'moments' },
