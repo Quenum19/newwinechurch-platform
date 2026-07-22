@@ -54,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // stateful côté client (ex: vote public via QR code depuis un tel).
         $middleware->validateCsrfTokens(except: [
             'api/public/events/*/bal/vote',
+            'api/public/enrollment/bal',
         ]);
 
         // Lit Accept-Language envoyé par axios → règle app()->getLocale() (fr/en).

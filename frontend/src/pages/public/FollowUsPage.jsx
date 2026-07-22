@@ -2,8 +2,9 @@
  * FollowUsPage — Landing "Suivez-nous" pour le QR verso des supports de table.
  */
 import { useState, useEffect } from 'react'
-import { Camera, Share2, Video, Music, MessageCircle, Globe, ArrowRight } from 'lucide-react'
+import { Camera, Share2, Video, Music, MessageCircle, Globe, ArrowRight, HeartHandshake } from 'lucide-react'
 import axios from 'axios'
+import BalEnrollmentModal from './BalEnrollmentModal'
 
 const baseURL = import.meta.env.VITE_API_URL || '/api'
 
@@ -18,6 +19,7 @@ const PLATFORMS = [
 
 export default function FollowUsPage() {
   const [links, setLinks] = useState({})
+  const [enrollmentOpen, setEnrollmentOpen] = useState(false)
 
   useEffect(() => {
     axios.get(`${baseURL}/public/nwc/social-links`)
@@ -102,7 +104,75 @@ export default function FollowUsPage() {
             ))}
           </div>
         )}
+
+        {/* Séparateur */}
+        <div style={{
+          margin: '2.5rem 0 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          opacity: 0.5,
+        }}>
+          <span style={{ flex: 1, height: '1px', background: 'rgba(201,169,97,0.3)' }}/>
+          <span style={{ fontSize: '0.7rem', color: '#C9A961', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
+            &#9733;
+          </span>
+          <span style={{ flex: 1, height: '1px', background: 'rgba(201,169,97,0.3)' }}/>
+        </div>
+
+        {/* CTA "Rejoindre la NWC" — imposant, encadré or, pour convertir les leads du bal */}
+        <button
+          onClick={() => setEnrollmentOpen(true)}
+          style={{
+            width: '100%',
+            padding: '1.4rem 1.4rem',
+            background: 'linear-gradient(135deg, #8B1A2F 0%, #6b1523 100%)',
+            border: '2px solid #C9A961',
+            borderRadius: '14px',
+            color: '#F5E6C8',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+            boxShadow: '0 8px 32px rgba(139,26,47,0.3)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <HeartHandshake size={32} color="#C9A961" style={{ flexShrink: 0 }}/>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: '0.7rem',
+                color: '#C9A961',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                marginBottom: '0.25rem',
+              }}>
+                Une invitation
+              </div>
+              <div style={{
+                fontSize: '1.2rem',
+                fontWeight: 700,
+                color: '#F5E6C8',
+                fontFamily: '"Playfair Display", serif',
+                fontStyle: 'italic',
+              }}>
+                Rejoindre la New Wine Church
+              </div>
+              <div style={{
+                fontSize: '0.85rem',
+                color: '#F5E6C8',
+                opacity: 0.8,
+                marginTop: '0.3rem',
+              }}>
+                Découvrir l'église ou rejoindre un département
+              </div>
+            </div>
+            <ArrowRight size={22} color="#C9A961"/>
+          </div>
+        </button>
       </div>
+
+      <BalEnrollmentModal open={enrollmentOpen} onClose={() => setEnrollmentOpen(false)}/>
     </div>
   )
 }

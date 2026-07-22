@@ -1,0 +1,99 @@
+<?php
+
+namespace App\Http\Controllers\Public;
+
+use App\Http\Controllers\Controller;
+use App\Models\Department;
+use App\Models\MembershipRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+
+/**
+ * Enrôlement bal — hub de contact NWC.
+ *
+ * Le QR "Suis-nous" imprimé sur les supports de table du bal 2026 pointe vers
+ * la page /suivre-nous qui contient un CTA "Rejoindre la New Wine Church".
+ * Ce controller reçoit le formulaire court (prénom, nom, tel, email, whatsapp,
+ * type d'engagement) et crée une membership_request avec source='bal-2026'.
+ *
+ * L'équipe accueil traite les demandes depuis /admin/demandes-adhesion — le
+ * badge "source: bal-2026" permet de filtrer/prioriser les leads du bal.
+ */
+class PublicBalEnrollmentController extends Controller
+{
+    /** POST /api/public/enrollment/bal — soumission formulaire enrôlement bal. */
+    public function store(Request $request): JsonResponse
+    {
+        // Rate limit anti-spam : max 5 demandes par IP par minute.
+        $key = 'bal-enrollment:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            return response()->json([
+                'message' => "Trop de tentatives. Réessaye dans {$seconds}s.",
+            ], 429);
+        }
+        RateLimiter::hit($key, 60);
+
+        $data = $request->validate([
+            'first_name'    => ['required', 'string', 'max:80'],
+            'name'          => ['required', 'string', 'max:80'],
+            'phone'         => ['required', 'string', 'max:30'],
+            'email'         => ['nullable', 'email', 'max:180'],
+            'whatsapp'      => ['nullable', 'string', 'max:30'],
+            'city'          => ['nullable', 'string', 'max:100'],
+            'enrollment_type'  => ['required', 'in:discover,department'],
+            'department_id'    => ['required_if:enrollment_type,department', 'nullable', 'integer', 'exists:departments,id'],
+        ]);
+
+        // Le champ whatsapp est stocké dans motivation en attendant une colonne
+        // dédiée (évite une nouvelle migration juste pour ça). Format standard :
+        // "WhatsApp: <numéro>" → l'accueil voit immédiatement.
+        $notes = [];
+        if (! empty($data['whatsapp'])) {
+            $notes[] = "WhatsApp : {$data['whatsapp']}";
+        }
+        $notes[] = 'Source : Bal 2026 (QR Suis-nous)';
+
+        $req = MembershipRequest::create([
+            'first_name'                => $data['first_name'],
+            'name'                      => $data['name'],
+            'phone'                     => $data['phone'],
+            'email'                     => $data['email'] ?? null,
+            'city'                      => $data['city'] ?? null,
+            'source'                    => 'bal-2026',
+            'enrollment_type'           => $data['enrollment_type'],
+            'interested_department_id'  => $data['department_id'] ?? null,
+            'motivation'                => implode(' · ', $notes),
+            'status'                    => 'pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Merci ! Nous te contacterons très rapidement.',
+            'id'      => $req->id,
+        ], 201);
+    }
+
+    /**
+     * GET /api/public/enrollment/departments — liste allégée pour le sélecteur.
+     *
+     * Endpoint dédié qui retourne uniquement ce dont le formulaire d'enrôlement
+     * a besoin (id, nom, icône, couleur, description courte). Plus léger que
+     * /public/departments (qui embarque governor, member_count, etc.).
+     */
+    public function departments(): JsonResponse
+    {
+        $departments = Department::active()->ordered()
+            ->get(['id', 'name', 'slug', 'description', 'icon', 'color_theme', 'color'])
+            ->map(fn ($d) => [
+                'id'          => $d->id,
+                'name'        => $d->name,
+                'slug'        => $d->slug,
+                'description' => \Illuminate\Support\Str::limit($d->description, 80),
+                'icon'        => $d->icon,
+                'color'       => $d->color_theme ?: $d->color ?: '#8B1A2F',
+            ]);
+
+        return response()->json(['departments' => $departments]);
+    }
+}

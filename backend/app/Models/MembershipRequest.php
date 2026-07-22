@@ -21,6 +21,7 @@ class MembershipRequest extends Model
     protected $fillable = [
         'first_name', 'name', 'email', 'phone', 'birth_date',
         'gender', 'city', 'referrer', 'motivation',
+        'source', 'enrollment_type', 'interested_department_id',
         'status', 'processed_by', 'processed_at', 'rejection_reason', 'user_id',
     ];
 
@@ -37,6 +38,11 @@ class MembershipRequest extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function interestedDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'interested_department_id');
     }
 
     public function scopePending(Builder $q): Builder

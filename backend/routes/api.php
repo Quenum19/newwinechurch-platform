@@ -199,6 +199,11 @@ Route::post('/public/events/{id}/bal/vote',  [\App\Http\Controllers\Public\BalVo
 // Follow us — liens réseaux sociaux NWC
 Route::get('/public/nwc/social-links', [\App\Http\Controllers\Public\NwcSocialLinksController::class, 'index']);
 
+// Hub d'enrôlement bal — CTA "Rejoindre la NWC" (page Suis-nous)
+Route::get ('/public/enrollment/departments', [\App\Http\Controllers\Public\PublicBalEnrollmentController::class, 'departments']);
+Route::post('/public/enrollment/bal',         [\App\Http\Controllers\Public\PublicBalEnrollmentController::class, 'store'])
+    ->middleware('throttle:5,1');
+
 // === DONS PUBLIQUES (membres connectés ou anonymes) ===
 Route::middleware('throttle:10,1')->group(function () {
     Route::post('/prayer-requests',        [PrayerRequestController::class, 'store']);
