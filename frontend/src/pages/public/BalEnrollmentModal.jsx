@@ -23,7 +23,6 @@ export default function BalEnrollmentModal({ open, onClose }) {
     first_name: '',
     name: '',
     phone: '',
-    email: '',
     whatsapp: '',
     city: '',
   })
@@ -44,7 +43,7 @@ export default function BalEnrollmentModal({ open, onClose }) {
   useEffect(() => {
     if (open) return
     const t = setTimeout(() => {
-      setForm({ first_name: '', name: '', phone: '', email: '', whatsapp: '', city: '' })
+      setForm({ first_name: '', name: '', phone: '', whatsapp: '', city: '' })
       setEnrollmentType('discover')
       setDepartmentId(null)
       setDone(false)
@@ -58,6 +57,7 @@ export default function BalEnrollmentModal({ open, onClose }) {
     form.first_name.trim() &&
     form.name.trim() &&
     form.phone.trim() &&
+    form.city.trim() &&
     (enrollmentType === 'discover' || departmentId)
 
   const submit = async (e) => {
@@ -121,8 +121,9 @@ export default function BalEnrollmentModal({ open, onClose }) {
           <Field label="Nom *" value={form.name} onChange={set('name')} />
           <Field label="Téléphone *" value={form.phone} onChange={set('phone')} type="tel" inputMode="tel" />
           <Field label="WhatsApp (facultatif)" value={form.whatsapp} onChange={set('whatsapp')} type="tel" inputMode="tel" />
-          <Field label="Email (facultatif)" value={form.email} onChange={set('email')} type="email" inputMode="email" />
-          <Field label="Ville (facultatif)" value={form.city} onChange={set('city')} />
+          <div className="sm:col-span-2">
+            <Field label="Lieu d'habitation *" value={form.city} onChange={set('city')} placeholder="Ex : Yopougon, Cocody, Abobo…" />
+          </div>
         </div>
 
         {/* Choix engagement — 2 grosses cards */}
@@ -195,7 +196,7 @@ export default function BalEnrollmentModal({ open, onClose }) {
   )
 }
 
-function Field({ label, ...rest }) {
+function Field({ label, placeholder, ...rest }) {
   return (
     <label className="block">
       <span className="block text-xs font-semibold text-[#5C4A3D] mb-1 uppercase tracking-wider">
@@ -203,7 +204,8 @@ function Field({ label, ...rest }) {
       </span>
       <input
         {...rest}
-        className="w-full px-3 py-2.5 rounded-lg border-2 border-[#E5DBC3] bg-white text-[#0A0A0A] focus:outline-none focus:border-[#8B1A2F] transition"
+        placeholder={placeholder}
+        className="w-full px-3 py-2.5 rounded-lg border-2 border-[#E5DBC3] bg-white text-[#0A0A0A] placeholder:text-[#8B7960]/60 focus:outline-none focus:border-[#8B1A2F] transition"
       />
     </label>
   )
@@ -229,26 +231,37 @@ function EngagementCard({ active, onClick, icon: Icon, title, subtitle }) {
 
 function DepartmentCard({ dept, active, onClick }) {
   const color = dept.color || '#8B1A2F'
+  const inLaunch = !dept.is_active
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`text-left p-3 rounded-lg border-2 transition ${
+      className={`relative text-left p-3 rounded-lg border-2 transition ${
         active
           ? 'border-[#8B1A2F] bg-[#8B1A2F]/5'
           : 'border-[#E5DBC3] bg-white hover:border-[#C9A961]'
       }`}
       title={dept.description}
     >
+      {inLaunch && (
+        <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded bg-[#C9A961] text-[#0A0A0A] text-[9px] font-bold uppercase tracking-wider shadow">
+          En lancement
+        </span>
+      )}
       <div
         className="w-8 h-8 rounded flex items-center justify-center text-white text-sm font-bold mb-1.5"
-        style={{ background: color }}
+        style={{ background: color, opacity: inLaunch ? 0.75 : 1 }}
       >
         {(dept.icon && dept.icon.length <= 2) ? dept.icon : dept.name[0]}
       </div>
       <div className="text-sm font-semibold text-[#0A0A0A] leading-tight">
         {dept.name}
       </div>
+      {inLaunch && (
+        <div className="text-[10px] text-[#8B7960] mt-1 italic leading-tight">
+          Sois parmi les pionniers
+        </div>
+      )}
     </button>
   )
 }

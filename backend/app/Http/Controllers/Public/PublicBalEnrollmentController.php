@@ -39,9 +39,8 @@ class PublicBalEnrollmentController extends Controller
             'first_name'    => ['required', 'string', 'max:80'],
             'name'          => ['required', 'string', 'max:80'],
             'phone'         => ['required', 'string', 'max:30'],
-            'email'         => ['nullable', 'email', 'max:180'],
             'whatsapp'      => ['nullable', 'string', 'max:30'],
-            'city'          => ['nullable', 'string', 'max:100'],
+            'city'          => ['required', 'string', 'max:100'],
             'enrollment_type'  => ['required', 'in:discover,department'],
             'department_id'    => ['required_if:enrollment_type,department', 'nullable', 'integer', 'exists:departments,id'],
         ]);
@@ -59,8 +58,7 @@ class PublicBalEnrollmentController extends Controller
             'first_name'                => $data['first_name'],
             'name'                      => $data['name'],
             'phone'                     => $data['phone'],
-            'email'                     => $data['email'] ?? null,
-            'city'                      => $data['city'] ?? null,
+            'city'                      => $data['city'],
             'source'                    => 'bal-2026',
             'enrollment_type'           => $data['enrollment_type'],
             'interested_department_id'  => $data['department_id'] ?? null,
@@ -75,16 +73,18 @@ class PublicBalEnrollmentController extends Controller
     }
 
     /**
-     * GET /api/public/enrollment/departments — liste allégée pour le sélecteur.
+     * GET /api/public/enrollment/departments — liste complète pour le sélecteur.
      *
-     * Endpoint dédié qui retourne uniquement ce dont le formulaire d'enrôlement
-     * a besoin (id, nom, icône, couleur, description courte). Plus léger que
-     * /public/departments (qui embarque governor, member_count, etc.).
+     * Retourne TOUS les départements (actifs + en préparation) : le bal est le
+     * bon moment pour "vendre" les départements en cours de lancement — les
+     * volontaires les plus intéressés voudront s'y positionner tôt. Les
+     * départements non-actifs sont marqués `is_active = false` pour que le
+     * front puisse afficher un badge "En lancement" discret.
      */
     public function departments(): JsonResponse
     {
-        $departments = Department::active()->ordered()
-            ->get(['id', 'name', 'slug', 'description', 'icon', 'color_theme', 'color'])
+        $departments = Department::ordered()
+            ->get(['id', 'name', 'slug', 'description', 'icon', 'color_theme', 'color', 'is_active'])
             ->map(fn ($d) => [
                 'id'          => $d->id,
                 'name'        => $d->name,
@@ -92,6 +92,7 @@ class PublicBalEnrollmentController extends Controller
                 'description' => \Illuminate\Support\Str::limit($d->description, 80),
                 'icon'        => $d->icon,
                 'color'       => $d->color_theme ?: $d->color ?: '#8B1A2F',
+                'is_active'   => (bool) $d->is_active,
             ]);
 
         return response()->json(['departments' => $departments]);
