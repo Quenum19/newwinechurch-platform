@@ -20,6 +20,7 @@ class BalPhoto extends Model
         'event_id',
         'path',
         'landscape_path',
+        'tv_path',
         'square_path',
         'story_path',
         'caption',

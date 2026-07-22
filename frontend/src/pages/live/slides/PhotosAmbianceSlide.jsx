@@ -81,7 +81,8 @@ export default function PhotosAmbianceSlide({ state }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', overflow: 'hidden' }}>
-      {/* Photo en fondu enchaîné, cover fullscreen */}
+      {/* Photo en fondu enchaîné, cover full écran (les cadres 16:9 sont pré-générés
+          côté backend avec le bon layout, pas besoin d'overlay ici). */}
       <AnimatePresence mode="sync">
         <motion.div
           key={currentPhoto + index}
@@ -92,47 +93,13 @@ export default function PhotosAmbianceSlide({ state }) {
           style={{
             position: 'absolute', inset: 0,
             backgroundImage: `url("${currentPhoto}")`,
-            backgroundSize: 'contain',
+            backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             backgroundColor: '#0A0A0A',
           }}
         />
       </AnimatePresence>
-
-      {/* Overlay très discret en bas : hashtag + compteur */}
-      <div style={{
-        position: 'absolute',
-        bottom: '3vh',
-        left: 0, right: 0,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0 4vw',
-        zIndex: 5,
-        pointerEvents: 'none',
-      }}>
-        <div style={{
-          fontFamily: '"Playfair Display", serif',
-          fontStyle: 'italic',
-          fontSize: 'clamp(1.2rem, 1.8vw, 1.8rem)',
-          color: '#F5E6C8',
-          textShadow: '0 2px 8px rgba(0,0,0,0.9)',
-          letterSpacing: '0.05em',
-        }}>
-          #BalNWC2026
-        </div>
-        <div style={{
-          fontFamily: '"Geist Mono", monospace',
-          fontSize: 'clamp(0.9rem, 1.2vw, 1.2rem)',
-          color: '#C9A961',
-          textShadow: '0 2px 8px rgba(0,0,0,0.9)',
-          letterSpacing: '0.2em',
-          opacity: 0.85,
-        }}>
-          {String(index + 1).padStart(2, '0')} / {String(photos.length).padStart(2, '0')}
-        </div>
-      </div>
     </div>
   )
 }

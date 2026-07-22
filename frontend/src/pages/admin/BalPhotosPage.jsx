@@ -131,6 +131,16 @@ export default function BalPhotosPage() {
               <div className="absolute inset-0 flex flex-col items-center justify-end p-2 opacity-0 group-hover:opacity-100 transition bg-gradient-to-t from-black/70 via-black/30 to-transparent">
                 {p.has_branded && (
                   <div className="flex gap-1 mb-1 flex-wrap justify-center">
+                    {p.tv_url && (
+                      <a
+                        href={p.tv_url}
+                        target="_blank" rel="noopener noreferrer"
+                        download
+                        className="px-2 py-1 bg-white/95 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-white inline-flex items-center gap-1"
+                      >
+                        <Download size={10}/> TV
+                      </a>
+                    )}
                     <a
                       href={p.landscape_url}
                       target="_blank" rel="noopener noreferrer"

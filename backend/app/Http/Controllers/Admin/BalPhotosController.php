@@ -50,6 +50,7 @@ class BalPhotosController extends Controller
             ->get()
             ->map(function ($p) use ($hasBranded) {
                 $landscapePath = $hasBranded ? ($p->landscape_path ?? null) : null;
+                $tvPath        = ($hasBranded && \Schema::hasColumn('bal_photos', 'tv_path')) ? ($p->tv_path ?? null) : null;
                 $squarePath    = $hasBranded ? ($p->square_path ?? null) : null;
                 $storyPath     = ($hasBranded && \Schema::hasColumn('bal_photos', 'story_path')) ? ($p->story_path ?? null) : null;
 
@@ -57,10 +58,11 @@ class BalPhotosController extends Controller
                     'id'            => $p->id,
                     'path'          => $p->path,
                     'url'           => $p->path ? asset('storage/' . $p->path) : null,
+                    'tv_url'        => $tvPath ? asset('storage/' . $tvPath) : null,
                     'landscape_url' => $landscapePath ? asset('storage/' . $landscapePath) : null,
                     'square_url'    => $squarePath ? asset('storage/' . $squarePath) : null,
                     'story_url'     => $storyPath ? asset('storage/' . $storyPath) : null,
-                    'has_branded'   => (bool) $landscapePath,
+                    'has_branded'   => (bool) ($tvPath ?: $landscapePath),
                     'caption'       => $p->caption,
                     'display_order' => $p->display_order,
                     'is_visible'    => (bool) $p->is_visible,
@@ -132,7 +134,17 @@ class BalPhotosController extends Controller
                     $composer = app(\App\Services\BalPhotoComposer::class);
                     $absOriginal = \Storage::disk('public')->path($originalPath);
 
-                    // Landscape 16:9
+                    // TV 16:9 (écran live full écran)
+                    if (\Schema::hasColumn('bal_photos', 'tv_path')) {
+                        $tv = $composer->composeTvPublic($absOriginal, $event);
+                        if ($tv) {
+                            $tvPath = 'bal-photos/branded/tv_' . uniqid() . '.jpg';
+                            \Storage::disk('public')->put($tvPath, $tv);
+                            $created_attributes['tv_path'] = $tvPath;
+                        }
+                    }
+
+                    // Landscape 3:2 (partage général)
                     $landscape = $composer->composeLandscapePublic($absOriginal, $event);
                     if ($landscape) {
                         $landscapePath = 'bal-photos/branded/l_' . uniqid() . '.jpg';

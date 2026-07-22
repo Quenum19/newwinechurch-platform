@@ -95,14 +95,17 @@ class BalScreenPublicController extends Controller
             $results = $this->computeResults($event->id);
         }
 
-        // Photos ambiance visibles — priorité à la version brandée (landscape) si dispo
+        // Photos ambiance visibles — priorité à la version TV 16:9 (full écran)
+        // fallback landscape puis path original si les colonnes n'existent pas.
+        $hasTv = \Schema::hasColumn('bal_photos', 'tv_path');
+        $columns = array_filter(['path', 'landscape_path', $hasTv ? 'tv_path' : null]);
         $photos = BalPhoto::where('event_id', $event->id)
             ->where('is_visible', true)
             ->orderBy('display_order')
             ->orderByDesc('id')
             ->limit(30)
-            ->get(['path', 'landscape_path'])
-            ->map(fn ($p) => asset('storage/' . ($p->landscape_path ?? $p->path)))
+            ->get($columns)
+            ->map(fn ($p) => asset('storage/' . (($hasTv ? $p->tv_path : null) ?? $p->landscape_path ?? $p->path)))
             ->toArray();
 
         return [
