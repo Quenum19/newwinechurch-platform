@@ -18,7 +18,7 @@ import Modal from '@/components/ui/Modal'
 
 const baseURL = import.meta.env.VITE_API_URL || '/api'
 
-export default function BalEnrollmentModal({ open, onClose }) {
+export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
   const [form, setForm] = useState({
     first_name: '',
     name: '',
@@ -69,6 +69,7 @@ export default function BalEnrollmentModal({ open, onClose }) {
         ...form,
         enrollment_type: enrollmentType,
         department_id: enrollmentType === 'department' ? departmentId : null,
+        event_id: eventId,
       })
       setDone(true)
       toast.success('Merci ! Nous te contacterons très bientôt.')

@@ -22,6 +22,7 @@ class MembershipRequest extends Model
         'first_name', 'name', 'email', 'phone', 'birth_date',
         'gender', 'city', 'referrer', 'motivation',
         'source', 'enrollment_type', 'interested_department_id',
+        'event_id', 'enrollment_status', 'admin_notes',
         'status', 'processed_by', 'processed_at', 'rejection_reason', 'user_id',
     ];
 
@@ -43,6 +44,21 @@ class MembershipRequest extends Model
     public function interestedDepartment(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'interested_department_id');
+    }
+
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
+    }
+
+    public function scopeEnrollments(Builder $q): Builder
+    {
+        return $q->whereNotNull('enrollment_type');
+    }
+
+    public function scopeForEvent(Builder $q, int $eventId): Builder
+    {
+        return $q->where('event_id', $eventId);
     }
 
     public function scopePending(Builder $q): Builder

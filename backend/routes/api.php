@@ -620,6 +620,14 @@ Route::middleware(['auth:sanctum'])
     Route::get ('/events/{id}/attendance/backup-pdf',     [AdminEventAttendanceController::class, 'backupPdf'])->whereNumber('id');
     Route::post('/events/{id}/attendance/manual',         [AdminEventAttendanceController::class, 'manualCheckIn'])->whereNumber('id');
 
+    // === Enrôlements par événement (générique : leads captés via QR "Suis-nous") ===
+    Route::get   ('/events/{id}/enrolements',                        [\App\Http\Controllers\Admin\EventEnrolementsController::class, 'index'])->whereNumber('id');
+    Route::get   ('/events/{id}/enrolements/export/excel',           [\App\Http\Controllers\Admin\EventEnrolementsController::class, 'exportExcel'])->whereNumber('id');
+    Route::get   ('/events/{id}/enrolements/export/pdf',             [\App\Http\Controllers\Admin\EventEnrolementsController::class, 'exportPdf'])->whereNumber('id');
+    Route::patch ('/events/{id}/enrolements/{enrolId}/status',       [\App\Http\Controllers\Admin\EventEnrolementsController::class, 'updateStatus'])->whereNumber('id')->whereNumber('enrolId');
+    Route::patch ('/events/{id}/enrolements/{enrolId}/notes',        [\App\Http\Controllers\Admin\EventEnrolementsController::class, 'updateNotes'])->whereNumber('id')->whereNumber('enrolId');
+    Route::delete('/events/{id}/enrolements/{enrolId}',              [\App\Http\Controllers\Admin\EventEnrolementsController::class, 'destroy'])->whereNumber('id')->whereNumber('enrolId');
+
     // === Bal 2026 — Régie de l'écran live + candidats + photos ambiance ===
     Route::get ('/events/{id}/bal/state',                 [\App\Http\Controllers\Admin\BalScreenController::class, 'state'])->whereNumber('id');
     Route::post('/events/{id}/bal/slide',                 [\App\Http\Controllers\Admin\BalScreenController::class, 'setSlide'])->whereNumber('id');

@@ -43,26 +43,26 @@ class PublicBalEnrollmentController extends Controller
             'city'          => ['required', 'string', 'max:100'],
             'enrollment_type'  => ['required', 'in:discover,department'],
             'department_id'    => ['required_if:enrollment_type,department', 'nullable', 'integer', 'exists:departments,id'],
+            'event_id'         => ['nullable', 'integer', 'exists:events,id'],
         ]);
 
-        // Le champ whatsapp est stocké dans motivation en attendant une colonne
-        // dédiée (évite une nouvelle migration juste pour ça). Format standard :
-        // "WhatsApp: <numéro>" → l'accueil voit immédiatement.
+        // WhatsApp stocké dans motivation en attendant une colonne dédiée.
         $notes = [];
         if (! empty($data['whatsapp'])) {
             $notes[] = "WhatsApp : {$data['whatsapp']}";
         }
-        $notes[] = 'Source : Bal 2026 (QR Suis-nous)';
 
         $req = MembershipRequest::create([
             'first_name'                => $data['first_name'],
             'name'                      => $data['name'],
             'phone'                     => $data['phone'],
             'city'                      => $data['city'],
-            'source'                    => 'bal-2026',
+            'source'                    => 'enrollment',
             'enrollment_type'           => $data['enrollment_type'],
+            'enrollment_status'         => 'nouveau',
             'interested_department_id'  => $data['department_id'] ?? null,
-            'motivation'                => implode(' · ', $notes),
+            'event_id'                  => $data['event_id'] ?? null,
+            'motivation'                => $notes ? implode(' · ', $notes) : null,
             'status'                    => 'pending',
         ]);
 

@@ -396,6 +396,29 @@ export default function EventForm() {
             </div>
           )}
 
+          {/* Actions rapides — sous-pages liées à cet événement (uniquement en édition) */}
+          {isEdit && (
+            <div className="adm-card p-4 sm:p-6 space-y-2">
+              <h2 className="text-xs uppercase tracking-widest font-mono mb-3" style={{ color: 'var(--adm-text-muted)' }}>
+                Liens rapides
+              </h2>
+              <Link
+                to={`/admin/evenements/${id}/enrolements`}
+                className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-[#FAF6EE] text-sm transition"
+              >
+                <span>❤ Enrôlements</span>
+                <span className="text-[color:var(--adm-accent)]">→</span>
+              </Link>
+              <Link
+                to={`/admin/evenements/${id}/inscrits`}
+                className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-[#FAF6EE] text-sm transition"
+              >
+                <span>👥 Inscrits</span>
+                <span className="text-[color:var(--adm-accent)]">→</span>
+              </Link>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <button type="submit" disabled={save.isPending} className="adm-btn adm-btn-primary justify-center">
               {save.isPending

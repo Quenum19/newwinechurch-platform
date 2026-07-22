@@ -29,7 +29,10 @@ class BalSupportsController extends Controller
         // URLs cibles des QR codes
         $frontendUrl = rtrim(config('app.frontend_url', 'https://newinechurch.org'), '/');
         $voteUrl   = $frontendUrl . '/bal/vote/' . $event->id;
-        $followUrl = $frontendUrl . '/nwc/follow';
+        // QR follow us paramétré avec ?event={id} pour que les enrôlements du
+        // formulaire "Rejoindre la NWC" soient automatiquement rattachés à cet
+        // événement (page admin dédiée + exports par event).
+        $followUrl = $frontendUrl . '/nwc/follow?event=' . $event->id;
 
         // QR codes en SVG data URI (embed direct dans le HTML)
         $voteQr   = $this->generateQrSvg($voteUrl);

@@ -30,7 +30,10 @@ class MembershipRequestsController extends Controller
     {
         abort_unless($request->user()?->can('view members'), 403);
 
+        // On EXCLUT les enrôlements (workflow séparé, géré depuis la page event).
+        // Cette liste ne contient que les demandes du formulaire /rejoindre classique.
         $query = MembershipRequest::query()
+            ->whereNull('enrollment_type')
             ->with('processedBy:id,name,first_name')
             ->orderByDesc('created_at');
 

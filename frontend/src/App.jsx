@@ -98,6 +98,7 @@ const TestimonialForm    = lazy(() => import('./pages/admin/TestimonialForm.jsx'
 const EventsList        = lazy(() => import('./pages/admin/EventsList.jsx'))
 const EventForm         = lazy(() => import('./pages/admin/EventForm.jsx'))
 const EventRegistrations = lazy(() => import('./pages/admin/EventRegistrations.jsx'))
+const EventEnrolementsPage = lazy(() => import('./pages/admin/EventEnrolementsPage.jsx'))
 const PostsList         = lazy(() => import('./pages/admin/PostsList.jsx'))
 const PostForm          = lazy(() => import('./pages/admin/PostForm.jsx'))
 const MediaGalleryPage  = lazy(() => import('./pages/admin/MediaGalleryPage.jsx'))
@@ -380,6 +381,7 @@ export default function App() {
           <Route path="/admin/evenements/nouveau"         element={<EventForm />} />
           <Route path="/admin/evenements/:id"             element={<EventForm />} />
           <Route path="/admin/evenements/:id/inscrits"    element={<EventRegistrations />} />
+          <Route path="/admin/evenements/:id/enrolements" element={<EventEnrolementsPage />} />
           <Route path="/admin/evenements/:id/billetterie" element={<EventTicketsDashboard />} />
           <Route path="/admin/evenements/:id/presence"    element={<EventAttendancePage />} />
           <Route path="/admin/evenements/:id/presence/kiosque" element={<EventAttendanceKioskPage />} />

@@ -20,6 +20,13 @@ const PLATFORMS = [
 export default function FollowUsPage() {
   const [links, setLinks] = useState({})
   const [enrollmentOpen, setEnrollmentOpen] = useState(false)
+  // Lit ?event={id} du query string pour rattacher l'enrôlement à l'event source
+  // (QR imprimé depuis l'admin d'un event → URL contient ?event=X)
+  const eventId = (() => {
+    if (typeof window === 'undefined') return null
+    const v = new URLSearchParams(window.location.search).get('event')
+    return v && /^\d+$/.test(v) ? parseInt(v, 10) : null
+  })()
 
   useEffect(() => {
     axios.get(`${baseURL}/public/nwc/social-links`)
@@ -172,7 +179,7 @@ export default function FollowUsPage() {
         </button>
       </div>
 
-      <BalEnrollmentModal open={enrollmentOpen} onClose={() => setEnrollmentOpen(false)}/>
+      <BalEnrollmentModal open={enrollmentOpen} onClose={() => setEnrollmentOpen(false)} eventId={eventId}/>
     </div>
   )
 }
