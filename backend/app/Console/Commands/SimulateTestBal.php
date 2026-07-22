@@ -325,11 +325,17 @@ class SimulateTestBal extends Command
         });
     }
 
-    /** Crée les comptes de test (idempotent, réutilise si déjà là). */
+    /** Crée les comptes de test (idempotent, restore les soft-deleted). */
     private function createTestAccounts(): void
     {
         foreach ($this->testAccounts as $acc) {
-            $user = User::where('email', $acc['email'])->first();
+            // Le model User utilise SoftDeletes — cherche même les trashed
+            // pour éviter les duplicate key errors si le destroy précédent
+            // n'a pas fait de forceDelete.
+            $user = User::withTrashed()->where('email', $acc['email'])->first();
+            if ($user && $user->trashed()) {
+                $user->restore();
+            }
             if (! $user) {
                 $user = User::create([
                     'email'      => $acc['email'],
@@ -338,6 +344,12 @@ class SimulateTestBal extends Command
                     'password'   => Hash::make('sim2026'),
                     'status'     => 'active',
                 ]);
+            } else {
+                // Reset mot de passe + status au cas où ils auraient changé
+                $user->forceFill([
+                    'password' => Hash::make('sim2026'),
+                    'status'   => 'active',
+                ])->save();
             }
             if (! $user->hasRole($acc['role'])) {
                 $user->assignRole($acc['role']);
@@ -362,12 +374,12 @@ class SimulateTestBal extends Command
             $event->delete();
         }
 
-        // 2. Comptes test
+        // 2. Comptes test — forceDelete pour vraiment libérer l'email unique
         foreach ($this->testAccounts as $acc) {
-            $user = User::where('email', $acc['email'])->first();
+            $user = User::withTrashed()->where('email', $acc['email'])->first();
             if ($user) {
                 $this->line("  → Compte: {$acc['email']}");
-                $user->delete();
+                $user->forceDelete();
             }
         }
 
