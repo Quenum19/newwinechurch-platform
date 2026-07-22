@@ -2,10 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Models\BalCandidate;
 use App\Models\Event;
 use App\Models\EventTicket;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -28,11 +31,14 @@ use Illuminate\Support\Str;
 class SimulateTestBal extends Command
 {
     protected $signature = 'nwc:simulate-test-bal
-                            {--tickets=0 : Nombre de tickets fictifs à pré-générer (0 = vide, laisser vos users s\'inscrire)}
+                            {--tickets=0 : Nombre de tickets fictifs à pré-générer (0 = vide)}
+                            {--candidates=8 : Nombre de candidats Roi & Reine à créer (0 = aucun)}
+                            {--accounts : Créer les comptes test (sim-accueil, sim-photo, sim-regie) avec les bons rôles}
                             {--source= : Slug de l\'event à cloner (défaut: premier event ticketed)}
-                            {--reset : Supprime l\'event test existant + tickets avant de recréer}';
+                            {--reset : Supprime la simulation existante avant de recréer}
+                            {--destroy : Supprime tout (event test + tickets + candidats + comptes) puis quitte}';
 
-    protected $description = 'Duplique un événement en version TEST (vide par défaut, prêt pour vraies inscriptions)';
+    protected $description = 'Simulation complète bal : clone event + tickets + candidats + comptes test (tout est destroyable)';
 
     /** Prénoms/noms/téléphones fictifs — mix ivoirien réaliste. */
     private array $firstNames = [
@@ -48,8 +54,20 @@ class SimulateTestBal extends Command
     ];
     private array $ticketTypesSample = ['Standard', 'VIP', 'VIP', 'Standard', 'Standard', 'Étudiant'];
 
+    /** Comptes de test créés par --accounts. */
+    private array $testAccounts = [
+        ['email' => 'sim-accueil@test.local',  'first_name' => 'Simu',  'name' => 'Accueil',       'role' => 'accueil'],
+        ['email' => 'sim-photo@test.local',    'first_name' => 'Simu',  'name' => 'Photographe',   'role' => 'controleur'], // scan tickets + upload photos
+        ['email' => 'sim-regie@test.local',    'first_name' => 'Simu',  'name' => 'Régie',         'role' => 'admin'],
+    ];
+
     public function handle(): int
     {
+        // Mode destroy : tout supprimer et sortir
+        if ($this->option('destroy')) {
+            return $this->destroyAll();
+        }
+
         $count = (int) $this->option('tickets');
         if ($count < 0 || $count > 300) {
             $this->error("--tickets doit être entre 0 et 300 (reçu: {$count})");
@@ -71,6 +89,7 @@ class SimulateTestBal extends Command
             if ($this->option('reset')) {
                 $this->warn("→ Suppression de l'event test existant (id={$existing->id})…");
                 EventTicket::where('event_id', $existing->id)->delete();
+                BalCandidate::where('event_id', $existing->id)->delete();
                 $existing->delete();
             } else {
                 $this->warn("Event test déjà existant (id={$existing->id}). Utilise --reset pour recréer.");
@@ -154,6 +173,21 @@ class SimulateTestBal extends Command
             $this->newLine(2);
         }
 
+        // 4bis. Candidats Roi & Reine
+        $candidatesCount = (int) $this->option('candidates');
+        if ($candidatesCount > 0) {
+            $this->info("→ Création de {$candidatesCount} candidats (moitié roi, moitié reine)…");
+            $this->createCandidates($testEvent->id, $candidatesCount);
+            $this->info("  ✓ Candidats créés.");
+        }
+
+        // 4ter. Comptes test
+        if ($this->option('accounts')) {
+            $this->info("→ Création des comptes test…");
+            $this->createTestAccounts();
+            $this->info("  ✓ Comptes test créés (mot de passe : sim2026).");
+        }
+
         // 5. Récap
         $this->newLine();
         $this->info('═══════════════════════════════════════════════════════');
@@ -205,8 +239,38 @@ class SimulateTestBal extends Command
             $this->newLine();
         }
 
-        $this->info('  🗑  Pour supprimer et recommencer :');
-        $this->line('     php artisan nwc:simulate-test-bal --reset');
+        // Récap candidats
+        if ($candidatesCount > 0) {
+            $this->info('  👑 VOTE ROI & REINE :');
+            $this->line("     → QR vote : {$this->frontendUrl()}/bal/vote/{$testEvent->id}");
+            $this->line("     → Régie : /admin/bal/{$testEvent->id}/regie → 'Ouvrir le vote'");
+            $this->line("     → Après vote → 'Proclamer' pour afficher les résultats");
+            $this->newLine();
+        }
+
+        // Récap comptes
+        if ($this->option('accounts')) {
+            $this->info('  👤 COMPTES DE TEST (mot de passe : sim2026) :');
+            foreach ($this->testAccounts as $acc) {
+                $this->line("     • {$acc['email']}  (rôle: {$acc['role']})");
+            }
+            $this->newLine();
+        }
+
+        // Récap enrôlements
+        $this->info('  ❤ ENRÔLEMENTS "REJOINDRE LA NWC" :');
+        $this->line("     → QR follow us : {$this->frontendUrl()}/nwc/follow?event={$testEvent->id}");
+        $this->line("     → Vue admin : /admin/evenements/{$testEvent->id}/enrolements");
+        $this->newLine();
+
+        // Récap photos
+        $this->info('  📸 PHOTOS AMBIANCE (cadre Dark Night) :');
+        $this->line("     → Upload : /admin/bal/{$testEvent->id}/photos");
+        $this->line("     → Régie → slide 'Photos ambiance'");
+        $this->newLine();
+
+        $this->info('  🗑  Pour tout supprimer proprement :');
+        $this->line('     php artisan nwc:simulate-test-bal --destroy');
         $this->newLine();
 
         return self::SUCCESS;
@@ -218,7 +282,6 @@ class SimulateTestBal extends Command
         if ($slug = $this->option('source')) {
             return Event::where('slug', $slug)->first();
         }
-        // Premier event ticketing_enabled non-test avec au moins 1 ticket vendu ou capacity > 0
         return Event::where('ticketing_enabled', true)
             ->where('slug', 'not like', 'test-%')
             ->where(function ($q) {
@@ -226,5 +289,95 @@ class SimulateTestBal extends Command
             })
             ->orderByDesc('id')
             ->first();
+    }
+
+    /** Crée N candidats fictifs (moitié roi / moitié reine). */
+    private function createCandidates(int $eventId, int $count): void
+    {
+        // Prénoms genrés — masculins et féminins d'Afrique de l'Ouest
+        $males = ['Yannick', 'Serge', 'Franck', 'Amadou', 'Kouassi', 'Jean-Marc', 'David', 'Simon', 'Josué', 'Emmanuel'];
+        $females = ['Grace', 'Christelle', 'Aïcha', 'Fatou', 'Ornella', 'Rachel', 'Ruth', 'Sarah', 'Anne', 'Judith'];
+
+        $roiCount = intval(ceil($count / 2));
+        $reineCount = $count - $roiCount;
+
+        DB::transaction(function () use ($eventId, $males, $females, $roiCount, $reineCount) {
+            for ($i = 0; $i < $roiCount; $i++) {
+                BalCandidate::create([
+                    'event_id'      => $eventId,
+                    'role'          => 'roi',
+                    'first_name'    => $males[$i % count($males)],
+                    'last_name'     => $this->lastNames[array_rand($this->lastNames)],
+                    'display_order' => $i,
+                    'is_active'     => true,
+                ]);
+            }
+            for ($i = 0; $i < $reineCount; $i++) {
+                BalCandidate::create([
+                    'event_id'      => $eventId,
+                    'role'          => 'reine',
+                    'first_name'    => $females[$i % count($females)],
+                    'last_name'     => $this->lastNames[array_rand($this->lastNames)],
+                    'display_order' => $i,
+                    'is_active'     => true,
+                ]);
+            }
+        });
+    }
+
+    /** Crée les comptes de test (idempotent, réutilise si déjà là). */
+    private function createTestAccounts(): void
+    {
+        foreach ($this->testAccounts as $acc) {
+            $user = User::where('email', $acc['email'])->first();
+            if (! $user) {
+                $user = User::create([
+                    'email'      => $acc['email'],
+                    'first_name' => $acc['first_name'],
+                    'name'       => $acc['name'],
+                    'password'   => Hash::make('sim2026'),
+                    'status'     => 'active',
+                ]);
+            }
+            if (! $user->hasRole($acc['role'])) {
+                $user->assignRole($acc['role']);
+            }
+        }
+    }
+
+    /** Destruction complète : event test + tickets + candidats + comptes test. */
+    private function destroyAll(): int
+    {
+        $this->warn('🧹 Suppression complète de la simulation…');
+
+        // 1. Events test (slug commence par 'test-')
+        $events = Event::where('slug', 'like', 'test-%')->get();
+        foreach ($events as $event) {
+            $this->line("  → Event: {$event->title} (id={$event->id})");
+            EventTicket::where('event_id', $event->id)->delete();
+            BalCandidate::where('event_id', $event->id)->delete();
+            \App\Models\BalVote::where('event_id', $event->id)->delete();
+            \App\Models\BalPhoto::where('event_id', $event->id)->delete();
+            \App\Models\MembershipRequest::where('event_id', $event->id)->delete();
+            $event->delete();
+        }
+
+        // 2. Comptes test
+        foreach ($this->testAccounts as $acc) {
+            $user = User::where('email', $acc['email'])->first();
+            if ($user) {
+                $this->line("  → Compte: {$acc['email']}");
+                $user->delete();
+            }
+        }
+
+        $this->newLine();
+        $this->info('✅ Simulation supprimée. Base propre.');
+        return self::SUCCESS;
+    }
+
+    private function frontendUrl(): string
+    {
+        return rtrim(config('app.frontend_url', 'https://newinechurch.org'), '/');
     }
 }
