@@ -200,9 +200,11 @@ class EventEnrolementsController extends Controller
             public_path('logos/logo_newwine.png'),
             base_path('public/logos/logo_newwine.png'),
             dirname(base_path()) . '/public_html/logos/logo_newwine.png',
+            dirname(base_path()) . '/domains/newinechurch.org/public_html/logos/logo_newwine.png',
+            storage_path('app/exports-logo-cache/logo_newwine.png'),
         ];
         foreach ($candidates as $path) {
-            if ($path && @file_exists($path) && filesize($path) > 500) {
+            if ($path && @file_exists($path) && @filesize($path) > 500) {
                 return 'data:image/png;base64,' . base64_encode(file_get_contents($path));
             }
         }

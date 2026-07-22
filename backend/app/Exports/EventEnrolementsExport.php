@@ -266,9 +266,10 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
             public_path('logos/logo_newwine.png'),
             base_path('public/logos/logo_newwine.png'),
             dirname(base_path()) . '/public_html/logos/logo_newwine.png',
+            dirname(base_path()) . '/domains/newinechurch.org/public_html/logos/logo_newwine.png',
         ];
         foreach ($candidates as $path) {
-            if ($path && @file_exists($path)) return $path;
+            if ($path && @file_exists($path) && @filesize($path) > 500) return $path;
         }
         $cached = storage_path('app/exports-logo-cache/logo_newwine.png');
         if (@file_exists($cached) && filesize($cached) > 500) return $cached;
