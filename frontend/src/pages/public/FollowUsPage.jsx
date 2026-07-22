@@ -43,7 +43,7 @@ export default function FollowUsPage() {
         <img
           src="/logos/logo_newwine.png"
           alt="NWC"
-          style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 1.5rem', filter: 'brightness(0) invert(1)' }}
+          style={{ width: '96px', height: '96px', objectFit: 'contain', margin: '0 auto 1.5rem' }}
         />
         <p style={{
           fontSize: '0.85rem',
