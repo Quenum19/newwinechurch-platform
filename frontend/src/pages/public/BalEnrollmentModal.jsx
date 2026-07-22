@@ -231,37 +231,26 @@ function EngagementCard({ active, onClick, icon: Icon, title, subtitle }) {
 
 function DepartmentCard({ dept, active, onClick }) {
   const color = dept.color || '#8B1A2F'
-  const inLaunch = !dept.is_active
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`relative text-left p-3 rounded-lg border-2 transition ${
+      className={`text-left p-3 rounded-lg border-2 transition ${
         active
           ? 'border-[#8B1A2F] bg-[#8B1A2F]/5'
           : 'border-[#E5DBC3] bg-white hover:border-[#C9A961]'
       }`}
       title={dept.description}
     >
-      {inLaunch && (
-        <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded bg-[#C9A961] text-[#0A0A0A] text-[9px] font-bold uppercase tracking-wider shadow">
-          En lancement
-        </span>
-      )}
       <div
         className="w-8 h-8 rounded flex items-center justify-center text-white text-sm font-bold mb-1.5"
-        style={{ background: color, opacity: inLaunch ? 0.75 : 1 }}
+        style={{ background: color }}
       >
         {(dept.icon && dept.icon.length <= 2) ? dept.icon : dept.name[0]}
       </div>
       <div className="text-sm font-semibold text-[#0A0A0A] leading-tight">
         {dept.name}
       </div>
-      {inLaunch && (
-        <div className="text-[10px] text-[#8B7960] mt-1 italic leading-tight">
-          Sois parmi les pionniers
-        </div>
-      )}
     </button>
   )
 }
