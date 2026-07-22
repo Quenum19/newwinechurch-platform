@@ -6,188 +6,77 @@ use App\Models\Event;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
-use Intervention\Image\Typography\FontFactory;
 
 /**
- * Compose les photos ambiance du Bal avec branding automatique.
+ * Compose les photos ambiance du Bal avec cadre "A Dark Night in Elegance".
  *
- * Utilise Intervention Image v3 via ImageManager explicite (Imagick si dispo,
- * sinon GD). Chaque étape est try/catch séparément — si le compositing plante,
- * on retourne null et le controller garde l'original.
+ * Approche pixel-perfect : le cadre décoratif (bordures or, wordmark vertical,
+ * badge date bordeaux, lockup Elegance, étoile, logo) a été pré-généré en PNG
+ * transparent depuis le design Claude Design (Chrome headless → PNG 32bit alpha).
+ * Ces PNG sont dans backend/resources/frames/.
+ *
+ * Le composer :
+ *   1. Charge la photo utilisateur
+ *   2. La cover au format cible (1350x900 paysage, 1080x1080 carré)
+ *   3. Superpose le PNG cadre par-dessus (Intervention v4 insert respecte l'alpha)
+ *   4. Encode en JPG qualité 90
+ *
+ * Avantages :
+ *   - Rendu identique au design original (polices Google, gradients, glows, shadows)
+ *   - Aucune dépendance à des polices TTF côté serveur
+ *   - Refonte du cadre = régénérer le PNG, pas modifier le code
  */
 class BalPhotoComposer
 {
-    // Palette NWC
-    private const GOLD  = 'c9a961';
-    private const BLACK = '#0a0a0a';
-    private const IVORY = 'f5e6c8';
-
     private ImageManager $manager;
 
     public function __construct()
     {
-        // Imagick prioritaire (meilleur rendu texte + qualité), GD en fallback
         $driver = extension_loaded('imagick') ? new ImagickDriver() : new GdDriver();
         $this->manager = new ImageManager($driver);
     }
 
-    /** Compose l'image paysage 1920x1080. Retourne le binaire JPEG ou null si échec. */
+    /** Compose paysage 1350x900 (3:2). Retourne le binaire JPEG ou null si échec. */
     public function composeLandscapePublic(string $sourcePath, Event $event): ?string
     {
-        try {
-            $W = 1920;
-            $H = 1080;
-
-            // Fond = photo agrandie + floutée (couvre TOUTE la zone, style Instagram stories)
-            $canvas = $this->manager->decodePath($sourcePath)->cover($W, $H)->blur(35);
-
-            $topBand    = 90;
-            $bottomBand = 110;
-            $sideMargin = 40;
-            $photoW = $W - (2 * $sideMargin);
-            $photoH = $H - $topBand - $bottomBand - 40;
-
-            // Photo NETTE centrée en "contain" → jamais de coupe de tête ni de bord
-            $photo = $this->manager->decodePath($sourcePath)->contain($photoW, $photoH);
-            $x = $sideMargin + intval(($photoW - $photo->width()) / 2);
-            $y = $topBand + intval(($photoH - $photo->height()) / 2);
-            $canvas->insert($photo, $x, $y);
-
-            $this->drawBands($canvas, $event, $W, $H, $topBand, $bottomBand);
-
-            return (string) $canvas->encodeUsingFileExtension('jpg', quality: 90);
-        } catch (\Throwable $e) {
-            \Log::warning('composeLandscape failed', [
-                'err'  => $e->getMessage(),
-                'file' => $e->getFile() . ':' . $e->getLine(),
-            ]);
-            return null;
-        }
+        return $this->compose($sourcePath, 1350, 900, 'dark-night-landscape.png');
     }
 
-    /** Compose l'image carrée 2048x2048 avec fond flouté. */
+    /** Compose carré 1080x1080. Retourne le binaire JPEG ou null si échec. */
     public function composeSquarePublic(string $sourcePath, Event $event): ?string
     {
+        return $this->compose($sourcePath, 1080, 1080, 'dark-night-square.png');
+    }
+
+    /** Compose story vertical 1080x1920 (9:16 Instagram/TikTok). */
+    public function composeStoryPublic(string $sourcePath, Event $event): ?string
+    {
+        return $this->compose($sourcePath, 1080, 1920, 'dark-night-story.png');
+    }
+
+    /** Pipeline commun : photo cover + overlay PNG. */
+    private function compose(string $sourcePath, int $w, int $h, string $frameFile): ?string
+    {
         try {
-            $S = 2048;
+            // 1. Photo utilisateur en cover (remplit toute la surface)
+            $canvas = $this->manager->decodePath($sourcePath)->cover($w, $h);
 
-            $canvas = $this->manager->decodePath($sourcePath)->cover($S, $S)->blur(35);
-
-            $topBand    = 90;
-            $bottomBand = 110;
-            $sideMargin = 60;
-            $maxW = $S - (2 * $sideMargin);
-            $maxH = $S - $topBand - $bottomBand - 40;
-
-            $photo = $this->manager->decodePath($sourcePath)->contain($maxW, $maxH);
-            $x = intval(($S - $photo->width()) / 2);
-            $y = $topBand + intval(($maxH - $photo->height()) / 2);
-            $canvas->insert($photo, $x, $y);
-
-            $this->drawBands($canvas, $event, $S, $S, $topBand, $bottomBand);
+            // 2. Overlay cadre par-dessus (transparence respectée)
+            $framePath = base_path("resources/frames/{$frameFile}");
+            if (@file_exists($framePath)) {
+                $frame = $this->manager->decodePath($framePath);
+                $canvas->insert($frame, 0, 0);
+            } else {
+                \Log::warning('BalPhotoComposer frame introuvable', ['path' => $framePath]);
+            }
 
             return (string) $canvas->encodeUsingFileExtension('jpg', quality: 90);
         } catch (\Throwable $e) {
-            \Log::warning('composeSquare failed', [
+            \Log::warning('BalPhotoComposer compose failed', [
                 'err'  => $e->getMessage(),
                 'file' => $e->getFile() . ':' . $e->getLine(),
             ]);
             return null;
         }
-    }
-
-    /**
-     * Dessine bandeaux haut/bas + logo + textes.
-     * Chaque draw est isolé — un échec sur le logo ne casse pas le texte.
-     */
-    protected function drawBands($canvas, Event $event, int $W, int $H, int $topBand, int $bottomBand): void
-    {
-        // Bandeaux noirs semi-opaques
-        try {
-            $topStrip = $this->manager->createImage($W, $topBand)->fill('#0a0a0a');
-            $canvas->insert($topStrip, 0, 0);
-
-            $bottomStrip = $this->manager->createImage($W, $bottomBand)->fill('#0a0a0a');
-            $canvas->insert($bottomStrip, 0, $H - $bottomBand);
-        } catch (\Throwable $e) {
-            \Log::warning('drawBands strips failed', ['err' => $e->getMessage()]);
-        }
-
-        // Logo NWC (haut gauche)
-        try {
-            $logo = $this->resolveLogoPath();
-            if ($logo) {
-                $logoImg = $this->manager->decodePath($logo)->scale(70, 70);
-                $canvas->insert($logoImg, 30, 10);
-            }
-        } catch (\Throwable $e) {
-            \Log::warning('drawBands logo failed', ['err' => $e->getMessage()]);
-        }
-
-        // Titre en haut
-        try {
-            $title = strtoupper($event->title ?? 'A Dark Night in Elegance');
-            $canvas->text($title, 115, intval($topBand / 2) + 4, function (FontFactory $f) {
-                $f->filename($this->fontPath('DejaVuSans-Bold.ttf'));
-                $f->size(28);
-                $f->color(self::IVORY);
-                $f->align('left');
-                $f->valign('middle');
-            });
-        } catch (\Throwable $e) {
-            \Log::warning('drawBands title failed', ['err' => $e->getMessage()]);
-        }
-
-        // Footer en bas
-        try {
-            $date = $this->formatDate($event);
-            $footer = strtoupper($date) . '  ·  BAL 2026  ·  NEW WINE CHURCH  ·  ' . chr(9733);
-            $canvas->text($footer, intval($W / 2), $H - intval($bottomBand / 2), function (FontFactory $f) {
-                $f->filename($this->fontPath('DejaVuSans-Bold.ttf'));
-                $f->size(22);
-                $f->color(self::GOLD);
-                $f->align('center');
-                $f->valign('middle');
-            });
-        } catch (\Throwable $e) {
-            \Log::warning('drawBands footer failed', ['err' => $e->getMessage()]);
-        }
-    }
-
-    /** Résout le chemin absolu du logo NWC. */
-    protected function resolveLogoPath(): ?string
-    {
-        $candidates = [
-            public_path('logos/logo_newwine.png'),
-            base_path('public/logos/logo_newwine.png'),
-            dirname(base_path()) . '/public_html/logos/logo_newwine.png',
-            dirname(base_path()) . '/domains/newinechurch.org/public_html/logos/logo_newwine.png',
-        ];
-        foreach ($candidates as $c) {
-            if (@file_exists($c)) return $c;
-        }
-        $cached = storage_path('app/exports-logo-cache/logo_newwine.png');
-        return @file_exists($cached) ? $cached : null;
-    }
-
-    /** Trouve un font DejaVu (fallback système). */
-    protected function fontPath(string $name): string
-    {
-        $paths = [
-            '/usr/share/fonts/truetype/dejavu/' . $name,
-            '/usr/share/fonts/dejavu/' . $name,
-            base_path('resources/fonts/' . $name),
-            'C:\\Windows\\Fonts\\arial.ttf',
-        ];
-        foreach ($paths as $p) {
-            if (@file_exists($p)) return $p;
-        }
-        return '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
-    }
-
-    protected function formatDate(Event $event): string
-    {
-        if (! $event->starts_at) return '';
-        return $event->starts_at->locale('fr')->isoFormat('D MMMM YYYY');
     }
 }

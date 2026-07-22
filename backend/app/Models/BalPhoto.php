@@ -21,6 +21,7 @@ class BalPhoto extends Model
         'path',
         'landscape_path',
         'square_path',
+        'story_path',
         'caption',
         'uploaded_by',
         'display_order',

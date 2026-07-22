@@ -51,6 +51,7 @@ class BalPhotosController extends Controller
             ->map(function ($p) use ($hasBranded) {
                 $landscapePath = $hasBranded ? ($p->landscape_path ?? null) : null;
                 $squarePath    = $hasBranded ? ($p->square_path ?? null) : null;
+                $storyPath     = ($hasBranded && \Schema::hasColumn('bal_photos', 'story_path')) ? ($p->story_path ?? null) : null;
 
                 return [
                     'id'            => $p->id,
@@ -58,6 +59,7 @@ class BalPhotosController extends Controller
                     'url'           => $p->path ? asset('storage/' . $p->path) : null,
                     'landscape_url' => $landscapePath ? asset('storage/' . $landscapePath) : null,
                     'square_url'    => $squarePath ? asset('storage/' . $squarePath) : null,
+                    'story_url'     => $storyPath ? asset('storage/' . $storyPath) : null,
                     'has_branded'   => (bool) $landscapePath,
                     'caption'       => $p->caption,
                     'display_order' => $p->display_order,
@@ -144,6 +146,16 @@ class BalPhotosController extends Controller
                         $squarePath = 'bal-photos/branded/s_' . uniqid() . '.jpg';
                         \Storage::disk('public')->put($squarePath, $square);
                         $created_attributes['square_path'] = $squarePath;
+                    }
+
+                    // Story 9:16
+                    if (\Schema::hasColumn('bal_photos', 'story_path')) {
+                        $story = $composer->composeStoryPublic($absOriginal, $event);
+                        if ($story) {
+                            $storyPath = 'bal-photos/branded/t_' . uniqid() . '.jpg';
+                            \Storage::disk('public')->put($storyPath, $story);
+                            $created_attributes['story_path'] = $storyPath;
+                        }
                     }
                 } catch (\Throwable $e) {
                     \Log::warning('BalPhoto compose failed', [
