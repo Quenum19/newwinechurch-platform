@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 import api from '@/api/axios'
 import {
   Monitor, Image as ImageIcon, MoonStar, UserPlus, PartyPopper,
-  MessageCircle, ClipboardList, Sparkles, Music, Mic2, Crown,
+  MessageCircle, Sparkles, Music, Mic2, Crown,
   Vote, PlayCircle, Users, ChevronRight, Loader2, RefreshCw, ExternalLink,
   Camera,
 } from 'lucide-react'
@@ -29,7 +29,6 @@ const SLIDES = [
 
   { key: 'dancing-stars',  label: 'Dancing Stars',      icon: Music,         section: 'moments' },
   { key: 'bienvenue',      label: 'Bienvenue',          icon: MessageCircle, section: 'moments' },
-  { key: 'programme',      label: 'Programme',          icon: ClipboardList, section: 'moments' },
   { key: 'defile',         label: 'Défilé',             icon: Sparkles,      section: 'moments' },
   { key: 'rappeurs',       label: 'Rappeurs',           icon: Mic2,          section: 'moments' },
   { key: 'dj',             label: 'DJ',                 icon: Music,         section: 'moments' },

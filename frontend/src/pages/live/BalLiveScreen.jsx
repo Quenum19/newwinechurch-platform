@@ -23,7 +23,6 @@ import ArriveeSlide        from './slides/ArriveeSlide.jsx'
 import MurStarsSlide       from './slides/MurStarsSlide.jsx'
 import DancingStarsSlide   from './slides/DancingStarsSlide.jsx'
 import BienvenueSlide      from './slides/BienvenueSlide.jsx'
-import ProgrammeSlide      from './slides/ProgrammeSlide.jsx'
 import DefileSlide         from './slides/DefileSlide.jsx'
 import RappeursSlide       from './slides/RappeursSlide.jsx'
 import DjSlide             from './slides/DjSlide.jsx'
@@ -33,14 +32,13 @@ import OuvertureBalSlide   from './slides/OuvertureBalSlide.jsx'
 import NoirSlide           from './slides/NoirSlide.jsx'
 import PhotosAmbianceSlide from './slides/PhotosAmbianceSlide.jsx'
 
-// Table de correspondance slide → composant (14 slides V2)
+// Table de correspondance slide → composant (13 slides V2 — programme retirée 2026-07-23)
 const SLIDES = {
   default:            DefaultSlide,
   arrivee:            ArriveeSlide,
   'mur-stars':        MurStarsSlide,
   'dancing-stars':    DancingStarsSlide,
   bienvenue:          BienvenueSlide,
-  programme:          ProgrammeSlide,
   defile:             DefileSlide,
   rappeurs:           RappeursSlide,
   dj:                 DjSlide,
@@ -73,10 +71,10 @@ export default function BalLiveScreen() {
       // Charge la font Playfair via CSS import inline (fallback système)
       fontFamily: '"Playfair Display", "Georgia", serif',
     }}>
-      {/* Chargement Google Fonts Playfair + Anton */}
+      {/* Chargement Google Fonts — toutes les fonts utilisées par les 13 slides V2 */}
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap"
       />
 
       <SlideTransition slideKey={slideKey}>

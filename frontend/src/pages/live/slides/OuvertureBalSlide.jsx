@@ -104,7 +104,7 @@ export default function OuvertureBalSlide({ state }) {
           background: 'linear-gradient(90deg,#160d10,#2a1a10)',
           borderRight: '3px solid rgba(230,200,119,.6)',
           transformOrigin: 'left center',
-          animation: 'nwDoorL 2.6s cubic-bezier(.7,0,.3,1) 1.6s forwards',
+          animation: 'nwDoorL 2.6s cubic-bezier(.7,0,.3,1) 3s forwards',
           boxShadow: 'inset -30px 0 60px rgba(0,0,0,.6)',
         }} />
         <div style={{
@@ -112,7 +112,7 @@ export default function OuvertureBalSlide({ state }) {
           background: 'linear-gradient(270deg,#160d10,#2a1a10)',
           borderLeft: '3px solid rgba(230,200,119,.6)',
           transformOrigin: 'right center',
-          animation: 'nwDoorR 2.6s cubic-bezier(.7,0,.3,1) 1.6s forwards',
+          animation: 'nwDoorR 2.6s cubic-bezier(.7,0,.3,1) 3s forwards',
           boxShadow: 'inset 30px 0 60px rgba(0,0,0,.6)',
         }} />
 
@@ -145,24 +145,24 @@ export default function OuvertureBalSlide({ state }) {
         <div style={{ ...cornerBase, bottom: 44, left: 44 }} />
         <div style={{ ...cornerBase, bottom: 44, right: 44 }} />
 
-        {/* Countdown 3-2-1 — pur CSS, timings 0s / 0.5s / 1s, 1.6s chacun */}
+        {/* Countdown 3-2-1 — timings ralentis (feedback 2026-07-23) : 1s d'espacement */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 6, pointerEvents: 'none',
         }}>
           <div style={{ ...countBase, animation: 'nwCountPop 1.6s ease-in 0s 1 both' }}>3</div>
-          <div style={{ ...countBase, animation: 'nwCountPop 1.6s ease-in .5s 1 both' }}>2</div>
-          <div style={{ ...countBase, animation: 'nwCountPop 1.6s ease-in 1s 1 both' }}>1</div>
+          <div style={{ ...countBase, animation: 'nwCountPop 1.6s ease-in 1s 1 both' }}>2</div>
+          <div style={{ ...countBase, animation: 'nwCountPop 1.6s ease-in 2s 1 both' }}>1</div>
         </div>
 
-        {/* Titre révélé à 2.4s */}
+        {/* Titre révélé à 3.6s (après countdown ralenti) */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           textAlign: 'center', zIndex: 6,
-          animation: 'nwRevealUp 1s ease 2.4s both',
+          animation: 'nwRevealUp 1s ease 3.6s both',
           pointerEvents: 'none',
         }}>
           <div style={{

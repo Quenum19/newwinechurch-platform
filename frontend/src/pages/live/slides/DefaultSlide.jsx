@@ -95,60 +95,10 @@ export default function DefaultSlide({ state }) {
         <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
         <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
 
-        {/* Bloc central */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          textAlign: 'center', pointerEvents: 'none',
-        }}>
-          <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 38,
-            letterSpacing: '.6em', textIndent: '.6em',
-            color: '#E6C877', textShadow: '0 2px 10px rgba(0,0,0,.9)',
-          }}>NEW WINE CHURCH</div>
-
-          <div style={{
-            fontFamily: "'Anton',sans-serif", fontSize: 210, lineHeight: .92,
-            letterSpacing: '.02em', textTransform: 'uppercase',
-            color: '#ECCE7D',
-            background: 'linear-gradient(180deg,#FFF6D8 0%,#E6C877 46%,#C9A961 64%,#8a6d2f 100%)',
-            WebkitBackgroundClip: 'text', backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            marginTop: 20,
-            animation: 'nwGlow 6s ease-in-out infinite',
-          }}>A DARK NIGHT</div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 36, margin: '12px 0 6px' }}>
-            <span style={{ width: 170, height: 2, background: 'rgba(214,178,95,.8)' }} />
-            <span style={{
-              fontFamily: "'Cinzel',serif", fontWeight: 500, fontSize: 44,
-              letterSpacing: '.4em', textIndent: '.4em',
-              color: '#E6C877', textShadow: '0 2px 8px rgba(0,0,0,.9)',
-            }}>IN</span>
-            <span style={{ width: 170, height: 2, background: 'rgba(214,178,95,.8)' }} />
-          </div>
-          <div style={{
-            fontFamily: "'Great Vibes',cursive", fontSize: 220, lineHeight: .82,
-            color: '#EECF80',
-            textShadow: '0 0 80px rgba(201,169,97,.5),0 4px 14px rgba(0,0,0,.85)',
-          }}>Elegance</div>
-
-          <div style={{
-            fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-            fontSize: 44, color: '#F5E6C8', marginTop: 32,
-            textShadow: '0 2px 10px rgba(0,0,0,.9)',
-          }}>{subtitle}</div>
-        </div>
-
-        {/* Event tag bas */}
-        <div style={{
-          position: 'absolute', left: 0, right: 0, bottom: 80,
-          textAlign: 'center', pointerEvents: 'none',
-          fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 28,
-          letterSpacing: '.5em', textIndent: '.5em',
-          color: '#E6C877', textShadow: '0 2px 10px rgba(0,0,0,.95)',
-        }}>{eventTag}</div>
+        {/* Affiche seule — pas de texte ajouté, l'image contient déjà tout */}
+        {/* Sous-titre / tag laissés vides intentionnellement (voir feedback 2026-07-23) */}
+        {void subtitle}
+        {void eventTag}
       </div>
     </Stage>
   )

@@ -12,9 +12,7 @@ import Stage from '../components/Stage.jsx'
  * Égaliseur : 40 barres 12px, animation nwEq déphasée.
  */
 export default function DjSlide({ state }) {
-  const cfg = state?.config ?? {}
-  const djName = cfg.dj_name ?? 'DJ NWC'
-  const hasDj = !!djName
+  void state // nom DJ retiré (feedback 2026-07-23) — slide 100% design
 
   const eq = useMemo(() => {
     const rnd = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x) }
@@ -129,22 +127,14 @@ export default function DjSlide({ state }) {
             textShadow: '0 2px 10px rgba(0,0,0,.8)',
           }}>PLACE À LA MUSIQUE</div>
 
-          {/* Ligne DJ + nom */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 40 }}>
-            <span style={{
-              fontFamily: "'Anton',sans-serif", fontSize: 300, lineHeight: .9,
-              background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f)',
-              WebkitBackgroundClip: 'text', backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'nwGlowP 4s ease-in-out infinite',
-            }}>DJ</span>
-            {hasDj && (
-              <span style={{
-                fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-                fontSize: 72, color: '#F5E6C8',
-              }}>{djName}</span>
-            )}
-          </div>
+          {/* Titre DJ — nom retiré (feedback 2026-07-23) */}
+          <div style={{
+            fontFamily: "'Anton',sans-serif", fontSize: 300, lineHeight: .9,
+            background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f)',
+            WebkitBackgroundClip: 'text', backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            animation: 'nwGlowP 4s ease-in-out infinite',
+          }}>DJ</div>
 
           {/* Égaliseur — 40 barres */}
           <div style={{
