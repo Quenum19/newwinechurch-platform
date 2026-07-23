@@ -674,6 +674,7 @@ Route::middleware(['auth:sanctum'])
     // Liste d'attente
     Route::get   ('/events/{eventId}/waitlist',                     [AdminEventTicketsController::class, 'waitlist'])->whereNumber('eventId');
     Route::post  ('/events/{eventId}/waitlist/{id}/convert',        [AdminEventTicketsController::class, 'waitlistConvert'])->whereNumber('eventId')->whereNumber('id');
+    Route::post  ('/events/{eventId}/waitlist/bulk-convert',        [AdminEventTicketsController::class, 'waitlistBulkConvert'])->whereNumber('eventId');
     Route::delete('/events/{eventId}/waitlist/{id}',                [AdminEventTicketsController::class, 'waitlistRemove'])->whereNumber('eventId')->whereNumber('id');
 
     // Paiements + remboursements (Phase 2 + 6)

@@ -402,6 +402,7 @@ export const events = {
   // === Liste d'attente ===
   waitlist:          async (eventId) => (await api.get(`/admin/events/${eventId}/waitlist`)).data,
   waitlistConvert:   async (eventId, id) => (await api.post(`/admin/events/${eventId}/waitlist/${id}/convert`)).data,
+  waitlistBulkConvert: async (eventId, ids) => (await api.post(`/admin/events/${eventId}/waitlist/bulk-convert`, { ids })).data,
   waitlistRemove:    async (eventId, id) => (await api.delete(`/admin/events/${eventId}/waitlist/${id}`)).data,
 
   // === Phase 2 — Validation paiements ===

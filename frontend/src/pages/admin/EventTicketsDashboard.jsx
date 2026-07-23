@@ -641,16 +641,39 @@ function PaymentsToValidate({ orders, onValidated }) {
 }
 
 function WaitlistPanel({ eventId, entries, onRefresh }) {
+  const [selected, setSelected] = useState(new Set())
+
   const convertMutation = useMutation({
     mutationFn: (id) => events.waitlistConvert(eventId, id),
     onSuccess: (r) => { toast.success(r.message || 'Converti en ticket.'); onRefresh?.() },
     onError: (e) => toast.error(e?.response?.data?.message || 'Conversion impossible.'),
+  })
+  const bulkConvertMutation = useMutation({
+    mutationFn: (ids) => events.waitlistBulkConvert(eventId, ids),
+    onSuccess: (r) => {
+      toast.success(r.message || `${r.converted} ticket(s) émis.`)
+      setSelected(new Set())
+      onRefresh?.()
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || 'Bascule échouée.'),
   })
   const removeMutation = useMutation({
     mutationFn: (id) => events.waitlistRemove(eventId, id),
     onSuccess: () => { toast.success('Retiré de la liste.'); onRefresh?.() },
     onError: () => toast.error('Erreur.'),
   })
+
+  const allChecked = entries.length > 0 && selected.size === entries.length
+  const toggleAll = () => {
+    if (allChecked) setSelected(new Set())
+    else setSelected(new Set(entries.map((e) => e.id)))
+  }
+  const toggleOne = (id) => {
+    const next = new Set(selected)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelected(next)
+  }
 
   if (entries.length === 0) {
     return (
@@ -664,11 +687,23 @@ function WaitlistPanel({ eventId, entries, onRefresh }) {
 
   return (
     <div className="space-y-3">
-      <div className="p-4 bg-orange-50 border border-orange-200 text-sm">
+      <div className="p-4 bg-orange-50 border border-orange-200 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-orange-900">
           <strong>{entries.length}</strong> personne{entries.length > 1 ? 's' : ''} en attente.
-          Convertis-les en ticket dès qu'une place se libère (annulation, remboursement, capacité augmentée).
+          Coche des lignes puis bascule en tickets d'un coup.
         </p>
+        {selected.size > 0 && (
+          <button
+            onClick={() => {
+              if (! confirm(`Basculer ${selected.size} personne(s) en tickets ? Un email sera envoyé à chacune.`)) return
+              bulkConvertMutation.mutate(Array.from(selected))
+            }}
+            disabled={bulkConvertMutation.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white text-xs uppercase font-mono tracking-wider hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+          >
+            <Check size={14}/> Basculer {selected.size} sélection{selected.size > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
 
       <div className="adm-card overflow-hidden">
@@ -676,6 +711,16 @@ function WaitlistPanel({ eventId, entries, onRefresh }) {
           <thead className="text-xs uppercase tracking-wider font-mono"
                  style={{ background: '#FAFAFA', color: 'var(--adm-text-muted)' }}>
             <tr>
+              <th className="text-center px-3 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  onChange={toggleAll}
+                  className="h-4 w-4 rounded border-zinc-300 cursor-pointer"
+                  style={{ accentColor: '#8B1A2F' }}
+                  title="Tout sélectionner / désélectionner"
+                />
+              </th>
               <th className="text-left px-4 py-3 w-16">#</th>
               <th className="text-left px-4 py-3">Nom</th>
               <th className="text-left px-4 py-3 hidden sm:table-cell">Contact</th>
@@ -686,7 +731,20 @@ function WaitlistPanel({ eventId, entries, onRefresh }) {
           </thead>
           <tbody>
             {entries.map((w) => (
-              <tr key={w.id} className="border-t" style={{ borderColor: 'var(--adm-border)' }}>
+              <tr
+                key={w.id}
+                className={`border-t ${selected.has(w.id) ? 'bg-orange-50/50' : ''}`}
+                style={{ borderColor: 'var(--adm-border)' }}
+              >
+                <td className="px-3 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(w.id)}
+                    onChange={() => toggleOne(w.id)}
+                    className="h-4 w-4 rounded border-zinc-300 cursor-pointer"
+                    style={{ accentColor: '#8B1A2F' }}
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-700 font-bold font-mono">
                     {w.position}

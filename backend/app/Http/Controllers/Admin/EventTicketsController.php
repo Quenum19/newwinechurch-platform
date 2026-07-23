@@ -435,12 +435,72 @@ class EventTicketsController extends Controller
         $this->authorizeManage($request, $event);
 
         $entry = \App\Models\EventTicketWaitlist::where('event_id', $eventId)->findOrFail($waitlistId);
+        $result = $this->convertWaitlistEntry($event, $entry);
 
-        // Vérifier qu'il y a la capacité
+        return response()->json([
+            'message' => "{$result['sent']}/{$result['total']} ticket(s) émis pour {$entry->first_name} {$entry->last_name}.",
+            'tickets' => $result['tickets'],
+            'mail_error' => $result['mail_error'],
+        ]);
+    }
+
+    /**
+     * Bulk convert : bascule plusieurs entrées waitlist en tickets d'un coup.
+     * POST /admin/events/{id}/waitlist/bulk-convert  { ids: [1, 2, 3] }
+     */
+    public function waitlistBulkConvert(Request $request, int $eventId): JsonResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeManage($request, $event);
+
+        $data = $request->validate([
+            'ids'   => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $entries = \App\Models\EventTicketWaitlist::where('event_id', $eventId)
+            ->whereIn('id', $data['ids'])
+            ->where('status', 'waiting')
+            ->orderBy('position')
+            ->get();
+
+        $converted = 0;
+        $skipped   = [];
+        $mailErrors = 0;
+
+        foreach ($entries as $entry) {
+            $event->refresh();
+            if ($event->tickets_capacity && ($event->tickets_sold + $entry->quantity) > $event->tickets_capacity) {
+                $skipped[] = $entry->first_name . ' ' . $entry->last_name . ' (capacité insuffisante)';
+                continue;
+            }
+            $r = $this->convertWaitlistEntry($event, $entry);
+            $converted += count($r['tickets']);
+            if ($r['mail_error']) $mailErrors++;
+        }
+
+        $msg = "{$converted} ticket(s) émis pour " . count($entries) . " personne(s).";
+        if ($mailErrors > 0) $msg .= " ⚠ {$mailErrors} email(s) non envoyé(s) (tickets créés OK).";
+        if (! empty($skipped)) $msg .= " Ignorés : " . implode(', ', $skipped);
+
+        return response()->json([
+            'message'    => $msg,
+            'converted'  => $converted,
+            'skipped'    => $skipped,
+            'mail_errors' => $mailErrors,
+        ]);
+    }
+
+    /**
+     * Cœur de la conversion — extrait pour être réutilisé par single et bulk.
+     * Le mail est envoyé en try/catch : si SMTP plante, les tickets restent créés
+     * (bug antérieur : le 500 sur mail rollback annulait la conversion apparente
+     * côté UI alors que les tickets étaient bien en BDD).
+     */
+    private function convertWaitlistEntry(Event $event, \App\Models\EventTicketWaitlist $entry): array
+    {
         if ($event->tickets_capacity && ($event->tickets_sold + $entry->quantity) > $event->tickets_capacity) {
-            return response()->json([
-                'message' => 'Capacité insuffisante. Libère d\'abord ' . $entry->quantity . ' place(s).',
-            ], 422);
+            abort(422, 'Capacité insuffisante. Libère d\'abord ' . $entry->quantity . ' place(s).');
         }
 
         $codes  = app(\App\Services\TicketCodeGenerator::class);
@@ -471,17 +531,29 @@ class EventTicketsController extends Controller
             $entry->update(['status' => 'converted']);
         });
 
-        // Émission mail + PDF
+        // Émission mail + PDF — chaque envoi dans son try/catch pour ne pas
+        // faire échouer la conversion si SMTP est down.
         $sent = 0;
+        $mailError = null;
         foreach ($tickets as $t) {
-            $r = $issuer->issueAndSend($t);
-            if ($r['sent']) $sent++;
+            try {
+                $r = $issuer->issueAndSend($t);
+                if ($r['sent']) $sent++;
+            } catch (\Throwable $e) {
+                $mailError = $e->getMessage();
+                \Log::warning('waitlistConvert issueAndSend failed', [
+                    'ticket_id' => $t->id,
+                    'err'       => $e->getMessage(),
+                ]);
+            }
         }
 
-        return response()->json([
-            'message' => "{$sent}/" . count($tickets) . " ticket(s) émis pour {$entry->first_name} {$entry->last_name}.",
-            'order_code' => $orderCode,
-        ]);
+        return [
+            'total'      => count($tickets),
+            'sent'       => $sent,
+            'tickets'    => $tickets,
+            'mail_error' => $mailError,
+        ];
     }
 
     /** Supprime une entrée de la file d'attente. */
