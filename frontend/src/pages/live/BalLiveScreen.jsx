@@ -25,6 +25,7 @@ import DancingStarsSlide   from './slides/DancingStarsSlide.jsx'
 import BienvenueSlide      from './slides/BienvenueSlide.jsx'
 import DefileSlide         from './slides/DefileSlide.jsx'
 import RappeursSlide       from './slides/RappeursSlide.jsx'
+import KimBPhotosSlide     from './slides/KimBPhotosSlide.jsx'
 import DjSlide             from './slides/DjSlide.jsx'
 import VoteSlide           from './slides/VoteSlide.jsx'
 import ProclamationSlide   from './slides/ProclamationSlide.jsx'
@@ -41,6 +42,7 @@ const SLIDES = {
   bienvenue:          BienvenueSlide,
   defile:             DefileSlide,
   rappeurs:           RappeursSlide,
+  'kim-b-photos':     KimBPhotosSlide,
   dj:                 DjSlide,
   vote:               VoteSlide,
   proclamation:       ProclamationSlide,

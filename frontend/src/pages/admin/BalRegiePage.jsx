@@ -31,6 +31,7 @@ const SLIDES = [
   { key: 'bienvenue',      label: 'Bienvenue',          icon: MessageCircle, section: 'moments' },
   { key: 'defile',         label: 'Défilé',             icon: Sparkles,      section: 'moments' },
   { key: 'rappeurs',       label: 'Rappeurs',           icon: Mic2,          section: 'moments' },
+  { key: 'kim-b-photos',   label: 'Photos KIM B',       icon: Camera,        section: 'moments' },
   { key: 'dj',             label: 'DJ',                 icon: Music,         section: 'moments' },
 
   { key: 'ouverture-bal',  label: 'Ouverture du Bal',   icon: PartyPopper,   section: 'moments' },
