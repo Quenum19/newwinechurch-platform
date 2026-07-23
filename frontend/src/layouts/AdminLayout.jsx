@@ -46,7 +46,7 @@ function buildNavItems(t) {
     { to: '/admin/series',            icon: Layers,         label: t('admin.sidebar.series', 'Séries'),         perm: 'create events' },
     { to: '/admin/billetterie',       icon: Ticket,         label: t('admin.sidebar.ticketing', 'Billetterie'), perm: 'manage event tickets' },
     { to: '/admin/presence',          icon: ClipboardList,  label: t('admin.sidebar.attendance', 'Présence'), perm: 'view attendance' },
-    { to: '/admin/bal',               icon: Sparkles,       label: t('admin.sidebar.balLive', 'Bal live · Régie'), perm: 'view attendance' },
+    { to: '/admin/bal',               icon: Sparkles,       label: t('admin.sidebar.balLive', 'Bal live · Régie'), perm: 'manage event tickets' },
     { to: '/scan',                    icon: ScanLine,       label: t('admin.sidebar.scan', 'Scanner billets'), perm: 'scan tickets', target: '_blank' },
     { to: '/admin/blog',              icon: BookOpen,       label: t('admin.sidebar.blog'),       perm: 'view posts' },
     { to: '/admin/temoignages',       icon: MessageCircle,  label: t('admin.sidebar.testimonials', 'Témoignages'), perm: 'manage testimonials' },
