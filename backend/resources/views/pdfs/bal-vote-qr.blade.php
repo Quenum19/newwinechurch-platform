@@ -1,7 +1,7 @@
 {{--
-  QR de vote Roi & Reine — A5 portrait imprimable en plusieurs exemplaires.
-  Charte ivoire chaud identique aux supports de table (fond crème, texte
-  bordeaux + or, titre italique "Roi & Reine" en évidence).
+  QR de vote Roi & Reine — A5 portrait, design NOIR épuré.
+  Le QR est mis en avant (100mm), les infos autour sont minimales.
+  Imprimable en plusieurs exemplaires pour les tables/murs.
 --}}
 <!DOCTYPE html>
 <html lang="fr">
@@ -14,19 +14,19 @@
   html, body { width: 148mm; }
   body {
     font-family: "DejaVu Sans", sans-serif;
-    color: #4A3F32;
-    background: #FAF6EE;
+    color: #F5E6C8;
+    background: #0A0A0A;
   }
 
   .page {
     width: 148mm;
     height: 210mm;
     position: relative;
-    background: #FAF6EE;
+    background: linear-gradient(180deg, #0A0A0A 0%, #1a0f14 55%, #0A0A0A 100%);
     overflow: hidden;
   }
 
-  /* Double filet or (identique aux supports) */
+  /* Double filet or */
   .frame {
     position: absolute;
     top: 6mm; left: 6mm; right: 6mm; bottom: 6mm;
@@ -38,122 +38,100 @@
     border: 0.5pt solid rgba(201, 169, 97, 0.4);
   }
 
+  /* Losanges or aux 4 coins */
+  .corner {
+    position: absolute;
+    width: 3.5mm;
+    height: 3.5mm;
+    background: #C9A961;
+    transform: rotate(45deg);
+  }
+  .corner.tl { top: 12mm; left: 12mm; }
+  .corner.tr { top: 12mm; right: 12mm; }
+  .corner.bl { bottom: 12mm; left: 12mm; }
+  .corner.br { bottom: 12mm; right: 12mm; }
+
   .content {
     position: absolute;
-    top: 14mm; left: 14mm; right: 14mm; bottom: 28mm;
+    top: 14mm; left: 14mm; right: 14mm; bottom: 14mm;
     text-align: center;
   }
 
-  /* Sur-titre : NEW WINE CHURCH · ABIDJAN */
+  /* Brand — petit, lettres espacées or */
   .brand {
-    font-size: 9pt;
-    letter-spacing: 4pt;
+    font-size: 8pt;
+    letter-spacing: 3pt;
     color: #C9A961;
     text-transform: uppercase;
     font-weight: bold;
-    margin-top: 4mm;
+    margin-top: 3mm;
   }
 
-  /* Titre principal en écriture italique or */
+  /* Titre — Serif italique or éclatant */
   h1 {
     font-family: "DejaVu Serif", serif;
     font-style: italic;
-    font-size: 44pt;
-    color: #C9A961;
-    margin-top: 4mm;
+    font-size: 32pt;
+    color: #EECF80;
+    margin-top: 3mm;
     line-height: 1;
     letter-spacing: 0.5pt;
   }
 
-  .subtitle {
-    font-size: 10pt;
-    color: #8B7960;
-    letter-spacing: 2pt;
-    text-transform: uppercase;
-    font-weight: bold;
-    margin-top: 4mm;
-  }
-
+  /* Ornement filets ✦ or */
   .divider {
     color: #C9A961;
-    letter-spacing: 5pt;
-    font-size: 12pt;
-    margin: 5mm 0;
+    letter-spacing: 6pt;
+    font-size: 10pt;
+    margin: 4mm 0 2mm;
   }
 
-  .cta {
-    font-family: "DejaVu Serif", serif;
-    font-size: 14pt;
-    color: #4A3F32;
-    font-weight: bold;
-    margin: 3mm 0 4mm;
-    line-height: 1.4;
-  }
-
-  /* QR code — encart blanc sur ivoire, cadre or discret */
+  /* QR — dominant, encart ivoire net sur fond noir */
   .qr-wrap {
     display: inline-block;
-    background: #FFFFFF;
-    padding: 4mm;
+    background: #F5E6C8;
+    padding: 5mm;
     border-radius: 3mm;
-    border: 0.5pt solid #C9A961;
-    margin-top: 4mm;
+    margin-top: 3mm;
+    box-shadow: 0 0 0 1pt #C9A961;
   }
   .qr-wrap img {
     display: block;
-    width: 62mm;
-    height: 62mm;
+    width: 100mm;
+    height: 100mm;
   }
 
-  /* Ticket-hint ivoire encadré or discret */
-  .ticket-hint {
+  /* CTA — court, sous le QR */
+  .cta {
+    font-family: "DejaVu Serif", serif;
+    font-style: italic;
+    font-size: 13pt;
+    color: #F5E6C8;
+    font-weight: bold;
     margin-top: 5mm;
-    padding: 3mm 5mm;
-    display: inline-block;
-    border: 0.6pt dashed #C9A961;
-    border-radius: 2mm;
-    font-size: 9.5pt;
-    color: #4A3F32;
-    line-height: 1.5;
-    background: rgba(201, 169, 97, 0.08);
-  }
-  .ticket-hint strong {
-    color: #8B1A2F;
+    line-height: 1.3;
   }
 
-  /* Footer — bordeaux */
+  .code-hint {
+    margin-top: 3mm;
+    font-size: 8.5pt;
+    color: #C9A961;
+    letter-spacing: 1.5pt;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+
+  /* Footer minimal */
   .foot {
     position: absolute;
     left: 0; right: 0; bottom: 10mm;
     text-align: center;
   }
-  .foot-line {
-    display: inline-block;
-    padding: 2.5mm 6mm;
-    border: 0.8pt solid #8B1A2F;
-    border-radius: 2mm;
-    font-size: 9pt;
-    color: #8B1A2F;
+  .foot-tag {
+    font-size: 7pt;
+    color: #8B7960;
     letter-spacing: 2pt;
     text-transform: uppercase;
-    font-weight: bold;
-  }
-  .foot-tag {
-    margin-top: 3mm;
-    font-size: 7pt;
-    color: #A89A82;
-    letter-spacing: 1.8pt;
-    text-transform: uppercase;
-  }
-
-  /* Ornements filets/étoile assortis */
-  .divider-fine {
-    display: block;
-    text-align: center;
-    color: #C9A961;
-    margin: 3mm 0;
-    font-size: 10pt;
-    letter-spacing: 4pt;
   }
 </style>
 </head>
@@ -162,35 +140,28 @@
 <div class="page">
   <div class="frame"></div>
   <div class="frame-inner"></div>
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
 
   <div class="content">
     <div class="brand">New Wine Church &middot; Abidjan</div>
 
     <h1>Roi &amp; Reine</h1>
 
-    <div class="subtitle">Bal 2026 &mdash; A Dark Night in Elegance</div>
-
-    <div class="divider">&#9733; &#9733; &#9733;</div>
-
-    <div class="cta">
-      Scanne pour voter<br/>ton Roi &amp; ta Reine
-    </div>
+    <div class="divider">&#10022; &#10022; &#10022;</div>
 
     <div class="qr-wrap">
       <img src="{{ $voteQr }}" alt="QR Vote">
     </div>
 
-    <div class="ticket-hint">
-      &Agrave; l'ouverture du vote, saisis ton <strong>code ticket</strong>
-      re&ccedil;u par email<br/>(ex&nbsp;: <strong>NWC-EBXB</strong>).<br/>
-      1 ticket = 1 vote unique.
-    </div>
+    <div class="cta">Scanne pour voter</div>
+    <div class="code-hint">1 ticket &middot; 1 vote</div>
   </div>
 
   <div class="foot">
-    <div class="divider-fine">&#9670;</div>
-    <div class="foot-line">Un vote max par ticket</div>
-    <div class="foot-tag">Recto &middot; Vote</div>
+    <div class="foot-tag">A Dark Night in Elegance</div>
   </div>
 </div>
 
