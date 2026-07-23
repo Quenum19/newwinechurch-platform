@@ -66,14 +66,20 @@ export default function DancingStarsSlide({ state }) {
   return (
     <Stage>
       <style>{`
-        /* Rideau : fermé 0→0.4s, s'ouvre en 2s, reste ouvert (fill: forwards via 'both') */
-        @keyframes nwCurtainOpenL {
-          0%   { transform: translateX(0) }
-          100% { transform: translateX(-101%) }
+        /* Rideau CYCLIQUE (feedback 2026-07-23) : fermé → ouvert → fermé, en boucle
+           Cycle 18s : fermé 1.6s / ouverture 2s / ouvert 10s / fermeture 2s / fermé 2.4s
+           La vidéo derrière tourne en continu, révélée à chaque cycle. */
+        @keyframes nwCurtainCycleL {
+          0%, 9%   { transform: translateX(0) }
+          20%      { transform: translateX(-101%) }
+          77%      { transform: translateX(-101%) }
+          88%,100% { transform: translateX(0) }
         }
-        @keyframes nwCurtainOpenR {
-          0%   { transform: translateX(0) }
-          100% { transform: translateX(101%) }
+        @keyframes nwCurtainCycleR {
+          0%, 9%   { transform: translateX(0) }
+          20%      { transform: translateX(101%) }
+          77%      { transform: translateX(101%) }
+          88%,100% { transform: translateX(0) }
         }
         @keyframes nwCurtainSheen {
           0%   { transform: translateX(-140%) skewX(-12deg) }
@@ -214,7 +220,7 @@ export default function DancingStarsSlide({ state }) {
             position: 'absolute', top: 0, bottom: 0, left: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset -30px 0 40px rgba(0,0,0,.6)',
-            animation: 'nwCurtainOpenL 2s cubic-bezier(.7,0,.25,1) 0.4s both',
+            animation: 'nwCurtainCycleL 18s cubic-bezier(.7,0,.25,1) infinite',
           }}>
             <div style={{
               position: 'absolute', top: 0, bottom: 0, right: 0, width: 60,
@@ -231,7 +237,7 @@ export default function DancingStarsSlide({ state }) {
             position: 'absolute', top: 0, bottom: 0, right: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset 30px 0 40px rgba(0,0,0,.6)',
-            animation: 'nwCurtainOpenR 2s cubic-bezier(.7,0,.25,1) 0.4s both',
+            animation: 'nwCurtainCycleR 18s cubic-bezier(.7,0,.25,1) infinite',
           }}>
             <div style={{
               position: 'absolute', top: 0, bottom: 0, left: 0, width: 60,

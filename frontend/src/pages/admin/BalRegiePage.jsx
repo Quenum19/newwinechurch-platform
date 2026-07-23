@@ -43,6 +43,8 @@ export default function BalRegiePage() {
   const qc = useQueryClient()
 
   const [customArtiste, setCustomArtiste] = useState('')
+  const [artistePhoto, setArtistePhoto] = useState('')
+  const [dancingMedia, setDancingMedia] = useState('')
 
   // Query état actuel
   const { data: stateData, refetch } = useQuery({
@@ -97,8 +99,18 @@ export default function BalRegiePage() {
   const send = (slide, config) => setSlideMutation.mutate({ slide, config })
 
   const sendRappeur = (artiste) => {
-    send('rappeurs', { artiste })
-    toast.success(`Slide "${artiste}" envoyée`)
+    const cfg = { artiste }
+    const url = artistePhoto.trim()
+    if (url) cfg.artiste_photo = url
+    send('rappeurs', cfg)
+    toast.success(`Slide "${artiste}" envoyée${url ? ' (avec photo)' : ''}`)
+  }
+
+  const sendDancing = () => {
+    const url = dancingMedia.trim()
+    const cfg = url ? { dancing_media: url } : null
+    send('dancing-stars', cfg)
+    toast.success(url ? 'Dancing Stars envoyée (avec média)' : 'Dancing Stars envoyée')
   }
 
   const grouped = {
@@ -184,11 +196,42 @@ export default function BalRegiePage() {
           ))}
         </div>
 
+        {/* Sous-panneau Dancing Stars — URL photo / vidéo derrière le rideau */}
+        <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
+          <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
+            Dancing Stars — média derrière le rideau (photo ou vidéo) :
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="url"
+              placeholder="https://… (URL vidéo .mp4/.webm ou image .jpg/.png)"
+              value={dancingMedia}
+              onChange={(e) => setDancingMedia(e.target.value)}
+              className="adm-input text-sm px-2 py-1.5 flex-1 min-w-[280px]"
+            />
+            <button
+              onClick={sendDancing}
+              className="px-3 py-1.5 rounded text-sm font-semibold bg-[color:var(--adm-accent)] text-white"
+            >
+              Envoyer Dancing Stars
+            </button>
+          </div>
+        </div>
+
         {/* Sous-panneau rappeurs */}
         <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
           <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
-            Choisir l'artiste rappeur à afficher :
+            Rappeur — nom de l'artiste + photo (optionnelle) :
           </p>
+          <div className="flex flex-wrap gap-2 mb-2">
+            <input
+              type="url"
+              placeholder="URL photo de l'artiste (optionnelle)"
+              value={artistePhoto}
+              onChange={(e) => setArtistePhoto(e.target.value)}
+              className="adm-input text-sm px-2 py-1.5 flex-1 min-w-[280px]"
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             {ARTISTES.map((a) => (
               <button

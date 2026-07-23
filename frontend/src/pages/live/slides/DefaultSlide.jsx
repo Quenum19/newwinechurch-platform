@@ -55,15 +55,7 @@ export default function DefaultSlide({ state }) {
             }} />
           )}
         </div>
-        {/* Scrims de lisibilité */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(120% 100% at 50% 42%, rgba(10,8,6,.35) 0%, rgba(6,4,2,.72) 60%, rgba(4,3,2,.9) 100%)',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'linear-gradient(0deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.45) 30%, transparent 62%)',
-        }} />
+        {/* Scrims retirés (feedback 2026-07-23) — l'affiche parle seule sans opacité */}
 
         {/* Particules or montantes */}
         {particles.map((p, i) => (

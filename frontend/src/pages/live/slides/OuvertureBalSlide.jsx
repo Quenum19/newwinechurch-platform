@@ -166,12 +166,13 @@ export default function OuvertureBalSlide({ state }) {
           pointerEvents: 'none',
         }}>
           <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 40,
+            fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 72,
             letterSpacing: '.5em', textIndent: '.5em',
             color: '#E6C877', textShadow: '0 2px 12px rgba(0,0,0,.8)',
+            marginBottom: 12,
           }}>C'EST PARTI</div>
           <div style={{
-            fontFamily: "'Anton',sans-serif", fontSize: 210, lineHeight: .9,
+            fontFamily: "'Anton',sans-serif", fontSize: 300, lineHeight: .9,
             textTransform: 'uppercase',
             background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f)',
             WebkitBackgroundClip: 'text', backgroundClip: 'text',
@@ -179,13 +180,13 @@ export default function OuvertureBalSlide({ state }) {
             animation: 'nwGlowP 4s ease-in-out infinite',
           }}>Ouverture</div>
           <div style={{
-            fontFamily: "'Great Vibes',cursive", fontSize: 180, lineHeight: .78,
+            fontFamily: "'Great Vibes',cursive", fontSize: 260, lineHeight: .78,
             color: '#EECF80',
             textShadow: '0 0 80px rgba(201,169,97,.55)',
           }}>du Bal</div>
           <div style={{
-            display: 'flex', gap: 36, marginTop: 28,
-            fontFamily: "'Cinzel',serif", fontSize: 52, color: '#E6C877',
+            display: 'flex', gap: 44, marginTop: 32,
+            fontFamily: "'Cinzel',serif", fontSize: 68, color: '#E6C877',
           }}>
             <span>{'★'}</span>
             <span>{'★'}</span>
