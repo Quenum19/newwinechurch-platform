@@ -63,6 +63,25 @@ export default function BalRegiePage() {
     return data.url
   }
 
+  const explainUploadError = (err, file) => {
+    const status = err?.response?.status
+    const backendMsg = err?.response?.data?.message
+    const validation = err?.response?.data?.errors
+    const mb = file ? (file.size / (1024 * 1024)).toFixed(1) : '?'
+    if (status === 413) {
+      return `Fichier trop lourd (${mb} Mo) — la limite serveur est atteinte. Compresse la vidéo ou contacte Hostinger pour augmenter upload_max_filesize.`
+    }
+    if (status === 422) {
+      const firstError = validation ? Object.values(validation)[0]?.[0] : null
+      return firstError || backendMsg || `Fichier refusé (format ou taille non conforme, ${mb} Mo).`
+    }
+    if (backendMsg) return `${backendMsg} (${mb} Mo)`
+    if (err?.message === 'Network Error') {
+      return `Coupure réseau ou serveur ne répond pas (fichier ${mb} Mo).`
+    }
+    return `Échec upload (${mb} Mo, statut ${status ?? '?'}) — ouvre la console pour plus d'infos.`
+  }
+
   const handleDancingFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -73,7 +92,8 @@ export default function BalRegiePage() {
       setDancingMediaUrl(url)
       toast.success(`Média uploadé (${file.name})`)
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Échec de l'upload.")
+      console.error('Upload Dancing Stars failed', err)
+      toast.error(explainUploadError(err, file), { duration: 6000 })
       setDancingMediaName('')
     } finally {
       setDancingMediaUploading(false)
@@ -85,17 +105,20 @@ export default function BalRegiePage() {
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
     setArtistePhotosUploading(true)
+    let lastFile = null
     try {
       // Upload séquentiel (plus doux pour Hostinger que parallèle sur gros fichiers)
       const newOnes = []
       for (const file of files) {
+        lastFile = file
         const url = await uploadBalMedia(file)
         newOnes.push({ url, name: file.name })
       }
       setArtistePhotos((prev) => [...prev, ...newOnes])
       toast.success(`${newOnes.length} photo(s) uploadée(s)`)
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Échec de l'upload.")
+      console.error('Upload photos rappeur failed', err)
+      toast.error(explainUploadError(err, lastFile), { duration: 6000 })
     } finally {
       setArtistePhotosUploading(false)
       e.target.value = ''
