@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;500;600;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600&display=swap" rel="stylesheet">
+<style>
+  @keyframes nwRipple { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.4);opacity:0} }
+  @keyframes nwArrow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(12px)} }
+  @keyframes nwGlowP { 0%,100%{text-shadow:0 0 60px rgba(201,169,97,.4),0 3px 6px rgba(0,0,0,.7)} 50%{text-shadow:0 0 120px rgba(201,169,97,.65),0 3px 6px rgba(0,0,0,.7)} }
+  @keyframes nwFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes nwTwinkle { 0%,100%{opacity:.3} 50%{opacity:1} }
+  @keyframes nwCrownGlow { 0%,100%{filter:drop-shadow(0 0 8px rgba(230,200,119,.5))} 50%{filter:drop-shadow(0 0 20px rgba(255,233,168,.9))} }
+</style>
+</helmet>
+
+<div style="{{ root }}">
+  <div style="position:absolute; inset:0; background:radial-gradient(120% 100% at 50% 24%, #211a10 0%, #0d0a06 56%, #060402 100%);"></div>
+  <div style="position:absolute; inset:0; background:radial-gradient(44% 46% at 50% 44%, rgba(230,200,119,.12), transparent 70%);"></div>
+  <sc-for list="{{ twinkles }}" as="t" hint-placeholder-count="10"><div style="{{ t.style }}">✦</div></sc-for>
+
+  <div style="position:absolute; inset:28px; border:3px solid rgba(214,178,95,.92); box-shadow:inset 0 0 80px rgba(0,0,0,.4); pointer-events:none;"></div>
+  <div style="position:absolute; inset:40px; border:1px solid rgba(214,178,95,.5); pointer-events:none;"></div>
+  <div style="{{ corner.tl }}"></div><div style="{{ corner.tr }}"></div><div style="{{ corner.bl }}"></div><div style="{{ corner.br }}"></div>
+
+  <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:70px 90px;">
+    <div style="animation:nwCrownGlow 4s ease-in-out infinite; margin-bottom:2px;">
+      <svg width="130" height="90" viewBox="0 0 200 140"><defs><linearGradient id="vcg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D8"/><stop offset=".5" stop-color="#E6C877"/><stop offset="1" stop-color="#7E662E"/></linearGradient></defs><path d="M28 116 L20 44 L64 82 L100 24 L136 82 L180 44 L172 116 Z" fill="url(#vcg)" stroke="#7E662E" stroke-width="1.5"/><rect x="30" y="112" width="140" height="18" rx="4" fill="#C9A961" stroke="#7E662E" stroke-width="1.5"/><circle cx="100" cy="18" r="9" fill="#8B1A2F" stroke="#FFE9A8" stroke-width="2"/></svg>
+    </div>
+    <div style="font-family:'Cinzel',serif; font-weight:500; font-size:30px; letter-spacing:.48em; text-indent:.48em; color:#E6C877;">LE SCRUTIN EST OUVERT</div>
+    <div style="font-family:'Anton',sans-serif; font-size:150px; line-height:.9; text-transform:uppercase; background:linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:nwGlowP 6s ease-in-out infinite;">Roi &amp; Reine</div>
+
+    <!-- HERO : QR géant + compteur -->
+    <div style="display:flex; align-items:center; justify-content:center; gap:80px; margin-top:20px;">
+      <!-- compteur live -->
+      <div style="text-align:right; min-width:360px;">
+        <div style="font-family:'Anton',sans-serif; font-size:150px; line-height:.9; color:#ECCE7D; text-shadow:0 0 70px rgba(201,169,97,.45);">{{ votesTotal }}</div>
+        <div style="font-family:'Cinzel',serif; font-weight:600; font-size:28px; letter-spacing:.2em; color:#C9A961;">VOTES EXPRIMÉS</div>
+        <div style="height:12px; border-radius:99px; background:rgba(214,178,95,.18); margin-top:16px; overflow:hidden;">
+          <div style="height:100%; width:{{ globalPct }}; border-radius:99px; background:linear-gradient(90deg,#8B1A2F,#E6C877); box-shadow:0 0 16px rgba(230,200,119,.7); transition:width 1.2s ease;"></div>
+        </div>
+      </div>
+      <!-- QR hero -->
+      <div style="position:relative;">
+        <div style="position:absolute; inset:-14px; border-radius:26px; border:3px solid rgba(230,200,119,.6); animation:nwRipple 2.6s ease-out infinite;"></div>
+        <div style="position:absolute; inset:-14px; border-radius:26px; border:3px solid rgba(230,200,119,.5); animation:nwRipple 2.6s ease-out infinite 1.3s;"></div>
+        <div style="position:relative; padding:28px; background:#F5E6C8; border-radius:20px; box-shadow:0 0 60px rgba(230,200,119,.45);">
+          <div style="position:relative; width:340px; height:340px;"><div style="{{ qrStyle }}"></div></div>
+        </div>
+      </div>
+      <!-- CTA -->
+      <div style="text-align:left; min-width:360px;">
+        <div style="font-family:'Anton',sans-serif; font-size:64px; line-height:1; color:#F5E6C8;">SCANNE</div>
+        <div style="font-family:'Anton',sans-serif; font-size:64px; line-height:1; color:#F5E6C8;">POUR VOTER</div>
+        <div style="font-size:60px; color:#E6C877; margin-top:10px; animation:nwArrow 1.4s ease-in-out infinite;">⬇</div>
+        <div style="font-family:'Cormorant Garamond',serif; font-size:26px; color:#D9CBB0; margin-top:8px; max-width:340px;">Ton code ticket reçu par email · 1 vote unique</div>
+      </div>
+    </div>
+
+    <!-- candidats en médaillons -->
+    <div style="display:flex; align-items:flex-start; justify-content:center; gap:60px; margin-top:44px;">
+      <sc-for list="{{ candidates }}" as="c" hint-placeholder-count="4">
+        <div style="{{ c.wrap }}">
+          <div style="{{ c.avatar }}">{{ c.initial }}</div>
+          <div style="font-family:'Cinzel',serif; font-weight:600; font-size:26px; color:#F5E6C8; margin-top:12px;">{{ c.name }}</div>
+          <div style="font-family:'Anton',sans-serif; font-size:30px; color:#E6C877;">{{ c.votes }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;state&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ event?: { id?: string }; candidates?: { name: string; votes?: number; photo?: string }[]; stats?: { votes_count?: number; total_expected?: number } }&quot;}}">
+class Component extends DCLogic {
+  css(o){ return Object.entries(o).map(([k,v])=>`${k.replace(/[A-Z]/g,m=>"-"+m.toLowerCase())}:${v}`).join(";"); }
+  state={ p:0 };
+  componentDidMount(){ const t0=performance.now(),dur=1400; const tick=(t)=>{const k=Math.min(1,(t-t0)/dur);this.setState({p:1-Math.pow(1-k,3)});if(k<1)this._raf=requestAnimationFrame(tick);}; this._raf=requestAnimationFrame(tick); }
+  componentWillUnmount(){ cancelAnimationFrame(this._raf); }
+  renderVals(){
+    const st=this.props.state??{}; const stats=st.stats??{};
+    const root="position:relative; width:1920px; height:1080px; overflow:hidden; background:#0A0A0A; color:#F5E6C8; font-family:'Cormorant Garamond',serif;";
+    const cb={position:"absolute",width:"20px",height:"20px",background:"#E6C877",transform:"rotate(45deg)",boxShadow:"0 0 12px rgba(214,178,95,.7)"};
+    const corner={tl:this.css({...cb,top:"56px",left:"56px"}),tr:this.css({...cb,top:"56px",right:"56px"}),bl:this.css({...cb,bottom:"56px",left:"56px"}),br:this.css({...cb,bottom:"56px",right:"56px"})};
+    const rnd=(s)=>{let x=Math.sin(s)*10000;return x-Math.floor(x);};
+    const p=this.state.p;
+    const twinkles=Array.from({length:10},(_,i)=>{const left=rnd(i*2.7)*90+5;const top=rnd(i*3.9)*80+6;const size=16+rnd(i*1.5)*20;const dur=2.5+rnd(i*4)*2;
+      return {style:`position:absolute;left:${left}%;top:${top}%;font-family:'Cinzel',serif;font-size:${size}px;color:rgba(230,200,119,.5);animation:nwTwinkle ${dur}s ease-in-out infinite;animation-delay:${(-rnd(i*3)*dur).toFixed(2)}s;`};});
+
+    const defC=[{name:"Emmanuel N.",votes:1240},{name:"Grâce K.",votes:1310},{name:"David T.",votes:980},{name:"Sarah M.",votes:1105}];
+    const cand=(st.candidates&&st.candidates.length?st.candidates:defC);
+    const grads=["linear-gradient(135deg,#8B1A2F,#5f1720)","linear-gradient(135deg,#7E662E,#C9A961)"];
+    const candidates=cand.slice(0,4).map((c,i)=>({
+      name:c.name||"—", initial:(c.name||"?").charAt(0).toUpperCase(),
+      votes:Math.round((c.votes||0)*p).toLocaleString('fr-FR'),
+      avatar:this.css({ display:"flex",alignItems:"center",justifyContent:"center",width:"120px",height:"120px",borderRadius:"50%",
+        background: c.photo?`url("${c.photo}") center/cover`:grads[i%2], border:"3px solid rgba(214,178,95,.8)", boxShadow:"0 0 24px rgba(0,0,0,.5)",
+        fontFamily:"'Cinzel',serif",fontWeight:600,fontSize:"52px",color:"#F5E6C8" }),
+      wrap:this.css({ display:"flex",flexDirection:"column",alignItems:"center", animation:`nwFloat ${(4+i*0.6).toFixed(1)}s ease-in-out infinite`, animationDelay:`${(i*0.3).toFixed(2)}s` }),
+    }));
+
+    const votesTotalRaw = stats.votes_count ?? cand.reduce((a,c)=>a+(c.votes||0),0);
+    const total=stats.total_expected ?? 200;
+    const gpct=Math.max(0,Math.min(1,votesTotalRaw/(total*4)));
+    const cells=[];const N=21;for(let y=0;y<N;y++)for(let x=0;x<N;x++){const on=(rnd(x*3.1+y*7.7)>.5)||x<7&&y<7||x>=N-7&&y<7||x<7&&y>=N-7;if(on)cells.push(`${x*16}px ${y*16}px 0 7px #1a0f14`);}
+    const qrStyle=`position:absolute;top:0;left:0;width:16px;height:16px;box-shadow:${cells.join(",")};`;
+
+    return { root, corner, twinkles, candidates,
+      votesTotal: Math.round(votesTotalRaw*p).toLocaleString('fr-FR'),
+      globalPct:(gpct*100*p).toFixed(1)+"%", qrStyle };
+  }
+}
+</script>
+</body>
+</html>

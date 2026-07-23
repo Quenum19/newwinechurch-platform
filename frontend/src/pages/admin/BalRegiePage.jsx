@@ -12,12 +12,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import api from '@/api/axios'
 import {
-  Monitor, Image as ImageIcon, MoonStar, UserPlus, PartyPopper, DoorOpen,
-  MessageCircle, Utensils, ClipboardList, Sparkles, Music, Mic2, Crown,
+  Monitor, Image as ImageIcon, MoonStar, UserPlus, PartyPopper,
+  MessageCircle, ClipboardList, Sparkles, Music, Mic2, Crown,
   Vote, PlayCircle, Users, ChevronRight, Loader2, RefreshCw, ExternalLink,
   Camera,
 } from 'lucide-react'
 
+// 14 slides V2 (refonte Claude Design 2026-07-23) — Installation, BonAppetit, Fin retirées
 const SLIDES = [
   { key: 'default',        label: 'Affiche',            icon: ImageIcon,     section: 'ambiance' },
   { key: 'noir',           label: 'Écran noir',         icon: MoonStar,      section: 'ambiance' },
@@ -25,18 +26,15 @@ const SLIDES = [
   { key: 'arrivee',        label: 'Arrivée LIVE',       icon: UserPlus,      section: 'preshow' },
   { key: 'mur-stars',      label: 'Mur des stars',      icon: Sparkles,      section: 'preshow' },
   { key: 'photos-ambiance',label: 'Photos ambiance',    icon: Camera,        section: 'preshow' },
-  { key: 'installation',   label: 'Installation',       icon: DoorOpen,      section: 'preshow' },
 
   { key: 'dancing-stars',  label: 'Dancing Stars',      icon: Music,         section: 'moments' },
   { key: 'bienvenue',      label: 'Bienvenue',          icon: MessageCircle, section: 'moments' },
-  { key: 'bon-appetit',    label: 'Bon appétit',        icon: Utensils,      section: 'moments' },
   { key: 'programme',      label: 'Programme',          icon: ClipboardList, section: 'moments' },
   { key: 'defile',         label: 'Défilé',             icon: Sparkles,      section: 'moments' },
   { key: 'rappeurs',       label: 'Rappeurs',           icon: Mic2,          section: 'moments' },
   { key: 'dj',             label: 'DJ',                 icon: Music,         section: 'moments' },
 
   { key: 'ouverture-bal',  label: 'Ouverture du Bal',   icon: PartyPopper,   section: 'moments' },
-  { key: 'fin',            label: 'Fin (Merci)',        icon: Sparkles,      section: 'moments' },
 ]
 
 const ARTISTES = ['Clinton', 'KIM B']

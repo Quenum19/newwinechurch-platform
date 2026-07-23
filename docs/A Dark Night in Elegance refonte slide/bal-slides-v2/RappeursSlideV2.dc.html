@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;500;600;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600&display=swap" rel="stylesheet">
+<style>
+  @keyframes nwSpotSweep { 0%{transform:translateX(-42vw) rotate(-15deg)} 100%{transform:translateX(42vw) rotate(15deg)} }
+  @keyframes nwHaloPulse { 0%,100%{opacity:.4; transform:translate(-50%,-50%) scale(1)} 50%{opacity:.8; transform:translate(-50%,-50%) scale(1.12)} }
+  @keyframes nwLetterIn { 0%{opacity:0; transform:translateY(40px) rotateX(40deg)} 100%{opacity:1; transform:translateY(0) rotateX(0)} }
+  @keyframes nwGlowP { 0%,100%{text-shadow:0 0 60px rgba(201,169,97,.4),0 2px 4px rgba(0,0,0,.7)} 50%{text-shadow:0 0 120px rgba(201,169,97,.7),0 2px 4px rgba(0,0,0,.7)} }
+  @keyframes nwWave { 0%,100%{height:20%} 50%{height:100%} }
+</style>
+</helmet>
+
+<div style="{{ root }}">
+  <div style="position:absolute; inset:0; background:radial-gradient(120% 100% at 50% 40%, #2a0f14 0%, #12080a 58%, #060402 100%);"></div>
+  <div style="position:absolute; top:50%; left:50%; width:900px; height:900px; border-radius:50%; background:radial-gradient(closest-side, rgba(139,26,47,.4), transparent 70%); animation:nwHaloPulse 3s ease-in-out infinite;"></div>
+  <div style="position:absolute; top:-30%; left:50%; width:340px; height:160%; background:linear-gradient(180deg, rgba(230,200,119,.2), transparent 72%); filter:blur(8px); transform-origin:top center; animation:nwSpotSweep 5s ease-in-out infinite alternate;"></div>
+
+  <div style="position:absolute; inset:22px; border:2px solid rgba(214,178,95,.9); box-shadow:inset 0 0 70px rgba(0,0,0,.4); pointer-events:none;"></div>
+  <div style="position:absolute; inset:30px; border:1px solid rgba(214,178,95,.5); pointer-events:none;"></div>
+  <div style="{{ corner.tl }}"></div><div style="{{ corner.tr }}"></div><div style="{{ corner.bl }}"></div><div style="{{ corner.br }}"></div>
+
+  <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+    <!-- micro SVG or -->
+    <svg width="70" height="150" viewBox="0 0 70 150" style="margin-bottom:6px;">
+      <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D8"/><stop offset=".5" stop-color="#E6C877"/><stop offset="1" stop-color="#7E662E"/></linearGradient></defs>
+      <rect x="26" y="86" width="18" height="46" rx="4" fill="url(#mg)"/>
+      <rect x="14" y="126" width="42" height="8" rx="4" fill="url(#mg)"/>
+      <rect x="18" y="6" width="34" height="86" rx="17" fill="url(#mg)" stroke="#7E662E" stroke-width="1.5"/>
+      <g stroke="#7E662E" stroke-width="1.2" opacity=".5"><line x1="22" y1="24" x2="48" y2="24"/><line x1="22" y1="38" x2="48" y2="38"/><line x1="22" y1="52" x2="48" y2="52"/><line x1="22" y1="66" x2="48" y2="66"/></g>
+    </svg>
+    <div style="font-family:'Cinzel',serif; font-weight:600; font-size:36px; letter-spacing:.5em; text-indent:.5em; color:#E6C877; text-shadow:0 2px 10px rgba(0,0,0,.8);">SUR SCÈNE MAINTENANT</div>
+    <div style="font-family:'Anton',sans-serif; font-size:{{ nameSize }}; line-height:.9; text-transform:uppercase; letter-spacing:.02em; background:linear-gradient(180deg,#FFF6D8,#E6C877 50%,#B08A3F); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:nwLetterIn 1s cubic-bezier(.16,1,.3,1) both, nwGlowP 4s ease-in-out 1s infinite; max-width:1600px;">{{ artiste }}</div>
+    <!-- waveform -->
+    <div style="display:flex; align-items:center; gap:7px; height:80px; margin-top:34px;">
+      <sc-for list="{{ bars }}" as="b" hint-placeholder-count="32"><div style="{{ b.style }}"></div></sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;state&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ config?: { artiste?: string } }&quot;}}">
+class Component extends DCLogic {
+  css(o){ return Object.entries(o).map(([k,v])=>`${k.replace(/[A-Z]/g,m=>"-"+m.toLowerCase())}:${v}`).join(";"); }
+  renderVals(){
+    const st=this.props.state??{}; const cfg=st.config??{};
+    const artiste=(cfg.artiste ?? "Kim B & son staff").toString();
+    const root="position:relative; width:1920px; height:1080px; overflow:hidden; background:#0A0A0A; color:#F5E6C8; font-family:'Cormorant Garamond',serif;";
+    const cb={position:"absolute",width:"14px",height:"14px",background:"#E6C877",transform:"rotate(45deg)",boxShadow:"0 0 8px rgba(214,178,95,.6)"};
+    const corner={tl:this.css({...cb,top:"44px",left:"44px"}),tr:this.css({...cb,top:"44px",right:"44px"}),bl:this.css({...cb,bottom:"44px",left:"44px"}),br:this.css({...cb,bottom:"44px",right:"44px"})};
+    const rnd=(s)=>{let x=Math.sin(s)*10000;return x-Math.floor(x);};
+    const len=artiste.length;
+    const nameSize = len>18 ? "150px" : len>12 ? "200px" : "260px";
+    const bars=Array.from({length:32},(_,i)=>{const dur=(0.6+rnd(i*2.3)*0.9).toFixed(2);const w=10;
+      return {style:`width:${w}px;height:40%;border-radius:6px;background:linear-gradient(180deg,#FFE9A8,#C9A961 60%,#8B1A2F);box-shadow:0 0 8px rgba(230,200,119,.5);animation:nwWave ${dur}s ease-in-out infinite;animation-delay:${(-rnd(i*5)*1).toFixed(2)}s;`};});
+    return { root, corner, artiste, nameSize, bars };
+  }
+}
+</script>
+</body>
+</html>

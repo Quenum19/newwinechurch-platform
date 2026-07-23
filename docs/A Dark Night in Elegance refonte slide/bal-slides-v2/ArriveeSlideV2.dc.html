@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;500;600;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600&display=swap" rel="stylesheet">
+<style>
+  @keyframes nwRise { 0%{transform:translateY(20px);opacity:0} 12%{opacity:.9} 88%{opacity:.9} 100%{transform:translateY(-1080px);opacity:0} }
+  @keyframes nwHeart { 0%,100%{transform:scale(1)} 8%{transform:scale(1.045)} 16%{transform:scale(1)} 24%{transform:scale(1.03)} 32%{transform:scale(1)} }
+  @keyframes nwSweep { 0%{transform:translateX(-60%) skewX(-12deg);opacity:0} 30%{opacity:.55} 70%{opacity:.55} 100%{transform:translateX(160%) skewX(-12deg);opacity:0} }
+  @keyframes nwBurst { 0%{transform:scale(.6);opacity:0} 30%{opacity:.9} 100%{transform:scale(1.9);opacity:0} }
+  @keyframes nwPillIn { 0%{transform:translateY(14px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  @keyframes nwRingGlow { 0%,100%{filter:drop-shadow(0 0 6px rgba(230,200,119,.45))} 50%{filter:drop-shadow(0 0 16px rgba(230,200,119,.8))} }
+</style>
+</helmet>
+
+<div style="{{ root }}">
+  <sc-if value="{{ hasCover }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; background-image:{{ coverUrl }}; background-size:cover; background-position:center; filter:blur(22px) brightness(.34) saturate(1.1); transform:scale(1.15);"></div>
+  </sc-if>
+  <div style="position:absolute; inset:0; background:radial-gradient(120% 100% at 50% 30%, #1a0f14 0%, #0d0a06 58%, #060402 100%);"></div>
+  <div style="position:absolute; inset:0; background:radial-gradient(60% 55% at 50% 46%, transparent 46%, rgba(0,0,0,.68) 100%);"></div>
+
+  <!-- projecteur balayant -->
+  <div style="position:absolute; top:0; bottom:0; left:0; width:40%; background:linear-gradient(90deg, transparent, rgba(230,200,119,.10), transparent); animation:nwSweep 9s ease-in-out infinite;"></div>
+
+  <sc-for list="{{ particles }}" as="p" hint-placeholder-count="20"><div style="{{ p.style }}"></div></sc-for>
+
+  <div style="position:absolute; inset:22px; border:2px solid rgba(214,178,95,.9); box-shadow:inset 0 0 60px rgba(0,0,0,.3); pointer-events:none;"></div>
+  <div style="position:absolute; inset:30px; border:1px solid rgba(214,178,95,.5); pointer-events:none;"></div>
+  <div style="{{ corner.tl }}"></div><div style="{{ corner.tr }}"></div><div style="{{ corner.bl }}"></div><div style="{{ corner.br }}"></div>
+
+  <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+    <div style="font-family:'Cinzel',serif; font-weight:600; font-size:34px; letter-spacing:.52em; text-indent:.52em; color:#E6C877;">ILS SONT ARRIVÉS</div>
+
+    <!-- compteur + anneau -->
+    <div style="position:relative; width:620px; height:620px; display:flex; align-items:center; justify-content:center; margin:6px 0;">
+      <svg viewBox="0 0 620 620" style="position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); animation:nwRingGlow 4s ease-in-out infinite;">
+        <circle cx="310" cy="310" r="288" fill="none" stroke="rgba(214,178,95,.14)" stroke-width="6"></circle>
+        <circle cx="310" cy="310" r="288" fill="none" stroke="url(#nwGold)" stroke-width="7" stroke-linecap="round" stroke-dasharray="{{ ringCirc }}" stroke-dashoffset="{{ ringOffset }}" style="transition:stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1);"></circle>
+        <defs><linearGradient id="nwGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A8"></stop><stop offset="1" stop-color="#C9A961"></stop></linearGradient></defs>
+      </svg>
+      <div style="display:flex; flex-direction:column; align-items:center; animation:nwHeart 3.2s ease-in-out infinite;">
+        <div style="font-family:'Anton',sans-serif; font-size:300px; line-height:.9; color:#ECCE7D; background:linear-gradient(180deg,#FFE9A8,#E6C877 55%,#B08A3F); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; text-shadow:0 0 90px rgba(201,169,97,.4);">{{ countDisplay }}</div>
+        <div style="font-family:'Cinzel',serif; font-weight:600; font-size:30px; letter-spacing:.3em; text-indent:.3em; color:#D9CBB0; margin-top:-6px;">/ {{ totalExpected }} INVITÉS ATTENDUS</div>
+      </div>
+    </div>
+
+    <!-- dernier arrivé -->
+    <div style="position:relative; margin-top:8px;">
+      <div style="position:absolute; inset:-6px; border-radius:999px; border:2px solid rgba(230,200,119,.6); animation:nwBurst 3.2s ease-out infinite;"></div>
+      <div style="display:flex; align-items:center; gap:16px; padding:14px 34px; border-radius:999px; background:linear-gradient(180deg, rgba(139,26,47,.5), rgba(95,23,32,.5)); border:1px solid rgba(214,178,95,.7); box-shadow:0 0 30px rgba(0,0,0,.4); animation:nwPillIn .8s ease;">
+        <span style="width:10px; height:10px; border-radius:50%; background:#E6C877; box-shadow:0 0 14px rgba(230,200,119,1);"></span>
+        <span style="font-family:'Cinzel',serif; font-weight:600; font-size:26px; letter-spacing:.26em; text-indent:.26em; color:#F3E2B6;">DERNIER ARRIVÉ</span>
+        <span style="width:1px; height:34px; background:rgba(214,178,95,.5);"></span>
+        <span style="font-family:'Playfair Display',serif; font-size:40px; color:#F5E6C8;">{{ latestArrival }}</span>
+      </div>
+    </div>
+
+    <div style="font-family:'Playfair Display',serif; font-style:italic; font-size:38px; color:#F0E6CF; margin-top:34px; opacity:.9; min-height:48px;">{{ rotatingMessage }}</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;state&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ event?: { cover_image?: string }; stats?: { arrivees_count?: number; latest_arrival?: string; total_expected?: number }; messages?: string[] }&quot;}}">
+class Component extends DCLogic {
+  css(o){ return Object.entries(o).map(([k,v])=>`${k.replace(/[A-Z]/g,m=>"-"+m.toLowerCase())}:${v}`).join(";"); }
+  state = { count: 0, msgIdx: 0 };
+
+  componentDidMount() {
+    const st = this.props.state ?? {};
+    const target = (st.stats ?? {}).arrivees_count ?? 128;
+    const t0 = performance.now(), dur = 1600;
+    const tick = (t)=>{ const k=Math.min(1,(t-t0)/dur); const e=1-Math.pow(1-k,3);
+      this.setState({ count: Math.round(target*e) }); if(k<1) this._raf=requestAnimationFrame(tick); };
+    this._raf = requestAnimationFrame(tick);
+    this._iv = setInterval(()=>this.setState(s=>({ msgIdx:s.msgIdx+1 })), 5000);
+  }
+  componentWillUnmount(){ cancelAnimationFrame(this._raf); clearInterval(this._iv); }
+
+  renderVals() {
+    const st = this.props.state ?? {};
+    const event = st.event ?? {}, stats = st.stats ?? {};
+    const cover = event.cover_image ?? "";
+    const target = stats.arrivees_count ?? 128;
+    const total = stats.total_expected ?? 200;
+    const ratio = Math.max(0, Math.min(1, target/total));
+    const circ = 2*Math.PI*288;
+
+    const root = "position:relative; width:1920px; height:1080px; overflow:hidden; background:#0A0A0A; color:#F5E6C8; font-family:'Cormorant Garamond',serif;";
+    const cb = { position:"absolute", width:"14px", height:"14px", background:"#E6C877", transform:"rotate(45deg)", boxShadow:"0 0 8px rgba(214,178,95,.6)" };
+    const corner = { tl:this.css({...cb,top:"44px",left:"44px"}), tr:this.css({...cb,top:"44px",right:"44px"}), bl:this.css({...cb,bottom:"44px",left:"44px"}), br:this.css({...cb,bottom:"44px",right:"44px"}) };
+
+    const rnd=(s)=>{let x=Math.sin(s)*10000;return x-Math.floor(x);};
+    const particles = Array.from({length:20},(_,i)=>{const size=2+rnd(i*1.3)*3;const left=rnd(i*2.1)*100;const dur=10+rnd(i*3.7)*9;const delay=-rnd(i*5.2)*dur;const y=200+rnd(i*1.9)*760;
+      return {style:`position:absolute;left:${left}%;top:${y}px;width:${size}px;height:${size}px;border-radius:50%;background:radial-gradient(circle,#FFE9A8,rgba(201,169,97,.1));box-shadow:0 0 ${size*3}px rgba(230,200,119,.6);animation:nwRise ${dur}s linear infinite;animation-delay:${delay}s;`};});
+
+    const messages = st.messages ?? [
+      "La salle se remplit d'élégance…",
+      "Chaque invité est une étoile de la soirée",
+      "Bienvenue dans la nuit de tous les prestiges",
+      "Le gala peut commencer à briller",
+    ];
+
+    return {
+      root, corner, particles,
+      hasCover: !!cover, coverUrl:`url("${cover}")`,
+      countDisplay: this.state.count.toLocaleString('fr-FR'),
+      totalExpected: total,
+      ringCirc: circ.toFixed(1),
+      ringOffset: (circ*(1-ratio)).toFixed(1),
+      latestArrival: stats.latest_arrival ?? "Grâce K.",
+      rotatingMessage: messages[this.state.msgIdx % messages.length],
+    };
+  }
+}
+</script>
+</body>
+</html>

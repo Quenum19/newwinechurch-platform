@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;500;600;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600&display=swap" rel="stylesheet">
+<style>
+  @keyframes nwTwinkle { 0%,100%{opacity:.25; transform:scale(.85)} 50%{opacity:1; transform:scale(1.18)} }
+  @keyframes nwSpinSlow { to{transform:translate(-50%,-50%) rotate(360deg)} }
+  @keyframes nwGlowP { 0%,100%{text-shadow:0 0 70px rgba(201,169,97,.4),0 3px 6px rgba(0,0,0,.7)} 50%{text-shadow:0 0 130px rgba(201,169,97,.65),0 3px 6px rgba(0,0,0,.7)} }
+  @keyframes nwStarPulse { 0%,100%{transform:scale(1); text-shadow:0 0 30px rgba(214,178,95,.6)} 50%{transform:scale(1.14); text-shadow:0 0 55px rgba(214,178,95,.95)} }
+  @keyframes nwUp { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+</style>
+</helmet>
+
+<div style="{{ root }}">
+  <div style="position:absolute; inset:0; background:radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%);"></div>
+  <div style="position:absolute; top:50%; left:50%; font-family:'Cinzel',serif; font-size:1500px; line-height:1; color:rgba(230,200,119,.05); animation:nwSpinSlow 100s linear infinite;">★</div>
+
+  <div style="position:absolute; top:-12%; left:22%; width:26%; height:130%; background:linear-gradient(180deg, rgba(230,200,119,.13), transparent 70%); transform:skewX(-10deg); filter:blur(8px);"></div>
+  <div style="position:absolute; top:-12%; right:22%; width:26%; height:130%; background:linear-gradient(180deg, rgba(230,200,119,.11), transparent 70%); transform:skewX(10deg); filter:blur(8px);"></div>
+
+  <sc-for list="{{ twinkles }}" as="t" hint-placeholder-count="16"><div style="{{ t.style }}">✦</div></sc-for>
+
+  <div style="position:absolute; inset:28px; border:3px solid rgba(214,178,95,.92); box-shadow:inset 0 0 80px rgba(0,0,0,.4); pointer-events:none;"></div>
+  <div style="position:absolute; inset:40px; border:1px solid rgba(214,178,95,.5); pointer-events:none;"></div>
+  <div style="{{ corner.tl }}"></div><div style="{{ corner.tr }}"></div><div style="{{ corner.bl }}"></div><div style="{{ corner.br }}"></div>
+
+  <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+    <div style="display:flex; align-items:center; gap:60px;">
+      <span style="font-family:'Cinzel',serif; font-size:120px; color:#E6C877; animation:nwStarPulse 3s ease-in-out infinite;">★</span>
+      <span style="font-family:'Cinzel',serif; font-size:120px; color:#E6C877; animation:nwStarPulse 3s ease-in-out infinite 1.5s;">★</span>
+    </div>
+
+    <div style="font-family:'Anton',sans-serif; font-size:250px; line-height:.88; text-transform:uppercase; letter-spacing:.01em; background:linear-gradient(180deg,#FFF6D8,#E6C877 48%,#C9A961 66%,#8a6d2f); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:nwGlowP 6s ease-in-out infinite; margin:20px 0 6px;">Mur des<br>Stars</div>
+
+    <div style="display:flex; align-items:center; gap:34px; margin-top:26px;">
+      <span style="width:150px; height:2px; background:rgba(214,178,95,.7);"></span>
+      <span style="font-family:'Great Vibes',cursive; font-size:96px; line-height:.9; color:#EECF80; text-shadow:0 0 60px rgba(201,169,97,.4);">Prends ta photo</span>
+      <span style="width:150px; height:2px; background:rgba(214,178,95,.7);"></span>
+    </div>
+    <div style="font-family:'Playfair Display',serif; font-style:italic; font-size:46px; color:#F5E6C8; margin-top:22px;">et deviens une étoile de la soirée</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;state&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{}&quot;}}">
+class Component extends DCLogic {
+  css(o){ return Object.entries(o).map(([k,v])=>`${k.replace(/[A-Z]/g,m=>"-"+m.toLowerCase())}:${v}`).join(";"); }
+  renderVals(){
+    const root="position:relative; width:1920px; height:1080px; overflow:hidden; background:#0A0A0A; color:#F5E6C8; font-family:'Cormorant Garamond',serif;";
+    const cb={position:"absolute",width:"20px",height:"20px",background:"#E6C877",transform:"rotate(45deg)",boxShadow:"0 0 12px rgba(214,178,95,.7)"};
+    const corner={tl:this.css({...cb,top:"56px",left:"56px"}),tr:this.css({...cb,top:"56px",right:"56px"}),bl:this.css({...cb,bottom:"56px",left:"56px"}),br:this.css({...cb,bottom:"56px",right:"56px"})};
+    const rnd=(s)=>{let x=Math.sin(s)*10000;return x-Math.floor(x);};
+    const twinkles=Array.from({length:16},(_,i)=>{const left=rnd(i*2.1)*94+3;const top=rnd(i*3.3)*86+6;const size=20+rnd(i*1.7)*36;const dur=2.4+rnd(i*4)*2.6;
+      return {style:`position:absolute;left:${left}%;top:${top}%;font-family:'Cinzel',serif;font-size:${size}px;color:rgba(230,200,119,.55);text-shadow:0 0 16px rgba(214,178,95,.5);animation:nwTwinkle ${dur}s ease-in-out infinite, nwUp ${(4+rnd(i)*3).toFixed(1)}s ease-in-out infinite;animation-delay:${(-rnd(i*6)*dur).toFixed(2)}s;`};});
+    return { root, corner, twinkles };
+  }
+}
+</script>
+</body>
+</html>

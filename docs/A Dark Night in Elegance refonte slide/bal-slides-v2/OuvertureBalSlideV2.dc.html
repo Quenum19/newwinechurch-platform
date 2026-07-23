@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@400;500;600;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600&display=swap" rel="stylesheet">
+<style>
+  @keyframes nwDoorL { 0%{transform:perspective(1600px) rotateY(0deg)} 100%{transform:perspective(1600px) rotateY(-88deg)} }
+  @keyframes nwDoorR { 0%{transform:perspective(1600px) rotateY(0deg)} 100%{transform:perspective(1600px) rotateY(88deg)} }
+  @keyframes nwFireLaunch { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-380px);opacity:0} }
+  @keyframes nwFireBurst { 0%,60%{transform:scale(0);opacity:0} 65%{transform:scale(.3);opacity:1} 100%{transform:scale(1.6);opacity:0} }
+  @keyframes nwGlowP { 0%,100%{text-shadow:0 0 60px rgba(201,169,97,.4),0 2px 4px rgba(0,0,0,.7)} 50%{text-shadow:0 0 130px rgba(201,169,97,.75),0 2px 4px rgba(0,0,0,.7)} }
+  @keyframes nwCountPop { 0%{transform:scale(2.4);opacity:0} 30%{opacity:1} 100%{transform:scale(.4);opacity:0} }
+  @keyframes nwRevealUp { 0%{transform:translateY(50px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+</style>
+</helmet>
+
+<div style="{{ root }}">
+  <div style="position:absolute; inset:0; background:radial-gradient(120% 100% at 50% 30%, #2a0f14 0%, #12080a 56%, #060402 100%);"></div>
+
+  <!-- portes qui s'ouvrent -->
+  <div style="position:absolute; top:0; bottom:0; left:0; width:50%; background:linear-gradient(90deg,#160d10,#2a1a10); border-right:3px solid rgba(230,200,119,.6); transform-origin:left center; animation:nwDoorL 2.6s cubic-bezier(.7,0,.3,1) 1.6s forwards; box-shadow:inset -30px 0 60px rgba(0,0,0,.6);"></div>
+  <div style="position:absolute; top:0; bottom:0; right:0; width:50%; background:linear-gradient(270deg,#160d10,#2a1a10); border-left:3px solid rgba(230,200,119,.6); transform-origin:right center; animation:nwDoorR 2.6s cubic-bezier(.7,0,.3,1) 1.6s forwards; box-shadow:inset 30px 0 60px rgba(0,0,0,.6);"></div>
+
+  <!-- feux d'artifice -->
+  <sc-for list="{{ fireworks }}" as="f" hint-placeholder-count="6">
+    <div style="{{ f.launch }}"></div>
+    <div style="{{ f.burstWrap }}"><sc-for list="{{ f.rays }}" as="r" hint-placeholder-count="12"><div style="{{ r }}"></div></sc-for></div>
+  </sc-for>
+
+  <div style="position:absolute; inset:22px; border:2px solid rgba(214,178,95,.9); box-shadow:inset 0 0 70px rgba(0,0,0,.4); pointer-events:none; z-index:5;"></div>
+  <div style="position:absolute; inset:30px; border:1px solid rgba(214,178,95,.5); pointer-events:none; z-index:5;"></div>
+  <div style="{{ corner.tl }}"></div><div style="{{ corner.tr }}"></div><div style="{{ corner.bl }}"></div><div style="{{ corner.br }}"></div>
+
+  <!-- countdown 3-2-1 -->
+  <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:6;">
+    <div style="position:absolute; font-family:'Anton',sans-serif; font-size:520px; color:#ECCE7D; text-shadow:0 0 120px rgba(201,169,97,.7); animation:nwCountPop 1.6s ease-in 0s 1 both;">3</div>
+    <div style="position:absolute; font-family:'Anton',sans-serif; font-size:520px; color:#ECCE7D; text-shadow:0 0 120px rgba(201,169,97,.7); animation:nwCountPop 1.6s ease-in .5s 1 both;">2</div>
+    <div style="position:absolute; font-family:'Anton',sans-serif; font-size:520px; color:#ECCE7D; text-shadow:0 0 120px rgba(201,169,97,.7); animation:nwCountPop 1.6s ease-in 1s 1 both;">1</div>
+  </div>
+
+  <!-- titre révélé -->
+  <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; z-index:6; animation:nwRevealUp 1s ease 2.4s both;">
+    <div style="font-family:'Cinzel',serif; font-weight:600; font-size:40px; letter-spacing:.5em; text-indent:.5em; color:#E6C877; text-shadow:0 2px 12px rgba(0,0,0,.8);">C'EST PARTI</div>
+    <div style="font-family:'Anton',sans-serif; font-size:210px; line-height:.9; text-transform:uppercase; background:linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:nwGlowP 4s ease-in-out infinite;">Ouverture</div>
+    <div style="font-family:'Great Vibes',cursive; font-size:180px; line-height:.78; color:#EECF80; text-shadow:0 0 80px rgba(201,169,97,.55);">du Bal</div>
+    <div style="display:flex; gap:36px; margin-top:28px; font-family:'Cinzel',serif; font-size:52px; color:#E6C877;"><span>★</span><span>★</span><span>★</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;state&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{}&quot;}}">
+class Component extends DCLogic {
+  css(o){ return Object.entries(o).map(([k,v])=>`${k.replace(/[A-Z]/g,m=>"-"+m.toLowerCase())}:${v}`).join(";"); }
+  renderVals(){
+    const root="position:relative; width:1920px; height:1080px; overflow:hidden; background:#0A0A0A; color:#F5E6C8; font-family:'Cormorant Garamond',serif;";
+    const cb={position:"absolute",width:"14px",height:"14px",background:"#E6C877",transform:"rotate(45deg)",boxShadow:"0 0 8px rgba(214,178,95,.6)",zIndex:5};
+    const corner={tl:this.css({...cb,top:"44px",left:"44px"}),tr:this.css({...cb,top:"44px",right:"44px"}),bl:this.css({...cb,bottom:"44px",left:"44px"}),br:this.css({...cb,bottom:"44px",right:"44px"})};
+    const rnd=(s)=>{let x=Math.sin(s)*10000;return x-Math.floor(x);};
+    const cols=["#FFE9A8","#E6C877","#FFF6D8","#8B1A2F","#F5E6C8","#EECF80"];
+    const fireworks=Array.from({length:14},(_,i)=>{
+      const left=8+rnd(i*2.3)*84; const top=8+rnd(i*3.1)*40; const col=cols[i%cols.length];
+      const dur=(2.4+rnd(i*1.9)*1.2).toFixed(2); const delay=(1.6+i*0.32).toFixed(2);
+      const rayN=18; const rayLen=90+Math.round(rnd(i*4.7)*70);
+      const rays=Array.from({length:rayN},(_,j)=>{const ang=j*(360/rayN);
+        return `position:absolute; left:50%; top:50%; width:5px; height:${rayLen}px; background:linear-gradient(180deg,${col},transparent); box-shadow:0 0 8px ${col}; transform-origin:top center; transform:rotate(${ang}deg); border-radius:4px;`;});
+      return {
+        launch:this.css({ position:"absolute", left:left+"%", top:(top+26)+"%", width:"5px", height:"90px", borderRadius:"3px",
+          background:`linear-gradient(180deg,${col},transparent)`, boxShadow:`0 0 16px ${col}`, opacity:0,
+          animation:`nwFireLaunch 1s ease-out ${delay}s infinite`, zIndex:4 }),
+        burstWrap:this.css({ position:"absolute", left:left+"%", top:top+"%", width:"260px", height:"260px",
+          animation:`nwFireBurst ${dur}s ease-out ${(parseFloat(delay)+0.9).toFixed(2)}s infinite`, zIndex:4 }),
+        rays,
+      };
+    });
+    return { root, corner, fireworks };
+  }
+}
+</script>
+</body>
+</html>

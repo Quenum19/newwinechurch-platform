@@ -17,44 +17,38 @@ import { useMemo } from 'react'
 import { useBalState } from './hooks/useBalState.js'
 import SlideTransition from './components/SlideTransition.jsx'
 
-// Slides
-import DefaultSlide      from './slides/DefaultSlide.jsx'
-import ArriveeSlide      from './slides/ArriveeSlide.jsx'
-import MurStarsSlide     from './slides/MurStarsSlide.jsx'
-import InstallationSlide from './slides/InstallationSlide.jsx'
-import DancingStarsSlide from './slides/DancingStarsSlide.jsx'
-import BienvenueSlide    from './slides/BienvenueSlide.jsx'
-import BonAppetitSlide   from './slides/BonAppetitSlide.jsx'
-import ProgrammeSlide    from './slides/ProgrammeSlide.jsx'
-import DefileSlide       from './slides/DefileSlide.jsx'
-import RappeursSlide     from './slides/RappeursSlide.jsx'
-import DjSlide           from './slides/DjSlide.jsx'
-import VoteSlide         from './slides/VoteSlide.jsx'
-import ProclamationSlide from './slides/ProclamationSlide.jsx'
-import OuvertureBalSlide from './slides/OuvertureBalSlide.jsx'
-import FinSlide          from './slides/FinSlide.jsx'
-import NoirSlide         from './slides/NoirSlide.jsx'
+// Slides V2 (refonte Claude Design 2026-07-23)
+import DefaultSlide        from './slides/DefaultSlide.jsx'
+import ArriveeSlide        from './slides/ArriveeSlide.jsx'
+import MurStarsSlide       from './slides/MurStarsSlide.jsx'
+import DancingStarsSlide   from './slides/DancingStarsSlide.jsx'
+import BienvenueSlide      from './slides/BienvenueSlide.jsx'
+import ProgrammeSlide      from './slides/ProgrammeSlide.jsx'
+import DefileSlide         from './slides/DefileSlide.jsx'
+import RappeursSlide       from './slides/RappeursSlide.jsx'
+import DjSlide             from './slides/DjSlide.jsx'
+import VoteSlide           from './slides/VoteSlide.jsx'
+import ProclamationSlide   from './slides/ProclamationSlide.jsx'
+import OuvertureBalSlide   from './slides/OuvertureBalSlide.jsx'
+import NoirSlide           from './slides/NoirSlide.jsx'
 import PhotosAmbianceSlide from './slides/PhotosAmbianceSlide.jsx'
 
-// Table de correspondance slide → composant
+// Table de correspondance slide → composant (14 slides V2)
 const SLIDES = {
-  default:        DefaultSlide,
-  arrivee:        ArriveeSlide,
-  'mur-stars':    MurStarsSlide,
-  installation:   InstallationSlide,
-  'dancing-stars':DancingStarsSlide,
-  bienvenue:      BienvenueSlide,
-  'bon-appetit':  BonAppetitSlide,
-  programme:      ProgrammeSlide,
-  defile:         DefileSlide,
-  rappeurs:       RappeursSlide,
-  dj:             DjSlide,
-  vote:           VoteSlide,
-  proclamation:   ProclamationSlide,
-  'ouverture-bal':OuvertureBalSlide,
-  fin:            FinSlide,
-  noir:           NoirSlide,
-  'photos-ambiance': PhotosAmbianceSlide,
+  default:            DefaultSlide,
+  arrivee:            ArriveeSlide,
+  'mur-stars':        MurStarsSlide,
+  'dancing-stars':    DancingStarsSlide,
+  bienvenue:          BienvenueSlide,
+  programme:          ProgrammeSlide,
+  defile:             DefileSlide,
+  rappeurs:           RappeursSlide,
+  dj:                 DjSlide,
+  vote:               VoteSlide,
+  proclamation:       ProclamationSlide,
+  'ouverture-bal':    OuvertureBalSlide,
+  noir:               NoirSlide,
+  'photos-ambiance':  PhotosAmbianceSlide,
 }
 
 export default function BalLiveScreen() {

@@ -1,498 +1,323 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Stage from '../components/Stage.jsx'
+
 /**
- * Slide — Proclamation résultats Roi & Reine
- * Séquence orchestrée :
- *   1. SUSPENSE (5s) — pulsation "Résultats" + couronne qui grandit
- *   2. REVEAL ROI (7s) — carte roi + barre progressive de votes + confettis
- *   3. INTERLUDE (2s) — "Et maintenant… la REINE"
- *   4. REVEAL REINE (7s) — carte reine + barre progressive + confettis
- *   5. DUO FINAL (persistant) — les 2 côte à côte, ambiance royale
+ * ProclamationSlide V2 — Climax du bal : proclamation Roi & Reine 2026.
+ * Fidèle EXACT au .dc.html livré par Claude Design.
+ * - Couronne SVG custom (200×140) avec dégradé or, rubis et facette animée
+ * - 2 piédestaux 3D (perspective 1600px, rotateY ±6°, translateZ 40px)
+ * - Médaillons 380×380 avec anneau conic-gradient or, halo & petite couronne
+ * - Barres de votes progressives (transition 1.4s) + compteur count-up 1500ms ease-out cubic
+ * - 30 confettis 5 couleurs avec sway latéral
+ * - Halo respirant, flash initial, gradient nocturne, cadre double filet + losanges
+ * - Fallback typographique Great Vibes si pas de photo
  */
-import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import GoldParticles from '../components/GoldParticles.jsx'
-
-const PHASES = {
-  SUSPENSE:     'suspense',
-  INTERLUDE_1:  'interlude-1',
-  REVEAL_ROI:   'reveal-roi',
-  INTERLUDE_2:  'interlude-2',
-  REVEAL_REINE: 'reveal-reine',
-  DUO:          'duo',
-}
-
-// Timings en ms
-const T = {
-  SUSPENSE:     5000,
-  INTERLUDE_1:  2000,
-  REVEAL_ROI:   7000,
-  INTERLUDE_2:  2500,
-  REVEAL_REINE: 7000,
-}
-
 export default function ProclamationSlide({ state }) {
-  const results = state?.results
-  const [phase, setPhase] = useState(PHASES.SUSPENSE)
+  const st = state ?? {}
+  const res = st.results ?? {}
+  const roi = res.roi ?? { name: '—', votes: 0, photo: null }
+  const reine = res.reine ?? { name: '—', votes: 0, photo: null }
+  const maxV = Math.max(roi.votes || 0, reine.votes || 0, 1)
 
+  // Count-up progression p ∈ [0,1] — durée 1500ms, ease-out cubic (identique .dc.html)
+  const [p, setP] = useState(0)
+  const rafRef = useRef(null)
   useEffect(() => {
-    setPhase(PHASES.SUSPENSE)
-    const t1 = setTimeout(() => setPhase(PHASES.INTERLUDE_1), T.SUSPENSE)
-    const t2 = setTimeout(() => setPhase(PHASES.REVEAL_ROI), T.SUSPENSE + T.INTERLUDE_1)
-    const t3 = setTimeout(() => setPhase(PHASES.INTERLUDE_2), T.SUSPENSE + T.INTERLUDE_1 + T.REVEAL_ROI)
-    const t4 = setTimeout(() => setPhase(PHASES.REVEAL_REINE), T.SUSPENSE + T.INTERLUDE_1 + T.REVEAL_ROI + T.INTERLUDE_2)
-    const t5 = setTimeout(() => setPhase(PHASES.DUO), T.SUSPENSE + T.INTERLUDE_1 + T.REVEAL_ROI + T.INTERLUDE_2 + T.REVEAL_REINE)
-    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout) }
-  }, [results?.roi?.id, results?.reine?.id])
-
-  const bg = 'linear-gradient(135deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%)'
-
-  return (
-    <div style={{ position: 'absolute', inset: 0, background: bg, overflow: 'hidden' }}>
-      <GoldParticles count={40} intensity={0.9}/>
-
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, padding: '4vh 4vw' }}>
-        <AnimatePresence mode="wait">
-          {phase === PHASES.SUSPENSE && <SuspensePhase key="s"/>}
-          {phase === PHASES.INTERLUDE_1 && <InterludePhase key="i1" text="Et maintenant..." subtitle="Le Roi 2026"/>}
-          {phase === PHASES.REVEAL_ROI && <RevealPhase key="r" winner={results?.roi} label="Roi 2026"/>}
-          {phase === PHASES.INTERLUDE_2 && <InterludePhase key="i2" text="Et maintenant..." subtitle="La Reine 2026"/>}
-          {phase === PHASES.REVEAL_REINE && <RevealPhase key="re" winner={results?.reine} label="Reine 2026"/>}
-          {phase === PHASES.DUO && <DuoPhase key="d" roi={results?.roi} reine={results?.reine}/>}
-        </AnimatePresence>
-      </div>
-
-      {/* Confettis dorés — visibles sur reveal + duo */}
-      {(phase === PHASES.REVEAL_ROI || phase === PHASES.REVEAL_REINE || phase === PHASES.DUO) && <Confetti/>}
-    </div>
-  )
-}
-
-// ─── PHASE 1 : SUSPENSE ────────────────────────────────────────
-
-function SuspensePhase() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.15 }}
-      transition={{ duration: 0.6 }}
-      style={{ textAlign: 'center' }}
-    >
-      <motion.p
-        animate={{ letterSpacing: ['0.4em', '1em', '0.4em'] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          fontFamily: '"Playfair Display", serif',
-          fontStyle: 'italic',
-          fontSize: 'clamp(2rem, 4vw, 4rem)',
-          color: '#C9A961',
-          textTransform: 'uppercase',
-          margin: 0,
-        }}
-      >
-        Résultats
-      </motion.p>
-      <motion.div
-        animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          fontSize: 'clamp(10rem, 18vw, 20rem)',
-          color: '#F5E6C8',
-          textShadow: '0 0 80px rgba(201, 169, 97, 0.8), 0 0 160px rgba(201, 169, 97, 0.4)',
-          marginTop: '2rem',
-          fontFamily: '"Anton", sans-serif',
-          fontWeight: 900,
-          lineHeight: 1,
-        }}
-      >
-        👑
-      </motion.div>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-        style={{
-          fontFamily: '"Playfair Display", serif',
-          fontStyle: 'italic',
-          fontSize: 'clamp(1.2rem, 2vw, 2rem)',
-          color: '#F5E6C8',
-          opacity: 0.8,
-          marginTop: '2rem',
-          letterSpacing: '0.3em',
-        }}
-      >
-        Le suspense est à son comble...
-      </motion.p>
-    </motion.div>
-  )
-}
-
-// ─── PHASE 2 & 4 : INTERLUDE ───────────────────────────────────
-
-function InterludePhase({ text, subtitle }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -40 }}
-      transition={{ duration: 0.8 }}
-      style={{ textAlign: 'center' }}
-    >
-      <motion.p
-        initial={{ opacity: 0, letterSpacing: '0.1em' }}
-        animate={{ opacity: 1, letterSpacing: '0.4em' }}
-        transition={{ duration: 1.2 }}
-        style={{
-          fontFamily: '"Playfair Display", serif',
-          fontStyle: 'italic',
-          fontSize: 'clamp(2.5rem, 5vw, 5rem)',
-          color: '#F5E6C8',
-          textShadow: '0 0 30px rgba(201, 169, 97, 0.4)',
-          margin: 0,
-        }}
-      >
-        {text}
-      </motion.p>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 1 }}
-        style={{
-          fontFamily: '"Playfair Display", serif',
-          fontSize: 'clamp(2rem, 3.5vw, 3.5rem)',
-          color: '#C9A961',
-          marginTop: '1rem',
-          fontWeight: 700,
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-        }}
-      >
-        {subtitle}
-      </motion.p>
-    </motion.div>
-  )
-}
-
-// ─── PHASE 3 & 5 : REVEAL ──────────────────────────────────────
-
-function RevealPhase({ winner, label }) {
-  const [progress, setProgress] = useState(0)
-
-  useEffect(() => {
-    if (!winner) return
-    // Progression 0 → 100% en 3s, boum à la fin
-    let raf
-    const start = performance.now()
-    const tick = (now) => {
-      const elapsed = now - start
-      const p = Math.min(elapsed / 3000, 1)
-      // Ease-out cubic pour un effet "arrivée en trombe puis stabilise"
-      const eased = 1 - Math.pow(1 - p, 3)
-      setProgress(eased * 100)
-      if (p < 1) raf = requestAnimationFrame(tick)
+    const t0 = performance.now()
+    const dur = 1500
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / dur)
+      setP(1 - Math.pow(1 - k, 3))
+      if (k < 1) rafRef.current = requestAnimationFrame(tick)
     }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [winner?.id])
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [roi.votes, reine.votes])
 
-  if (!winner) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        style={{ textAlign: 'center', color: '#8B7960', fontStyle: 'italic', fontSize: '1.5rem' }}
-      >
-        Aucun vote pour {label}
-      </motion.div>
-    )
+  // 30 confettis pseudo-aléatoires déterministes (même formule que le .dc.html)
+  const confetti = useMemo(() => {
+    const rnd = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x) }
+    const cols = ['#FFE9A8', '#E6C877', '#C9A961', '#8B1A2F', '#F5E6C8']
+    return Array.from({ length: 30 }, (_, i) => {
+      const left = rnd(i * 2.3) * 100
+      const dur = 5 + rnd(i * 1.7) * 4
+      const delay = -rnd(i * 3.1) * dur
+      const w = 6 + rnd(i * 4.4) * 8
+      const h = w * (1.4 + rnd(i * 2) * 0.8)
+      const col = cols[i % cols.length]
+      const swayDur = 1.6 + rnd(i * 5) * 1.8
+      return { left, dur, delay, w, h, col, swayDur }
+    })
+  }, [])
+
+  // Losange or aux 4 coins (même formule que .dc.html)
+  const cornerBase = {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    background: '#E6C877',
+    transform: 'rotate(45deg)',
+    boxShadow: '0 0 8px rgba(214,178,95,.6)',
   }
 
-  const votes = winner.votes ?? 0
-  const displayedVotes = Math.round((votes * progress) / 100)
+  // Fabrique d'un piédestal (Roi ou Reine) — MÊMES valeurs exactes que .dc.html
+  const buildRoyal = (d, label, labelColor, tz, ry) => {
+    const votes = d.votes || 0
+    return {
+      label,
+      labelColor,
+      tz,
+      ry,
+      hasPhoto: !!d.photo,
+      photo: d.photo || null,
+      initial: (d.name || '?').trim().charAt(0).toUpperCase(),
+      name: d.name || '—',
+      barPct: ((votes / maxV) * 100 * p).toFixed(1) + '%',
+      votesDisplay: Math.round(votes * p).toLocaleString('fr-FR'),
+    }
+  }
+  const royals = [
+    buildRoyal(roi, 'LE ROI', '#E6C877', 40, 6),
+    buildRoyal(reine, 'LA REINE', '#F3E2B6', 40, -6),
+  ]
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.05 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-      style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', width: 'min(700px, 80vw)' }}
-    >
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        style={{
-          fontFamily: '"Playfair Display", serif',
-          fontSize: 'clamp(2rem, 3.2vw, 3.2rem)',
-          color: '#C9A961',
-          letterSpacing: '0.4em',
-          textTransform: 'uppercase',
-          margin: 0,
-        }}
-      >
-        {label}
-      </motion.p>
+    <Stage>
+      <style>{`
+        @keyframes nwConfetti { 0%{transform:translateY(-80px) rotateZ(0deg) rotateX(0deg);opacity:0} 8%{opacity:1} 100%{transform:translateY(1180px) rotateZ(720deg) rotateX(540deg);opacity:.9} }
+        @keyframes nwSway { 0%,100%{margin-left:-26px} 50%{margin-left:26px} }
+        @keyframes nwFlash { 0%{opacity:0} 15%{opacity:.85} 100%{opacity:0} }
+        @keyframes nwCrownShine { 0%,100%{filter:drop-shadow(0 0 10px rgba(230,200,119,.5))} 50%{filter:drop-shadow(0 0 26px rgba(255,233,168,.9))} }
+        @keyframes nwFacet { 0%,100%{opacity:.25} 50%{opacity:.9} }
+        @keyframes nwRiseP { 0%{transform:translateY(60px) scale(.94);opacity:0} 100%{transform:translateY(0) scale(1);opacity:1} }
+        @keyframes nwGlowP { 0%,100%{text-shadow:0 0 60px rgba(201,169,97,.35),0 2px 4px rgba(0,0,0,.6)} 50%{text-shadow:0 0 100px rgba(201,169,97,.55),0 2px 4px rgba(0,0,0,.6)} }
+        @keyframes nwHalo { 0%,100%{opacity:.5; transform:scale(1)} 50%{opacity:.85; transform:scale(1.06)} }
+      `}</style>
 
-      {/* Photo avec halo pulsant */}
-      <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ delay: 0.3, duration: 1, ease: 'backOut' }}
-        style={{ position: 'relative' }}
-      >
-        <motion.div
-          animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.15, 1] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
+      <div style={{
+        position: 'relative',
+        width: 1920,
+        height: 1080,
+        overflow: 'hidden',
+        background: '#0A0A0A',
+        color: '#F5E6C8',
+        fontFamily: "'Cormorant Garamond',serif",
+      }}>
+        {/* Gradient nocturne radial */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(120% 100% at 50% 20%, #2a0f14 0%, #12080a 55%, #060402 100%)',
+        }} />
+
+        {/* Halo qui respire */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(46% 46% at 50% 40%, rgba(230,200,119,.14), transparent 70%)',
+          animation: 'nwHalo 5s ease-in-out infinite',
+        }} />
+
+        {/* Flash initial (1.3s, run once) */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          opacity: 0,
+          background: '#FFF6D8',
+          animation: 'nwFlash 1.3s ease-out 1',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Confettis (30 pièces) */}
+        {confetti.map((c, i) => (
+          <div key={i} style={{
             position: 'absolute',
-            inset: '-30px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(201, 169, 97, 0.55) 0%, transparent 70%)',
-          }}
-        />
-        {winner.photo_url ? (
-          <img
-            src={winner.photo_url}
-            alt=""
-            style={{
-              position: 'relative',
-              width: 'clamp(220px, 30vw, 320px)',
-              height: 'clamp(220px, 30vw, 320px)',
-              objectFit: 'cover',
-              borderRadius: '50%',
-              border: '6px solid #C9A961',
-              boxShadow: '0 0 80px rgba(201, 169, 97, 0.8)',
-            }}
-          />
-        ) : (
-          <div style={{
-            position: 'relative',
-            width: 'clamp(220px, 30vw, 320px)',
-            height: 'clamp(220px, 30vw, 320px)',
-            borderRadius: '50%',
-            background: '#8B1A2F',
-            border: '6px solid #C9A961',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(5rem, 10vw, 10rem)',
+            top: -80,
+            left: `${c.left}%`,
+            animation: `nwSway ${c.swayDur}s ease-in-out infinite`,
           }}>
-            👑
-          </div>
-        )}
-      </motion.div>
-
-      {/* Nom en grand */}
-      <motion.h1
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.8 }}
-        style={{
-          fontFamily: '"Playfair Display", serif',
-          fontSize: 'clamp(3.5rem, 7vw, 7rem)',
-          color: '#F5E6C8',
-          fontWeight: 700,
-          margin: 0,
-          textShadow: '0 0 40px rgba(201, 169, 97, 0.6)',
-          lineHeight: 1,
-        }}
-      >
-        {winner.first_name} {winner.last_name}
-      </motion.h1>
-
-      {/* Barre de progression des votes qui monte */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.1, duration: 0.6 }}
-        style={{ width: '100%' }}
-      >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          marginBottom: '0.6rem',
-          fontFamily: '"Playfair Display", serif',
-        }}>
-          <span style={{
-            fontSize: 'clamp(1rem, 1.4vw, 1.4rem)',
-            color: '#C9A961',
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-          }}>
-            Votes reçus
-          </span>
-          <motion.span
-            style={{
-              fontSize: 'clamp(2.5rem, 4.5vw, 4.5rem)',
-              color: '#F5E6C8',
-              fontWeight: 900,
-              fontVariantNumeric: 'tabular-nums',
-              fontFamily: '"Anton", sans-serif',
-              lineHeight: 1,
-              textShadow: '0 0 20px rgba(201, 169, 97, 0.6)',
-            }}
-          >
-            {displayedVotes}
-          </motion.span>
-        </div>
-        <div style={{
-          height: '18px',
-          background: 'rgba(255, 255, 255, 0.08)',
-          borderRadius: '9px',
-          overflow: 'hidden',
-          border: '1.5px solid rgba(201, 169, 97, 0.4)',
-        }}>
-          <div style={{
-            width: `${progress}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #C9A961 0%, #F5E6C8 50%, #C9A961 100%)',
-            boxShadow: '0 0 20px rgba(201, 169, 97, 0.9)',
-            transition: 'width 60ms linear',
-          }}/>
-        </div>
-      </motion.div>
-
-      {/* Étoiles finales quand progress atteint 100% */}
-      {progress >= 99 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', damping: 8 }}
-          style={{
-            fontSize: 'clamp(2rem, 4vw, 4rem)',
-            color: '#C9A961',
-            letterSpacing: '1.5rem',
-          }}
-        >
-          ★ ★ ★
-        </motion.div>
-      )}
-    </motion.div>
-  )
-}
-
-// ─── PHASE 6 : DUO FINAL ───────────────────────────────────────
-
-function DuoPhase({ roi, reine }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1 }}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '4vw',
-        alignItems: 'center',
-        width: '100%',
-      }}
-    >
-      {[
-        { data: roi, label: 'Roi 2026' },
-        { data: reine, label: 'Reine 2026' },
-      ].map(({ data: w, label }, idx) => (
-        <motion.div
-          key={label}
-          initial={{ opacity: 0, y: 40, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.9, delay: idx * 0.35, ease: 'backOut' }}
-          style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}
-        >
-          <p style={{
-            fontFamily: '"Playfair Display", serif',
-            fontSize: 'clamp(1.5rem, 2.4vw, 2.4rem)',
-            color: '#C9A961',
-            letterSpacing: '0.4em',
-            textTransform: 'uppercase',
-            margin: 0,
-          }}>
-            {label}
-          </p>
-
-          {w?.photo_url ? (
-            <img
-              src={w.photo_url}
-              alt=""
-              style={{
-                width: 'clamp(180px, 22vw, 260px)',
-                height: 'clamp(180px, 22vw, 260px)',
-                objectFit: 'cover',
-                borderRadius: '50%',
-                border: '5px solid #C9A961',
-                boxShadow: '0 0 60px rgba(201, 169, 97, 0.7)',
-              }}
-            />
-          ) : (
             <div style={{
-              width: 'clamp(180px, 22vw, 260px)',
-              height: 'clamp(180px, 22vw, 260px)',
-              borderRadius: '50%',
-              background: '#8B1A2F',
-              border: '5px solid #C9A961',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'clamp(4rem, 8vw, 8rem)',
-            }}>
-              👑
-            </div>
-          )}
+              width: c.w,
+              height: c.h,
+              background: c.col,
+              opacity: 0.9,
+              borderRadius: 1,
+              boxShadow: '0 0 6px rgba(0,0,0,.3)',
+              animation: `nwConfetti ${c.dur}s linear infinite`,
+              animationDelay: `${c.delay}s`,
+              transformStyle: 'preserve-3d',
+            }} />
+          </div>
+        ))}
 
-          <h1 style={{
-            fontFamily: '"Playfair Display", serif',
-            fontSize: 'clamp(2.5rem, 5vw, 5rem)',
-            color: '#F5E6C8',
-            fontWeight: 700,
-            margin: 0,
-            textShadow: '0 0 30px rgba(201, 169, 97, 0.5)',
-            lineHeight: 1,
+        {/* Cadre double filet */}
+        <div style={{
+          position: 'absolute', inset: 22,
+          border: '2px solid rgba(214,178,95,.9)',
+          boxShadow: 'inset 0 0 70px rgba(0,0,0,.32)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 30,
+          border: '1px solid rgba(214,178,95,.5)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Losanges aux 4 coins */}
+        <div style={{ ...cornerBase, top: 44, left: 44 }} />
+        <div style={{ ...cornerBase, top: 44, right: 44 }} />
+        <div style={{ ...cornerBase, bottom: 44, left: 44 }} />
+        <div style={{ ...cornerBase, bottom: 44, right: 44 }} />
+
+        {/* Colonne centrale */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          {/* Couronne SVG custom (200×140) */}
+          <div style={{ animation: 'nwCrownShine 4s ease-in-out infinite' }}>
+            <svg width="200" height="140" viewBox="0 0 200 140">
+              <defs>
+                <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#FFF6D8" />
+                  <stop offset=".45" stopColor="#E6C877" />
+                  <stop offset="1" stopColor="#7E662E" />
+                </linearGradient>
+                <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#E6C877" />
+                  <stop offset="1" stopColor="#B08A3F" />
+                </linearGradient>
+              </defs>
+              <path d="M28 116 L20 44 L64 82 L100 24 L136 82 L180 44 L172 116 Z" fill="url(#cg)" stroke="#7E662E" strokeWidth="1.5" />
+              <rect x="30" y="112" width="140" height="18" rx="4" fill="url(#cg2)" stroke="#7E662E" strokeWidth="1.5" />
+              <circle cx="100" cy="18" r="9" fill="#8B1A2F" stroke="#FFE9A8" strokeWidth="2" />
+              <circle cx="20" cy="40" r="6" fill="#8B1A2F" stroke="#FFE9A8" strokeWidth="1.5" />
+              <circle cx="180" cy="40" r="6" fill="#8B1A2F" stroke="#FFE9A8" strokeWidth="1.5" />
+              <circle cx="64" cy="120" r="3.5" fill="#8B1A2F" />
+              <circle cx="100" cy="120" r="3.5" fill="#8B1A2F" />
+              <circle cx="136" cy="120" r="3.5" fill="#8B1A2F" />
+              <polygon points="100,24 136,82 64,82" fill="rgba(255,246,216,.35)" style={{ animation: 'nwFacet 3s ease-in-out infinite' }} />
+            </svg>
+          </div>
+
+          <div style={{
+            fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 44,
+            letterSpacing: '.4em', textIndent: '.4em',
+            color: '#E6C877', marginTop: 8,
+            animation: 'nwGlowP 5s ease-in-out infinite',
+          }}>VOS MAJESTÉS 2026</div>
+
+          <div style={{
+            fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
+            fontSize: 30, color: '#F0E6CF', marginTop: 6,
+          }}>couronnés par vos votes</div>
+
+          {/* Duo pédestaux 3D */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+            gap: 180, marginTop: 34, perspective: '1600px',
           }}>
-            {w?.first_name} {w?.last_name}
-          </h1>
+            {royals.map((r, i) => (
+              <div key={i} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                transformStyle: 'preserve-3d',
+                transform: `translateZ(${r.tz}px) rotateY(${r.ry}deg)`,
+                animation: 'nwRiseP .9s cubic-bezier(.16,1,.3,1) both',
+              }}>
+                {/* Label */}
+                <div style={{
+                  fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 30,
+                  letterSpacing: '.38em', textIndent: '.38em',
+                  color: r.labelColor,
+                }}>{r.label}</div>
 
-          <p style={{
-            fontFamily: '"Playfair Display", serif',
-            fontSize: 'clamp(1.1rem, 1.6vw, 1.6rem)',
-            color: '#C9A961',
-            margin: 0,
-          }}>
-            {w?.votes ?? 0} vote{(w?.votes ?? 0) > 1 ? 's' : ''}
-          </p>
-        </motion.div>
-      ))}
-    </motion.div>
-  )
-}
+                {/* Médaillon 380×380 */}
+                <div style={{ position: 'relative', width: 380, height: 380, margin: '20px 0' }}>
+                  {/* Petite couronne au-dessus */}
+                  <div style={{
+                    position: 'absolute', top: -88, left: '50%',
+                    transform: 'translateX(-50%)',
+                    animation: 'nwCrownShine 4s ease-in-out infinite',
+                  }}>
+                    <svg width="130" height="90" viewBox="0 0 200 140">
+                      <path d="M28 116 L20 44 L64 82 L100 24 L136 82 L180 44 L172 116 Z" fill="url(#cg)" stroke="#7E662E" strokeWidth="1.5" />
+                      <rect x="30" y="112" width="140" height="18" rx="4" fill="url(#cg2)" stroke="#7E662E" strokeWidth="1.5" />
+                      <circle cx="100" cy="18" r="9" fill="#8B1A2F" stroke="#FFE9A8" strokeWidth="2" />
+                    </svg>
+                  </div>
 
-// ─── Confettis dorés (chute lente) ────────────────────────────
+                  {/* Anneau conic gradient or */}
+                  <div style={{
+                    position: 'absolute', inset: -16, borderRadius: '50%',
+                    background: 'conic-gradient(from 0deg,#7E662E,#FFE9A8,#C9A961,#FFF6D8,#7E662E)',
+                    boxShadow: '0 0 50px rgba(230,200,119,.55)',
+                  }} />
+                  {/* Anneau intérieur noir (crée le liseré) */}
+                  <div style={{
+                    position: 'absolute', inset: -3, borderRadius: '50%',
+                    background: '#0A0A0A',
+                  }} />
+                  {/* Photo (ou fond médaillon si absente) */}
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    backgroundImage: r.hasPhoto ? `url("${r.photo}")` : 'none',
+                    backgroundColor: '#160d10',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }} />
+                  {/* Bordure rubis */}
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    border: '3px solid rgba(139,26,47,.7)',
+                  }} />
+                  {/* Fallback typographique Great Vibes */}
+                  {!r.hasPhoto && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: "'Great Vibes',cursive",
+                      fontSize: 150,
+                      color: 'rgba(230,200,119,.85)',
+                    }}>{r.initial}</div>
+                  )}
+                </div>
 
-function Confetti() {
-  const pieces = Array.from({ length: 24 }).map((_, i) => ({
-    id: i,
-    left: (i * 7 + (i % 3) * 5) % 100,
-    delay: (i * 0.15) % 3,
-    duration: 3 + (i % 4),
-    size: 6 + (i % 4) * 2,
-    color: i % 3 === 0 ? '#C9A961' : i % 3 === 1 ? '#F5E6C8' : '#B08A3F',
-    rotation: (i * 43) % 360,
-  }))
+                {/* Nom (Anton 72px) */}
+                <div style={{
+                  fontFamily: "'Anton',sans-serif", fontSize: 72,
+                  letterSpacing: '.02em',
+                  color: '#F5E6C8',
+                  textShadow: '0 0 40px rgba(201,169,97,.4)',
+                }}>{r.name}</div>
 
-  return (
-    <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4, overflow: 'hidden' }}>
-      {pieces.map((p) => (
-        <motion.div
-          key={p.id}
-          initial={{ y: '-10vh', opacity: 0, rotate: 0 }}
-          animate={{ y: '110vh', opacity: [0, 1, 1, 0], rotate: p.rotation + 720 }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeIn' }}
-          style={{
-            position: 'absolute',
-            left: `${p.left}%`,
-            width: `${p.size}px`,
-            height: `${p.size * 1.6}px`,
-            background: p.color,
-            boxShadow: `0 0 10px ${p.color}`,
-          }}
-        />
-      ))}
-    </div>
+                {/* Barre de progression (transition width 1.4s) */}
+                <div style={{
+                  width: 280, height: 10, borderRadius: 99,
+                  background: 'rgba(214,178,95,.16)',
+                  marginTop: 18, overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: r.barPct,
+                    borderRadius: 99,
+                    background: 'linear-gradient(90deg,#FFE9A8,#C9A961)',
+                    boxShadow: '0 0 14px rgba(230,200,119,.7)',
+                    transition: 'width 1.4s cubic-bezier(.16,1,.3,1)',
+                  }} />
+                </div>
+
+                {/* Compteur votes */}
+                <div style={{
+                  fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 34,
+                  letterSpacing: '.14em',
+                  color: '#E6C877', marginTop: 14,
+                }}>
+                  {r.votesDisplay}{' '}
+                  <span style={{ fontSize: 20, color: '#D9CBB0', letterSpacing: '.2em' }}>VOTES</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Stage>
   )
 }
