@@ -25,6 +25,7 @@ import DancingStarsSlide   from './slides/DancingStarsSlide.jsx'
 import BienvenueSlide      from './slides/BienvenueSlide.jsx'
 import DefileSlide         from './slides/DefileSlide.jsx'
 import RappeursSlide       from './slides/RappeursSlide.jsx'
+import RappeurPhotosSlide  from './slides/RappeurPhotosSlide.jsx'
 import DjSlide             from './slides/DjSlide.jsx'
 import VoteSlide           from './slides/VoteSlide.jsx'
 import ProclamationSlide   from './slides/ProclamationSlide.jsx'
@@ -32,7 +33,7 @@ import OuvertureBalSlide   from './slides/OuvertureBalSlide.jsx'
 import NoirSlide           from './slides/NoirSlide.jsx'
 import PhotosAmbianceSlide from './slides/PhotosAmbianceSlide.jsx'
 
-// Table de correspondance slide → composant (13 slides V2 — programme retirée 2026-07-23)
+// Table de correspondance slide → composant (14 slides V2)
 const SLIDES = {
   default:            DefaultSlide,
   arrivee:            ArriveeSlide,
@@ -41,6 +42,7 @@ const SLIDES = {
   bienvenue:          BienvenueSlide,
   defile:             DefileSlide,
   rappeurs:           RappeursSlide,
+  'rappeur-photos':   RappeurPhotosSlide,
   dj:                 DjSlide,
   vote:               VoteSlide,
   proclamation:       ProclamationSlide,

@@ -31,6 +31,7 @@ const SLIDES = [
   { key: 'bienvenue',      label: 'Bienvenue',          icon: MessageCircle, section: 'moments' },
   { key: 'defile',         label: 'Défilé',             icon: Sparkles,      section: 'moments' },
   { key: 'rappeurs',       label: 'Rappeurs',           icon: Mic2,          section: 'moments' },
+  { key: 'rappeur-photos', label: 'Photos rappeur',     icon: Camera,        section: 'moments' },
   { key: 'dj',             label: 'DJ',                 icon: Music,         section: 'moments' },
 
   { key: 'ouverture-bal',  label: 'Ouverture du Bal',   icon: PartyPopper,   section: 'moments' },
@@ -43,9 +44,8 @@ export default function BalRegiePage() {
   const qc = useQueryClient()
 
   const [customArtiste, setCustomArtiste] = useState('')
-  const [artistePhotoUrl, setArtistePhotoUrl] = useState('')
-  const [artistePhotoName, setArtistePhotoName] = useState('')
-  const [artistePhotoUploading, setArtistePhotoUploading] = useState(false)
+  const [artistePhotos, setArtistePhotos] = useState([])            // [{ url, name }, ...]
+  const [artistePhotosUploading, setArtistePhotosUploading] = useState(false)
   const [dancingMediaUrl, setDancingMediaUrl] = useState('')
   const [dancingMediaName, setDancingMediaName] = useState('')
   const [dancingMediaUploading, setDancingMediaUploading] = useState(false)
@@ -81,23 +81,32 @@ export default function BalRegiePage() {
     }
   }
 
-  const handleArtistePhotoFile = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setArtistePhotoUploading(true)
-    setArtistePhotoName(file.name)
+  const handleArtistePhotosFiles = async (e) => {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+    setArtistePhotosUploading(true)
     try {
-      const url = await uploadBalMedia(file)
-      setArtistePhotoUrl(url)
-      toast.success(`Photo uploadée (${file.name})`)
+      // Upload séquentiel (plus doux pour Hostinger que parallèle sur gros fichiers)
+      const newOnes = []
+      for (const file of files) {
+        const url = await uploadBalMedia(file)
+        newOnes.push({ url, name: file.name })
+      }
+      setArtistePhotos((prev) => [...prev, ...newOnes])
+      toast.success(`${newOnes.length} photo(s) uploadée(s)`)
     } catch (err) {
       toast.error(err?.response?.data?.message || "Échec de l'upload.")
-      setArtistePhotoName('')
     } finally {
-      setArtistePhotoUploading(false)
+      setArtistePhotosUploading(false)
       e.target.value = ''
     }
   }
+
+  const removeArtistePhoto = (idx) => {
+    setArtistePhotos((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  const clearArtistePhotos = () => setArtistePhotos([])
 
   // Query état actuel
   const { data: stateData, refetch } = useQuery({
@@ -152,10 +161,21 @@ export default function BalRegiePage() {
   const send = (slide, config) => setSlideMutation.mutate({ slide, config })
 
   const sendRappeur = (artiste) => {
-    const cfg = { artiste }
-    if (artistePhotoUrl) cfg.artiste_photo = artistePhotoUrl
-    send('rappeurs', cfg)
-    toast.success(`Slide "${artiste}" envoyée${artistePhotoUrl ? ' (avec photo)' : ''}`)
+    send('rappeurs', { artiste })
+    toast.success(`Slide "${artiste}" envoyée`)
+  }
+
+  const sendRappeurPhotos = (artiste) => {
+    if (artistePhotos.length === 0) {
+      toast.error("Ajoute au moins une photo d'abord.")
+      return
+    }
+    const cfg = {
+      artiste,
+      artiste_photos: artistePhotos.map((p) => p.url),
+    }
+    send('rappeur-photos', cfg)
+    toast.success(`Diaporama "${artiste}" envoyé (${artistePhotos.length} photos)`)
   }
 
   const sendDancing = () => {
@@ -282,32 +302,11 @@ export default function BalRegiePage() {
           </div>
         </div>
 
-        {/* Sous-panneau rappeurs */}
+        {/* Sous-panneau annonce rappeur (nom seul, sans photo) */}
         <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
           <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
-            Rappeur — nom de l'artiste + photo (optionnelle) :
+            Annonce rappeur — nom sur scène (slide « Rappeurs ») :
           </p>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
-              {artistePhotoUploading ? (
-                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload…</>
-              ) : (
-                'Choisir une photo'
-              )}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleArtistePhotoFile}
-                disabled={artistePhotoUploading}
-                className="hidden"
-              />
-            </label>
-            {artistePhotoName && (
-              <span className="text-xs text-zinc-500 italic truncate max-w-[240px]">
-                {artistePhotoUrl ? '✓ ' : ''}{artistePhotoName}
-              </span>
-            )}
-          </div>
           <div className="flex flex-wrap gap-2">
             {ARTISTES.map((a) => (
               <button
@@ -330,7 +329,83 @@ export default function BalRegiePage() {
               disabled={!customArtiste.trim()}
               className="px-3 py-1.5 rounded text-sm font-semibold bg-[color:var(--adm-accent)] text-white disabled:opacity-40"
             >
-              Envoyer
+              Envoyer annonce
+            </button>
+          </div>
+        </div>
+
+        {/* Sous-panneau Photos rappeur (diaporama plein écran) */}
+        <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
+          <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
+            Photos rappeur — diaporama plein écran (slide « Photos rappeur ») :
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
+              {artistePhotosUploading ? (
+                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload…</>
+              ) : (
+                'Ajouter photo(s)'
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                onChange={handleArtistePhotosFiles}
+                disabled={artistePhotosUploading}
+                className="hidden"
+              />
+            </label>
+            {artistePhotos.length > 0 && (
+              <>
+                <span className="text-xs text-zinc-500 italic">
+                  {artistePhotos.length} photo{artistePhotos.length > 1 ? 's' : ''} prête{artistePhotos.length > 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={clearArtistePhotos}
+                  className="text-xs text-red-600 hover:underline"
+                >
+                  vider
+                </button>
+              </>
+            )}
+          </div>
+
+          {artistePhotos.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {artistePhotos.map((p, i) => (
+                <div key={i} className="relative">
+                  <img
+                    src={p.url}
+                    alt=""
+                    className="h-14 w-14 object-cover rounded border border-zinc-300"
+                  />
+                  <button
+                    onClick={() => removeArtistePhoto(i)}
+                    className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full h-4 w-4 text-[10px] leading-none"
+                    title="Retirer"
+                  >×</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {ARTISTES.map((a) => (
+              <button
+                key={a}
+                onClick={() => sendRappeurPhotos(a)}
+                disabled={artistePhotos.length === 0}
+                className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] hover:text-[color:var(--adm-accent)] disabled:opacity-40 transition"
+              >
+                Envoyer photos {a}
+              </button>
+            ))}
+            <button
+              onClick={() => customArtiste.trim() && sendRappeurPhotos(customArtiste.trim())}
+              disabled={!customArtiste.trim() || artistePhotos.length === 0}
+              className="px-3 py-1.5 rounded text-sm font-semibold bg-[color:var(--adm-accent)] text-white disabled:opacity-40"
+            >
+              Envoyer photos (nom perso)
             </button>
           </div>
         </div>
