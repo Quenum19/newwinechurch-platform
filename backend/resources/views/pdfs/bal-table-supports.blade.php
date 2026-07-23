@@ -1,6 +1,7 @@
 {{--
   Support de table imprimable — recto (QR vote) + verso (QR follow us).
-  Format A5 portrait, design NWC noir/or, layout fixé (footer collé).
+  Format A5 portrait, design NWC ivoire/or/bordeaux (charte élégante papier),
+  layout fixé (footer collé).
 --}}
 <!DOCTYPE html>
 <html lang="fr">
@@ -16,8 +17,8 @@
   html, body { width: 148mm; }
   body {
     font-family: "DejaVu Sans", sans-serif;
-    color: #F5E6C8;
-    background: #0A0A0A;
+    color: #4A3F32;
+    background: #FAF6EE;
   }
 
   /* Chaque page = A5 fixé sur 148x210 mm, pas de scroll ni débord */
@@ -25,7 +26,7 @@
     width: 148mm;
     height: 210mm;
     position: relative;
-    background: linear-gradient(180deg, #0A0A0A 0%, #1a0f14 50%, #0A0A0A 100%);
+    background: #FAF6EE;
     overflow: hidden;
     page-break-after: always;
   }
@@ -81,22 +82,23 @@
     border-radius: 3mm;
   }
 
-  /* Titre principal */
+  /* Titre principal — italique or */
   h1 {
     font-family: "DejaVu Serif", serif;
     font-style: italic;
-    font-size: 22pt;
-    color: #F5E6C8;
+    font-size: 32pt;
+    color: #C9A961;
     margin-top: 3mm;
     line-height: 1;
     letter-spacing: 0.5pt;
   }
 
   .subtitle {
-    font-size: 8pt;
-    color: #C9A961;
+    font-size: 8.5pt;
+    color: #8B7960;
     letter-spacing: 1.2pt;
     text-transform: uppercase;
+    font-weight: bold;
     margin-top: 2.5mm;
   }
 
@@ -110,71 +112,77 @@
   .cta {
     font-family: "DejaVu Serif", serif;
     font-style: italic;
-    font-size: 10pt;
-    color: #F5E6C8;
+    font-size: 11pt;
+    color: #4A3F32;
     font-weight: bold;
     margin: 2mm 0 2mm;
     line-height: 1.3;
   }
 
-  /* QR code — centré, encart ivoire chaud */
+  /* QR code — encart blanc sur ivoire, cadre or discret */
   .qr-wrap {
     display: inline-block;
-    background: #F5E6C8;
+    background: #FFFFFF;
     padding: 3mm;
     border-radius: 2.5mm;
-    margin-top: 2mm;
+    border: 0.5pt solid #C9A961;
+    margin-top: 3mm;
   }
   .qr-wrap img {
     display: block;
-    width: 48mm;
-    height: 48mm;
+    width: 50mm;
+    height: 50mm;
   }
 
-  /* Ligne "tip" sous le QR */
+  /* Ligne "tip" sous le QR (verso) — noms des réseaux */
   .tip {
     margin-top: 3mm;
     font-size: 8pt;
-    color: #C9A961;
+    color: #8B7960;
     letter-spacing: 1pt;
     text-transform: uppercase;
     font-weight: bold;
   }
 
-  /* FOOTER : absolument positionné en bas — jamais de collision avec .content */
+  /* FOOTER : bordeaux encadré, tag or discret dessous */
   .foot {
     position: absolute;
     left: 0; right: 0; bottom: 10mm;
     text-align: center;
   }
   .foot-line {
+    display: inline-block;
+    padding: 2mm 5mm;
+    border: 0.7pt solid #8B1A2F;
+    border-radius: 2mm;
     font-size: 8pt;
-    color: #C9A961;
+    color: #8B1A2F;
     letter-spacing: 1.8pt;
     text-transform: uppercase;
     font-weight: bold;
   }
   .foot-tag {
-    margin-top: 2mm;
+    margin-top: 2.5mm;
     font-size: 6.5pt;
-    color: #8B7960;
+    color: #A89A82;
     letter-spacing: 1.8pt;
     text-transform: uppercase;
   }
 
   /* Code ticket rappel (recto vote uniquement) */
   .ticket-hint {
-    margin-top: 2.5mm;
-    padding: 1.5mm 3mm;
+    margin-top: 3mm;
+    padding: 2mm 4mm;
     display: inline-block;
     border: 0.6pt dashed #C9A961;
     border-radius: 1.5mm;
-    font-size: 7.5pt;
-    color: #F5E6C8;
-    line-height: 1.3;
+    font-size: 8pt;
+    color: #4A3F32;
+    line-height: 1.4;
+    background: rgba(201, 169, 97, 0.08);
   }
   .ticket-hint strong {
-    color: #C9A961;
+    color: #8B1A2F;
   }
 </style>
 </head>
