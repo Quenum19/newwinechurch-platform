@@ -13,7 +13,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { Loader2, Sparkles, HeartHandshake, ArrowRight, Check } from 'lucide-react'
+import { Loader2, HeartHandshake, ArrowRight, Check } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 
 const baseURL = import.meta.env.VITE_API_URL || '/api'
@@ -26,7 +26,7 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     whatsapp: '',
     city: '',
   })
-  const [enrollmentType, setEnrollmentType] = useState('discover')
+  // Un seul type d'engagement supporté : servir dans un département
   const [departmentId, setDepartmentId] = useState(null)
   const [departments, setDepartments] = useState([])
   const [submitting, setSubmitting] = useState(false)
@@ -44,7 +44,6 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     if (open) return
     const t = setTimeout(() => {
       setForm({ first_name: '', name: '', phone: '', whatsapp: '', city: '' })
-      setEnrollmentType('discover')
       setDepartmentId(null)
       setDone(false)
     }, 300)
@@ -58,7 +57,7 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     form.name.trim() &&
     form.phone.trim() &&
     form.city.trim() &&
-    (enrollmentType === 'discover' || departmentId)
+    departmentId
 
   const submit = async (e) => {
     e.preventDefault()
@@ -67,8 +66,8 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     try {
       await axios.post(`${baseURL}/public/enrollment/bal`, {
         ...form,
-        enrollment_type: enrollmentType,
-        department_id: enrollmentType === 'department' ? departmentId : null,
+        enrollment_type: 'department',
+        department_id: departmentId,
         event_id: eventId,
       })
       setDone(true)
@@ -127,53 +126,29 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
           </div>
         </div>
 
-        {/* Choix engagement — 2 grosses cards */}
-        <div>
-          <label className="block text-sm font-semibold text-[#5C4A3D] mb-2 uppercase tracking-wider">
-            Quel est ton souhait ?
+        {/* Sélection du département — obligatoire */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-[#5C4A3D] uppercase tracking-wider">
+            <HeartHandshake size={14} className="inline mr-1 text-[#8B1A2F]"/>
+            Choisis le département que tu veux rejoindre
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <EngagementCard
-              active={enrollmentType === 'discover'}
-              onClick={() => setEnrollmentType('discover')}
-              icon={Sparkles}
-              title="Je veux découvrir"
-              subtitle="Venir aux cultes, être accueilli(e), faire connaissance"
-            />
-            <EngagementCard
-              active={enrollmentType === 'department'}
-              onClick={() => setEnrollmentType('department')}
-              icon={HeartHandshake}
-              title="Je veux servir"
-              subtitle="Rejoindre un département et m'engager"
-            />
-          </div>
+          {departments.length === 0 ? (
+            <div className="text-sm text-[#8B7960] py-4 text-center italic">
+              Chargement des départements…
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
+              {departments.map((d) => (
+                <DepartmentCard
+                  key={d.id}
+                  dept={d}
+                  active={departmentId === d.id}
+                  onClick={() => setDepartmentId(d.id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Grid départements — visible seulement si "servir" */}
-        {enrollmentType === 'department' && (
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[#5C4A3D] uppercase tracking-wider">
-              Choisis ton département
-            </label>
-            {departments.length === 0 ? (
-              <div className="text-sm text-[#8B7960] py-4 text-center italic">
-                Chargement des départements…
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
-                {departments.map((d) => (
-                  <DepartmentCard
-                    key={d.id}
-                    dept={d}
-                    active={departmentId === d.id}
-                    onClick={() => setDepartmentId(d.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         <Modal.Footer>
           <button
@@ -209,24 +184,6 @@ function Field({ label, placeholder, ...rest }) {
         className="w-full px-3 py-2.5 rounded-lg border-2 border-[#E5DBC3] bg-white text-[#0A0A0A] placeholder:text-[#8B7960]/60 focus:outline-none focus:border-[#8B1A2F] transition"
       />
     </label>
-  )
-}
-
-function EngagementCard({ active, onClick, icon: Icon, title, subtitle }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`text-left p-4 rounded-lg border-2 transition ${
-        active
-          ? 'border-[#8B1A2F] bg-[#8B1A2F]/5 shadow-sm'
-          : 'border-[#E5DBC3] bg-white hover:border-[#C9A961]'
-      }`}
-    >
-      <Icon size={22} className={active ? 'text-[#8B1A2F]' : 'text-[#C9A961]'} />
-      <div className="font-bold text-[#0A0A0A] mt-2">{title}</div>
-      <div className="text-xs text-[#5C4A3D] mt-1 leading-snug">{subtitle}</div>
-    </button>
   )
 }
 

@@ -41,10 +41,11 @@ class PublicBalEnrollmentController extends Controller
             'phone'         => ['required', 'string', 'max:30'],
             'whatsapp'      => ['nullable', 'string', 'max:30'],
             'city'          => ['required', 'string', 'max:100'],
-            'enrollment_type'  => ['required', 'in:discover,department'],
-            'department_id'    => ['required_if:enrollment_type,department', 'nullable', 'integer', 'exists:departments,id'],
-            'event_id'         => ['nullable', 'integer', 'exists:events,id'],
+            // Type d'engagement figé côté serveur : département obligatoire.
+            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            'event_id'      => ['nullable', 'integer', 'exists:events,id'],
         ]);
+        $data['enrollment_type'] = 'department';
 
         // WhatsApp stocké dans motivation en attendant une colonne dédiée.
         $notes = [];
