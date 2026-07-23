@@ -121,9 +121,10 @@ export default function MemberLayout() {
     if (hasScan) {
       rawNav.push({ to: '/scan', icon: UserCheck, label: t('member.nav.scan', 'Scanner billets'), target: '_blank' })
     }
-    if (hasAdminPanel) {
-      rawNav.push({ to: '/admin', icon: LayoutDashboard, label: t('member.nav.adminPanel', 'Panel admin complet') })
-    }
+    // Note : le lien 'Panel admin complet' a été retiré volontairement du sidebar
+    // membre. Les utilisateurs staff (admin/superadmin) accèdent directement à
+    // /admin via URL. Cela évite d'exposer un raccourci confus aux rôles staff
+    // scopés (gouverneur, accueil, leader) qui n'ont besoin que de leur espace.
   }
 
   const visibleItems = (() => {
