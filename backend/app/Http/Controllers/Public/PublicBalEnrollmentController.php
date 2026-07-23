@@ -47,6 +47,25 @@ class PublicBalEnrollmentController extends Controller
         ]);
         $data['enrollment_type'] = 'department';
 
+        // Fallback intelligent : si le QR scanné ne contient pas ?event=X (ex :
+        // supports de table imprimés avant l'ajout du paramètre), on rattache
+        // automatiquement à l'event 'bal' à venir ou fraîchement passé. Évite
+        // de perdre des leads dans une vue admin globale absente.
+        if (empty($data['event_id'])) {
+            $fallback = \App\Models\Event::query()
+                ->where(function ($q) {
+                    $q->where('title', 'like', '%bal%')
+                      ->orWhere('slug', 'like', '%bal%')
+                      ->orWhere('type', 'bal');
+                })
+                ->whereDate('starts_at', '>=', now()->subDays(3))
+                ->orderBy('starts_at')
+                ->first();
+            if ($fallback) {
+                $data['event_id'] = $fallback->id;
+            }
+        }
+
         // WhatsApp stocké dans motivation en attendant une colonne dédiée.
         $notes = [];
         if (! empty($data['whatsapp'])) {

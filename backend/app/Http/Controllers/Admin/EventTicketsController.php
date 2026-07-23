@@ -842,15 +842,18 @@ class EventTicketsController extends Controller
         $event = Event::findOrFail($eventId);
         $this->authorizeRead($request, $event);
 
-        // Tickets vendus (confirmed + used, exclus remboursés/annulés) triés par nom
+        // Tickets vendus (confirmed + used, exclus remboursés/annulés).
+        // Tri par date de paiement/inscription (chronologique) — les premiers inscrits
+        // sont appelés d'abord. Pour les tickets gratuits (payment_validated_at null),
+        // on fallback sur created_at via COALESCE. Départage par last_name.
         $tickets = EventTicket::where('event_id', $eventId)
             ->whereIn('status', ['confirmed', 'used'])
             ->where(function ($q) {
                 $q->whereNull('payment_status')
                   ->orWhereNotIn('payment_status', ['refunded']);
             })
+            ->orderByRaw('COALESCE(payment_validated_at, created_at) ASC')
             ->orderBy('last_name')
-            ->orderBy('first_name')
             ->get();
 
         // Résolution logo (data URI)
