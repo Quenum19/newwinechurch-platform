@@ -11,35 +11,37 @@ use Illuminate\Support\Facades\Schema;
  * Retourne les liens des réseaux sociaux NWC pour la page publique
  * "Follow us" accessible via QR code sur les supports de table.
  *
- * Lit depuis la table settings existante (clés social_facebook, etc.).
- * Retourne les valeurs en clair (URLs publiques, pas de secret).
+ * Lit depuis la table `site_settings` (clés `social.instagram`, `social.facebook`,
+ * `social.tiktok`, `social.youtube`, `social.whatsapp`, `social.website_url`).
+ * Retourne au frontend avec la convention `social_XXX` que la page attend.
  */
 class NwcSocialLinksController extends Controller
 {
     public function index(): JsonResponse
     {
-        $keys = [
-            'social_facebook',
-            'social_instagram',
-            'social_tiktok',
-            'social_youtube',
-            'social_whatsapp',
-            'social_twitter',
-            'website_url',
+        // clé BDD (site_settings.key) → clé API (retournée au frontend)
+        $map = [
+            'social.facebook'    => 'social_facebook',
+            'social.instagram'   => 'social_instagram',
+            'social.tiktok'      => 'social_tiktok',
+            'social.youtube'     => 'social_youtube',
+            'social.whatsapp'    => 'social_whatsapp',
+            'social.twitter'     => 'social_twitter',
+            'social.website_url' => 'website_url',
         ];
 
         $links = [];
 
-        if (Schema::hasTable('settings')) {
-            $rows = DB::table('settings')
-                ->whereIn('key', $keys)
+        if (Schema::hasTable('site_settings')) {
+            $rows = DB::table('site_settings')
+                ->whereIn('key', array_keys($map))
                 ->pluck('value', 'key')
                 ->toArray();
 
-            foreach ($keys as $k) {
-                $val = $rows[$k] ?? null;
+            foreach ($map as $dbKey => $apiKey) {
+                $val = $rows[$dbKey] ?? null;
                 if ($val && trim((string) $val) !== '') {
-                    $links[$k] = trim((string) $val);
+                    $links[$apiKey] = trim((string) $val);
                 }
             }
         }
