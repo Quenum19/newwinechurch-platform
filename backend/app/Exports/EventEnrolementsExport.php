@@ -61,13 +61,19 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
 
     public function collection()
     {
-        return MembershipRequest::query()
+        // Simplification : on retire orderBy sur enum nullable + eager load
+        // qui pouvaient masquer les résultats. Lazy load OK pour l'export
+        // (peu de rows, pas de problème N+1 critique).
+        $items = MembershipRequest::query()
             ->forEvent($this->event->id)
             ->enrollments()
-            ->with('interestedDepartment:id,name')
-            ->orderBy('enrollment_status')
             ->orderByDesc('created_at')
             ->get();
+
+        // Pré-charge le département après coup (idempotent)
+        $items->load('interestedDepartment:id,name');
+
+        return $items;
     }
 
     public function headings(): array

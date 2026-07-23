@@ -16,7 +16,7 @@
 <meta charset="UTF-8">
 <title>Enrôlements — {{ $event->title }}</title>
 <style>
-  @page { margin: 12mm 10mm 12mm 10mm; }
+  @page { margin: 18mm 15mm 18mm 15mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: DejaVu Sans, sans-serif;

@@ -96,10 +96,14 @@ export default function EventEnrolementsPage() {
       {/* Stats cards */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Total" value={stats.total} accent="var(--adm-accent)"/>
-          <StatCard label="Nouveaux" value={stats.nouveau} accent="#C9A961"/>
-          <StatCard label="Contactés" value={stats.contacte} accent="#2563EB"/>
-          <StatCard label="Convertis" value={stats.converti} accent="#15803D"/>
+          <StatCard label="Total"     value={stats.total}    accent="var(--adm-accent)"
+            active={filterStatus === ''}         onClick={() => setFilterStatus('')}/>
+          <StatCard label="Nouveaux"  value={stats.nouveau}  accent="#C9A961"
+            active={filterStatus === 'nouveau'}  onClick={() => setFilterStatus(filterStatus === 'nouveau'  ? '' : 'nouveau')}/>
+          <StatCard label="Contactés" value={stats.contacte} accent="#2563EB"
+            active={filterStatus === 'contacte'} onClick={() => setFilterStatus(filterStatus === 'contacte' ? '' : 'contacte')}/>
+          <StatCard label="Convertis" value={stats.converti} accent="#15803D"
+            active={filterStatus === 'converti'} onClick={() => setFilterStatus(filterStatus === 'converti' ? '' : 'converti')}/>
         </div>
       )}
 
@@ -204,10 +208,14 @@ export default function EventEnrolementsPage() {
   )
 }
 
-function StatCard({ label, value, accent }) {
+function StatCard({ label, value, accent, active = false, onClick }) {
+  const cn = onClick ? 'adm-card p-3 cursor-pointer transition' : 'adm-card p-3'
+  const style = active
+    ? { borderColor: accent, background: 'color-mix(in srgb, ' + accent + ' 8%, white)', boxShadow: '0 0 0 2px ' + accent + '33' }
+    : {}
   return (
-    <div className="adm-card p-3">
-      <div className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">{label}</div>
+    <div className={cn} style={style} onClick={onClick} role={onClick ? 'button' : undefined}>
+      <div className="text-xs uppercase tracking-wider font-semibold" style={{ color: active ? accent : '#71717A' }}>{label}</div>
       <div className="text-2xl font-bold mt-1" style={{ color: accent }}>{value ?? 0}</div>
     </div>
   )
