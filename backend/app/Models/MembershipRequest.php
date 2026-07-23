@@ -21,7 +21,7 @@ class MembershipRequest extends Model
     protected $fillable = [
         'first_name', 'name', 'email', 'phone', 'birth_date',
         'gender', 'city', 'referrer', 'motivation',
-        'source', 'enrollment_type', 'interested_department_id',
+        'source', 'enrollment_type', 'interested_department_id', 'interested_mountain',
         'event_id', 'enrollment_status', 'admin_notes',
         'status', 'processed_by', 'processed_at', 'rejection_reason', 'user_id',
     ];

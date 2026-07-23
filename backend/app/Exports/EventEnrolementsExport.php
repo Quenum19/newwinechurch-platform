@@ -52,8 +52,8 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
             'E' => 16,  // Téléphone
             'F' => 16,  // WhatsApp
             'G' => 20,  // Lieu d'habitation
-            'H' => 14,  // Souhait
-            'I' => 22,  // Département
+            'H' => 22,  // Département
+            'I' => 22,  // Montagne
             'J' => 12,  // Statut
             'K' => 36,  // Notes
         ];
@@ -74,7 +74,7 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
     {
         return [
             '#', 'Date', 'Prénom', 'Nom', 'Téléphone', 'WhatsApp',
-            "Lieu d'habitation", 'Souhait', 'Département', 'Statut', 'Notes',
+            "Lieu d'habitation", 'Département', 'Montagne', 'Statut', 'Notes',
         ];
     }
 
@@ -87,12 +87,6 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
             $whatsapp = trim($m[1]);
         }
 
-        $souhait = match ($req->enrollment_type) {
-            'discover'   => 'Découvrir',
-            'department' => 'Servir',
-            default      => '—',
-        };
-
         $statut = match ($req->enrollment_status) {
             'nouveau'  => 'Nouveau',
             'contacte' => 'Contacté',
@@ -100,6 +94,8 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
             'ecarte'   => 'Écarté',
             default    => 'Nouveau',
         };
+
+        $mountain = \App\Http\Controllers\Admin\EventEnrolementsController::mountainLabel($req->interested_mountain);
 
         return [
             $this->rowNumber,
@@ -109,8 +105,8 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
             $req->phone ?? '—',
             $whatsapp ?? '—',
             $req->city ?? '—',
-            $souhait,
             $req->interestedDepartment?->name ?? '—',
+            $mountain ?? '—',
             $statut,
             $req->admin_notes ?? '',
         ];

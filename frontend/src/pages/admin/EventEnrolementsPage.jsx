@@ -16,8 +16,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Download, FileSpreadsheet, Loader2, Search, Sparkles,
-  HeartHandshake, Trash2, MessageSquarePlus, X,
+  ArrowLeft, Download, FileSpreadsheet, Loader2, Search,
+  HeartHandshake, Trash2, MessageSquarePlus, Mountain,
 } from 'lucide-react'
 import api from '@/api/axios'
 import Modal from '@/components/ui/Modal'
@@ -129,9 +129,9 @@ export default function EventEnrolementsPage() {
           onChange={(e) => setFilterType(e.target.value)}
           className="px-3 py-2 rounded-md border border-[var(--adm-border)] bg-white text-sm"
         >
-          <option value="">Tous souhaits</option>
-          <option value="discover">Découvrir</option>
-          <option value="department">Servir</option>
+          <option value="">Toutes cibles</option>
+          <option value="department">Département</option>
+          <option value="mountain">Montagne</option>
         </select>
         <div className="flex gap-2">
           <button
@@ -167,7 +167,8 @@ export default function EventEnrolementsPage() {
                 <tr>
                   <th className="px-3 py-3 text-left">Contact</th>
                   <th className="px-3 py-3 text-left">Lieu</th>
-                  <th className="px-3 py-3 text-left">Souhait</th>
+                  <th className="px-3 py-3 text-left">Département</th>
+                  <th className="px-3 py-3 text-left">Montagne</th>
                   <th className="px-3 py-3 text-left">Statut</th>
                   <th className="px-3 py-3 text-left">Notes</th>
                   <th className="px-3 py-3"></th>
@@ -214,7 +215,6 @@ function StatCard({ label, value, accent }) {
 
 function EnrolementRow({ row, onStatusChange, onNotesEdit, onDelete }) {
   const style = STATUS_STYLES[row.enrollment_status] || STATUS_STYLES.nouveau
-  const isServing = row.enrollment_type === 'department'
 
   return (
     <tr className="hover:bg-[#FAF6EE]/50">
@@ -227,25 +227,27 @@ function EnrolementRow({ row, onStatusChange, onNotesEdit, onDelete }) {
       </td>
       <td className="px-3 py-3 text-zinc-600">{row.city || '—'}</td>
       <td className="px-3 py-3">
-        {isServing ? (
-          <div>
-            <div className="inline-flex items-center gap-1 text-xs font-semibold">
-              <HeartHandshake size={12} className="text-[#8B1A2F]"/> Servir
-            </div>
-            {row.department && (
-              <div className="text-xs text-zinc-500 mt-0.5">
-                <span
-                  className="inline-block w-2 h-2 rounded-full mr-1"
-                  style={{ background: row.department.color || '#8B1A2F' }}
-                />
-                {row.department.name}
-              </div>
-            )}
+        {row.department ? (
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold">
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ background: row.department.color || '#8B1A2F' }}
+            />
+            <HeartHandshake size={12} className="text-[#8B1A2F]"/>
+            {row.department.name}
           </div>
         ) : (
-          <div className="inline-flex items-center gap-1 text-xs font-semibold">
-            <Sparkles size={12} className="text-[#C9A961]"/> Découvrir
+          <span className="text-xs text-zinc-400 italic">—</span>
+        )}
+      </td>
+      <td className="px-3 py-3">
+        {row.mountain_label ? (
+          <div className="inline-flex items-center gap-1 text-xs font-semibold text-[#8B1A2F]">
+            <Mountain size={12}/>
+            {row.mountain_label}
           </div>
+        ) : (
+          <span className="text-xs text-zinc-400 italic">—</span>
         )}
       </td>
       <td className="px-3 py-3">

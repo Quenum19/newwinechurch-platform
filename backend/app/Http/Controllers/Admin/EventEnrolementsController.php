@@ -46,8 +46,13 @@ class EventEnrolementsController extends Controller
             $query->where('enrollment_status', $status);
         }
 
+        // Filtre 'cible' : département / montagne selon ce qui est renseigné
         if ($type = $request->query('type')) {
-            $query->where('enrollment_type', $type);
+            if ($type === 'department') {
+                $query->whereNotNull('interested_department_id');
+            } elseif ($type === 'mountain') {
+                $query->whereNotNull('interested_mountain');
+            }
         }
 
         if ($q = trim((string) $request->query('q'))) {
@@ -189,8 +194,25 @@ class EventEnrolementsController extends Controller
                 'name'  => $r->interestedDepartment->name,
                 'color' => $r->interestedDepartment->color_theme ?: $r->interestedDepartment->color,
             ] : null,
+            'mountain'          => $r->interested_mountain,
+            'mountain_label'    => self::mountainLabel($r->interested_mountain),
             'admin_notes'       => $r->admin_notes,
         ];
+    }
+
+    /** Label lisible pour une montagne (les 7 sphères d'influence). */
+    public static function mountainLabel(?string $key): ?string
+    {
+        return match ($key) {
+            'religion'          => 'Religion',
+            'media'             => 'Media',
+            'gouvernement'      => 'Gouvernement',
+            'economie'          => 'Economie',
+            'education'         => 'Education',
+            'famille'           => 'Famille',
+            'art_musique_sport' => 'Art · Musique · Sport',
+            default             => null,
+        };
     }
 
     /** Logo NWC en data URI (pour PDF). */

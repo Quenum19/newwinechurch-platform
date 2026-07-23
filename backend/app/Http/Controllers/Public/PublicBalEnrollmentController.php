@@ -41,8 +41,9 @@ class PublicBalEnrollmentController extends Controller
             'phone'         => ['required', 'string', 'max:30'],
             'whatsapp'      => ['nullable', 'string', 'max:30'],
             'city'          => ['required', 'string', 'max:100'],
-            // Type d'engagement figé côté serveur : département obligatoire.
-            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            // Au moins l'un des deux : département OU montagne (les 7 sphères d'influence).
+            'department_id' => ['nullable', 'integer', 'exists:departments,id', 'required_without:mountain'],
+            'mountain'      => ['nullable', 'string', 'in:religion,media,gouvernement,economie,education,famille,art_musique_sport', 'required_without:department_id'],
             'event_id'      => ['nullable', 'integer', 'exists:events,id'],
         ]);
         $data['enrollment_type'] = 'department';
@@ -81,6 +82,7 @@ class PublicBalEnrollmentController extends Controller
             'enrollment_type'           => $data['enrollment_type'],
             'enrollment_status'         => 'nouveau',
             'interested_department_id'  => $data['department_id'] ?? null,
+            'interested_mountain'       => $data['mountain'] ?? null,
             'event_id'                  => $data['event_id'] ?? null,
             'motivation'                => $notes ? implode(' · ', $notes) : null,
             'status'                    => 'pending',

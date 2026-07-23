@@ -174,10 +174,10 @@
       <th style="width:24mm">Nom</th>
       <th style="width:24mm">Téléphone</th>
       <th style="width:24mm">WhatsApp</th>
-      <th style="width:30mm">Lieu d'habitation</th>
-      <th style="width:18mm">Souhait</th>
-      <th style="width:30mm">Département</th>
-      <th style="width:20mm">Statut</th>
+      <th style="width:26mm">Lieu d'habitation</th>
+      <th style="width:26mm">Département</th>
+      <th style="width:26mm">Montagne</th>
+      <th style="width:18mm">Statut</th>
       <th>Notes</th>
     </tr>
   </thead>
@@ -188,12 +188,8 @@
         if ($r->motivation && preg_match('/WhatsApp\s*:\s*([^·]+)/i', $r->motivation, $m)) {
             $whatsapp = trim($m[1]);
         }
-        $souhait = match($r->enrollment_type) {
-          'discover' => 'Découvrir',
-          'department' => 'Servir',
-          default => '—',
-        };
         $statut = $r->enrollment_status ?: 'nouveau';
+        $mountain = \App\Http\Controllers\Admin\EventEnrolementsController::mountainLabel($r->interested_mountain);
       @endphp
       <tr>
         <td class="num">{{ $i + 1 }}</td>
@@ -203,8 +199,8 @@
         <td class="center">{{ $r->phone ?? '—' }}</td>
         <td class="center">{{ $whatsapp ?? '—' }}</td>
         <td>{{ $r->city ?? '—' }}</td>
-        <td class="center">{{ $souhait }}</td>
         <td>{{ $r->interestedDepartment?->name ?? '—' }}</td>
+        <td>{{ $mountain ?? '—' }}</td>
         <td class="center">
           <span class="badge badge-{{ $statut }}">
             {{ match($statut) {

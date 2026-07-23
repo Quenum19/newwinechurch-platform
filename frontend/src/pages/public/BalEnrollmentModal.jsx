@@ -13,10 +13,21 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { Loader2, HeartHandshake, ArrowRight, Check } from 'lucide-react'
+import { Loader2, HeartHandshake, ArrowRight, Check, Mountain } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 
 const baseURL = import.meta.env.VITE_API_URL || '/api'
+
+// Les 7 sphères d'influence (montagnes) — valeurs figées côté serveur
+const MOUNTAINS = [
+  { key: 'religion',            label: 'Religion',              emoji: '⛪' },
+  { key: 'media',               label: 'Media',                 emoji: '📺' },
+  { key: 'gouvernement',        label: 'Gouvernement',          emoji: '🏛️' },
+  { key: 'economie',            label: 'Economie',              emoji: '💼' },
+  { key: 'education',           label: 'Education',             emoji: '🎓' },
+  { key: 'famille',             label: 'Famille',               emoji: '👨‍👩‍👧' },
+  { key: 'art_musique_sport',   label: 'Art · Musique · Sport', emoji: '🎨' },
+]
 
 export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
   const [form, setForm] = useState({
@@ -26,8 +37,8 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     whatsapp: '',
     city: '',
   })
-  // Un seul type d'engagement supporté : servir dans un département
   const [departmentId, setDepartmentId] = useState(null)
+  const [mountain, setMountain] = useState(null)
   const [departments, setDepartments] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -45,6 +56,7 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     const t = setTimeout(() => {
       setForm({ first_name: '', name: '', phone: '', whatsapp: '', city: '' })
       setDepartmentId(null)
+      setMountain(null)
       setDone(false)
     }, 300)
     return () => clearTimeout(t)
@@ -57,7 +69,7 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
     form.name.trim() &&
     form.phone.trim() &&
     form.city.trim() &&
-    departmentId
+    (departmentId || mountain)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -68,6 +80,7 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
         ...form,
         enrollment_type: 'department',
         department_id: departmentId,
+        mountain: mountain,
         event_id: eventId,
       })
       setDone(true)
@@ -126,11 +139,11 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
           </div>
         </div>
 
-        {/* Sélection du département — obligatoire */}
+        {/* Sélection du département */}
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-[#5C4A3D] uppercase tracking-wider">
             <HeartHandshake size={14} className="inline mr-1 text-[#8B1A2F]"/>
-            Choisis le département que tu veux rejoindre
+            Rejoindre un département
           </label>
           {departments.length === 0 ? (
             <div className="text-sm text-[#8B7960] py-4 text-center italic">
@@ -148,6 +161,34 @@ export default function BalEnrollmentModal({ open, onClose, eventId = null }) {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Séparateur OU */}
+        <div className="flex items-center gap-3 py-1">
+          <span className="flex-1 h-px bg-[#E5DBC3]"/>
+          <span className="text-[10px] font-mono text-[#8B7960] uppercase tracking-widest">et / ou</span>
+          <span className="flex-1 h-px bg-[#E5DBC3]"/>
+        </div>
+
+        {/* Sélection d'une Montagne (7 sphères d'influence) */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-[#5C4A3D] uppercase tracking-wider">
+            <Mountain size={14} className="inline mr-1 text-[#8B1A2F]"/>
+            Rejoindre les Montagnes
+          </label>
+          <p className="text-xs text-[#8B7960] italic">
+            Les 7 sphères d'influence — choisis celle où tu veux impacter.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {MOUNTAINS.map((m) => (
+              <MountainCard
+                key={m.key}
+                mountain={m}
+                active={mountain === m.key}
+                onClick={() => setMountain(mountain === m.key ? null : m.key)}
+              />
+            ))}
+          </div>
         </div>
 
         <Modal.Footer>
@@ -184,6 +225,25 @@ function Field({ label, placeholder, ...rest }) {
         className="w-full px-3 py-2.5 rounded-lg border-2 border-[#E5DBC3] bg-white text-[#0A0A0A] placeholder:text-[#8B7960]/60 focus:outline-none focus:border-[#8B1A2F] transition"
       />
     </label>
+  )
+}
+
+function MountainCard({ mountain, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left p-3 rounded-lg border-2 transition ${
+        active
+          ? 'border-[#8B1A2F] bg-[#8B1A2F]/5'
+          : 'border-[#E5DBC3] bg-white hover:border-[#C9A961]'
+      }`}
+    >
+      <div className="text-2xl mb-1 leading-none">{mountain.emoji}</div>
+      <div className="text-sm font-semibold text-[#0A0A0A] leading-tight">
+        {mountain.label}
+      </div>
+    </button>
   )
 }
 
