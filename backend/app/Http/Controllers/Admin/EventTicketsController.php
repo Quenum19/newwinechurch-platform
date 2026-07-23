@@ -528,7 +528,7 @@ class EventTicketsController extends Controller
                     'payment_status' => 'free',
                 ]);
             }
-            $entry->update(['status' => 'converted']);
+            $entry->update(['status' => 'promoted']);
         });
 
         // Émission mail + PDF — chaque envoi dans son try/catch pour ne pas

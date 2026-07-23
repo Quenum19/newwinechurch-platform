@@ -120,7 +120,7 @@ class WaitlistConvertAll extends Command
                             'payment_status' => 'free',
                         ]);
                     }
-                    $entry->update(['status' => 'converted']);
+                    $entry->update(['status' => 'promoted']);
                 });
             } catch (\Throwable $e) {
                 $skipped[] = "{$entry->first_name} {$entry->last_name} (erreur BDD: " . $e->getMessage() . ')';
