@@ -51,8 +51,17 @@ export default function DancingStarsSlide() {
   return (
     <Stage>
       <style>{`
-        @keyframes nwOpenL { 0%,8%{transform:translateX(0)} 42%,58%{transform:translateX(-101%)} 92%,100%{transform:translateX(0)} }
-        @keyframes nwOpenR { 0%,8%{transform:translateX(0)} 42%,58%{transform:translateX(101%)} 92%,100%{transform:translateX(0)} }
+        /* Cycle rideau 12s : fermé 1.8s → ouverture 2.4s → ouvert 3.6s → fermeture 2.4s → fermé 1.8s */
+        @keyframes nwOpenL {
+          0%, 15%   { transform: translateX(0) }
+          35%, 65%  { transform: translateX(-101%) }
+          85%, 100% { transform: translateX(0) }
+        }
+        @keyframes nwOpenR {
+          0%, 15%   { transform: translateX(0) }
+          35%, 65%  { transform: translateX(101%) }
+          85%, 100% { transform: translateX(0) }
+        }
         @keyframes nwCurtainSheen { 0%{transform:translateX(-140%) skewX(-12deg)} 100%{transform:translateX(260%) skewX(-12deg)} }
         @keyframes nwSpotCross { 0%{transform:translateX(-44vw) rotate(-14deg)} 100%{transform:translateX(44vw) rotate(14deg)} }
         @keyframes nwGlowP { 0%,100%{text-shadow:0 0 70px rgba(201,169,97,.45),0 3px 6px rgba(0,0,0,.7)} 50%{text-shadow:0 0 140px rgba(201,169,97,.75),0 3px 6px rgba(0,0,0,.7)} }
@@ -144,7 +153,8 @@ export default function DancingStarsSlide() {
             position: 'absolute', top: 0, bottom: 0, left: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset -30px 0 40px rgba(0,0,0,.6)',
-            animation: 'nwOpenL 9s ease-in-out infinite',
+            animation: 'nwOpenL 12s cubic-bezier(.65,0,.35,1) infinite',
+            willChange: 'transform',
           }}>
             <div style={{
               position: 'absolute', top: 0, bottom: 0, right: 0, width: 60,
@@ -161,7 +171,8 @@ export default function DancingStarsSlide() {
             position: 'absolute', top: 0, bottom: 0, right: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset 30px 0 40px rgba(0,0,0,.6)',
-            animation: 'nwOpenR 9s ease-in-out infinite',
+            animation: 'nwOpenR 12s cubic-bezier(.65,0,.35,1) infinite',
+            willChange: 'transform',
           }}>
             <div style={{
               position: 'absolute', top: 0, bottom: 0, left: 0, width: 60,
