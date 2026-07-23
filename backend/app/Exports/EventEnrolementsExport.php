@@ -4,11 +4,10 @@ namespace App\Exports;
 
 use App\Models\Event;
 use App\Models\MembershipRequest;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -26,10 +25,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
  * Même styling que AttendanceExport (header ivoire + titre bordeaux + zébrures
  * + freeze pane) — parfaite cohérence visuelle avec les autres exports du projet.
  */
-class EventEnrolementsExport implements FromCollection, WithHeadings, WithMapping, WithEvents, WithTitle, WithStartRow, WithColumnWidths
+class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, WithEvents, WithTitle, WithColumnWidths
 {
-    private int $rowNumber = 0;
-
     public function __construct(protected Event $event) {}
 
     public function title(): string
@@ -59,21 +56,53 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
         ];
     }
 
-    public function collection()
+    /**
+     * Retourne toutes les lignes de data (sans les headings — WithHeadings les écrit à startRow-1).
+     * On construit un array PHP direct au lieu d'utiliser FromCollection+WithMapping qui
+     * s'avérait ne pas écrire les data dans certains cas (Maatwebsite v3).
+     */
+    public function array(): array
     {
-        // Simplification : on retire orderBy sur enum nullable + eager load
-        // qui pouvaient masquer les résultats. Lazy load OK pour l'export
-        // (peu de rows, pas de problème N+1 critique).
         $items = MembershipRequest::query()
             ->forEvent($this->event->id)
             ->enrollments()
             ->orderByDesc('created_at')
             ->get();
-
-        // Pré-charge le département après coup (idempotent)
         $items->load('interestedDepartment:id,name');
 
-        return $items;
+        $rows = [];
+        $rowNum = 0;
+        foreach ($items as $req) {
+            $rowNum++;
+
+            $whatsapp = null;
+            if ($req->motivation && preg_match('/WhatsApp\s*:\s*([^·]+)/i', $req->motivation, $m)) {
+                $whatsapp = trim($m[1]);
+            }
+            $statut = match ($req->enrollment_status) {
+                'nouveau'  => 'Nouveau',
+                'contacte' => 'Contacté',
+                'converti' => 'Converti',
+                'ecarte'   => 'Écarté',
+                default    => 'Nouveau',
+            };
+            $mountain = \App\Http\Controllers\Admin\EventEnrolementsController::mountainLabel($req->interested_mountain);
+
+            $rows[] = [
+                $rowNum,
+                $req->created_at?->format('d/m'),
+                $req->first_name ?? '—',
+                $req->name ?? '—',
+                $req->phone ?? '—',
+                $whatsapp ?? '—',
+                $req->city ?? '—',
+                $req->interestedDepartment?->name ?? '—',
+                $mountain ?? '—',
+                $statut,
+                $req->admin_notes ?? '',
+            ];
+        }
+        return $rows;
     }
 
     public function headings(): array
@@ -81,40 +110,6 @@ class EventEnrolementsExport implements FromCollection, WithHeadings, WithMappin
         return [
             '#', 'Date', 'Prénom', 'Nom', 'Téléphone', 'WhatsApp',
             "Lieu d'habitation", 'Département', 'Montagne', 'Statut', 'Notes',
-        ];
-    }
-
-    public function map($req): array
-    {
-        $this->rowNumber++;
-
-        $whatsapp = null;
-        if ($req->motivation && preg_match('/WhatsApp\s*:\s*([^·]+)/i', $req->motivation, $m)) {
-            $whatsapp = trim($m[1]);
-        }
-
-        $statut = match ($req->enrollment_status) {
-            'nouveau'  => 'Nouveau',
-            'contacte' => 'Contacté',
-            'converti' => 'Converti',
-            'ecarte'   => 'Écarté',
-            default    => 'Nouveau',
-        };
-
-        $mountain = \App\Http\Controllers\Admin\EventEnrolementsController::mountainLabel($req->interested_mountain);
-
-        return [
-            $this->rowNumber,
-            $req->created_at?->format('d/m'),
-            $req->first_name ?? '—',
-            $req->name ?? '—',
-            $req->phone ?? '—',
-            $whatsapp ?? '—',
-            $req->city ?? '—',
-            $req->interestedDepartment?->name ?? '—',
-            $mountain ?? '—',
-            $statut,
-            $req->admin_notes ?? '',
         ];
     }
 
