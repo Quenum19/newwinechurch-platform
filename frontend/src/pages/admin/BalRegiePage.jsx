@@ -262,9 +262,25 @@ export default function BalRegiePage() {
           Grands moments
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {grouped.moments.map((s) => (
-            <SlideButton key={s.key} slide={s} active={currentSlide === s.key} onClick={() => send(s.key)}/>
-          ))}
+          {grouped.moments.map((s) => {
+            // Cas spéciaux : passer la config déjà uploadée si dispo
+            let onClick = () => send(s.key)
+            if (s.key === 'rappeur-photos') {
+              onClick = () => {
+                if (artistePhotos.length === 0) {
+                  toast.error("Ajoute d'abord des photos dans le panneau plus bas.")
+                  return
+                }
+                send('rappeur-photos', {
+                  artiste: customArtiste.trim() || 'KIM B',
+                  artiste_photos: artistePhotos.map((p) => p.url),
+                })
+              }
+            } else if (s.key === 'dancing-stars' && dancingMediaUrl) {
+              onClick = () => send('dancing-stars', { dancing_media: dancingMediaUrl })
+            }
+            return <SlideButton key={s.key} slide={s} active={currentSlide === s.key} onClick={onClick}/>
+          })}
         </div>
 
         {/* Sous-panneau Dancing Stars — upload photo / vidéo derrière le rideau */}

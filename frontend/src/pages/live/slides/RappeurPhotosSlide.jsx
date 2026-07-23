@@ -70,17 +70,25 @@ export default function RappeurPhotosSlide({ state }) {
               lineHeight: 1,
             }}
           >
-            {artiste ? artiste.toUpperCase() : "L'ARTISTE"}
+            {artiste ? artiste.toUpperCase() : 'PHOTOS RAPPEUR'}
           </motion.h1>
 
           <p style={{
             fontFamily: '"Playfair Display", serif',
             fontStyle: 'italic',
-            fontSize: 'clamp(1.8rem, 3vw, 3rem)',
+            fontSize: 'clamp(1.5rem, 2.4vw, 2.4rem)',
             color: '#F5E6C8',
-            marginTop: '4vh',
+            marginTop: '3vh',
           }}>
-            Sur scène dans quelques instants…
+            Aucune photo pour l'instant.
+          </p>
+          <p style={{
+            fontFamily: '"Cormorant Garamond", serif',
+            fontSize: 'clamp(1rem, 1.4vw, 1.4rem)',
+            color: '#8B7960',
+            marginTop: '1vh',
+          }}>
+            Régie : uploade des photos puis clique « Envoyer photos ».
           </p>
         </div>
       </div>
