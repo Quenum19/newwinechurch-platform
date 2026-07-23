@@ -14,7 +14,7 @@ import api from '@/api/axios'
 import {
   Monitor, Image as ImageIcon, MoonStar, UserPlus, PartyPopper,
   MessageCircle, Sparkles, Music, Mic2, Crown,
-  Vote, PlayCircle, Users, ChevronRight, RefreshCw, ExternalLink,
+  Vote, PlayCircle, Users, ChevronRight, Loader2, RefreshCw, ExternalLink,
   Camera,
 } from 'lucide-react'
 
@@ -44,6 +44,50 @@ export default function BalRegiePage() {
   const qc = useQueryClient()
 
   const [customArtiste, setCustomArtiste] = useState('')
+
+  // Upload photos KIM B (persisté côté serveur, URLs livrées via state.config)
+  const [kimBUploading, setKimBUploading] = useState(false)
+  const [kimBProgress, setKimBProgress] = useState(0)
+
+  const handleKimBFiles = async (e) => {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+    setKimBUploading(true)
+    setKimBProgress(0)
+    try {
+      const fd = new FormData()
+      files.forEach((f) => fd.append('photos[]', f))
+      const { data } = await api.post(
+        `/admin/events/${eventId}/bal/kim-b/upload`,
+        fd,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 5 * 60 * 1000,
+          onUploadProgress: (evt) => {
+            if (evt.total) setKimBProgress(Math.round((evt.loaded / evt.total) * 100))
+          },
+        }
+      )
+      // Envoie immédiatement la slide avec les nouvelles URLs
+      setSlideMutation.mutate({
+        slide: 'kim-b-photos',
+        config: { kim_b_photos: data.photos },
+      })
+      toast.success(`${data.photos.length} photo(s) KIM B uploadée(s) et affichées`)
+    } catch (err) {
+      console.error('Upload KIM B failed', err)
+      const status = err?.response?.status
+      const msg = err?.response?.data?.message
+        || (status === 413 ? 'Fichier(s) trop lourd(s) — max 20 Mo par photo.'
+          : status === 422 ? 'Format refusé (jpg/png/webp uniquement).'
+          : `Échec upload (statut ${status ?? '?'})`)
+      toast.error(msg, { duration: 6000 })
+    } finally {
+      setKimBUploading(false)
+      setKimBProgress(0)
+      e.target.value = ''
+    }
+  }
 
   // Query état actuel
   const { data: stateData, refetch } = useQuery({
@@ -215,6 +259,38 @@ export default function BalRegiePage() {
               Envoyer
             </button>
           </div>
+        </div>
+
+        {/* Sous-panneau upload photos KIM B */}
+        <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
+          <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
+            Photos KIM B — upload et affichage direct (slide « Photos KIM B ») :
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
+              {kimBUploading ? (
+                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload {kimBProgress}%</>
+              ) : (
+                'Uploader photos KIM B'
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={handleKimBFiles}
+                disabled={kimBUploading}
+                className="hidden"
+              />
+            </label>
+            <span className="text-xs text-zinc-500 italic">
+              Sélectionne les 3 photos d'un coup. Elles s'affichent tout de suite.
+            </span>
+          </div>
+          {kimBUploading && (
+            <div className="mt-2 h-1 bg-zinc-200 rounded overflow-hidden">
+              <div className="h-full bg-[color:var(--adm-accent)] transition-all" style={{ width: `${kimBProgress}%` }}/>
+            </div>
+          )}
         </div>
       </section>
 

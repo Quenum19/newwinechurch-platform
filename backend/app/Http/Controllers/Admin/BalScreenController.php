@@ -7,6 +7,7 @@ use App\Models\BalScreenState;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Régie de l'écran live du Bal 2026.
@@ -117,6 +118,38 @@ class BalScreenController extends Controller
             'message' => 'Vote clôturé.',
             'state'   => $state->fresh(),
         ]);
+    }
+
+    /**
+     * POST /admin/events/{id}/bal/kim-b/upload — upload des photos de KIM B.
+     *
+     * Accepte 1 à N images (champ `photos[]`), les stocke dans
+     * storage/app/public/kim-b/ et retourne les URLs publiques.
+     * Écrase les fichiers portant le même nom séquentiel (1.jpg, 2.jpg, …).
+     */
+    public function uploadKimBPhotos(Request $request, int $eventId): JsonResponse
+    {
+        $this->ensureAuthorized($request);
+        Event::findOrFail($eventId);
+
+        $request->validate([
+            'photos'   => ['required', 'array', 'min:1', 'max:10'],
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:20480'], // 20 Mo/photo
+        ]);
+
+        $urls = [];
+        // Nommage séquentiel (1, 2, 3…) pour écraser proprement à chaque upload
+        // et éviter l'accumulation de vieux fichiers.
+        foreach ($request->file('photos') as $i => $file) {
+            $filename = 'kim-b/' . ($i + 1) . '.' . $file->getClientOriginalExtension();
+            Storage::disk('public')->putFileAs('', $file, $filename);
+            $urls[] = asset('storage/' . $filename);
+        }
+
+        return response()->json([
+            'photos' => $urls,
+            'message' => count($urls) . ' photo(s) uploadée(s).',
+        ], 201);
     }
 
     /** POST /admin/events/{id}/bal/proclamer — passe en mode proclamation. */

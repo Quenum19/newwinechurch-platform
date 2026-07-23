@@ -631,6 +631,7 @@ Route::middleware(['auth:sanctum'])
     // === Bal 2026 — Régie de l'écran live + candidats + photos ambiance ===
     Route::get ('/events/{id}/bal/state',                 [\App\Http\Controllers\Admin\BalScreenController::class, 'state'])->whereNumber('id');
     Route::post('/events/{id}/bal/slide',                 [\App\Http\Controllers\Admin\BalScreenController::class, 'setSlide'])->whereNumber('id');
+    Route::post('/events/{id}/bal/kim-b/upload',          [\App\Http\Controllers\Admin\BalScreenController::class, 'uploadKimBPhotos'])->whereNumber('id');
     Route::post('/events/{id}/bal/vote/open',             [\App\Http\Controllers\Admin\BalScreenController::class, 'openVote'])->whereNumber('id');
     Route::post('/events/{id}/bal/vote/close',            [\App\Http\Controllers\Admin\BalScreenController::class, 'closeVote'])->whereNumber('id');
     Route::post('/events/{id}/bal/proclamer',             [\App\Http\Controllers\Admin\BalScreenController::class, 'proclamer'])->whereNumber('id');
