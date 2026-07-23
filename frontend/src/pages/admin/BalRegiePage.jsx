@@ -46,19 +46,30 @@ export default function BalRegiePage() {
   const [customArtiste, setCustomArtiste] = useState('')
   const [artistePhotos, setArtistePhotos] = useState([])            // [{ url, name }, ...]
   const [artistePhotosUploading, setArtistePhotosUploading] = useState(false)
+  const [artistePhotosProgress, setArtistePhotosProgress] = useState(0)
   const [dancingMediaUrl, setDancingMediaUrl] = useState('')
   const [dancingMediaName, setDancingMediaName] = useState('')
   const [dancingMediaUploading, setDancingMediaUploading] = useState(false)
+  const [dancingMediaProgress, setDancingMediaProgress] = useState(0)
 
   // Upload commun (image ou vidéo) via /admin/events/{id}/bal/upload-media
   // Retourne l'URL publique absolue à passer ensuite en config de setSlide.
-  const uploadBalMedia = async (file) => {
+  // Timeout 5 min (les vidéos peuvent prendre du temps à monter sur Hostinger).
+  const uploadBalMedia = async (file, onProgress) => {
     const fd = new FormData()
     fd.append('file', file)
     const { data } = await api.post(
       `/admin/events/${eventId}/bal/upload-media`,
       fd,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 5 * 60 * 1000, // 5 minutes
+        onUploadProgress: (evt) => {
+          if (onProgress && evt.total) {
+            onProgress(Math.round((evt.loaded / evt.total) * 100))
+          }
+        },
+      }
     )
     return data.url
   }
@@ -87,8 +98,9 @@ export default function BalRegiePage() {
     if (!file) return
     setDancingMediaUploading(true)
     setDancingMediaName(file.name)
+    setDancingMediaProgress(0)
     try {
-      const url = await uploadBalMedia(file)
+      const url = await uploadBalMedia(file, setDancingMediaProgress)
       setDancingMediaUrl(url)
       toast.success(`Média uploadé (${file.name})`)
     } catch (err) {
@@ -97,6 +109,7 @@ export default function BalRegiePage() {
       setDancingMediaName('')
     } finally {
       setDancingMediaUploading(false)
+      setDancingMediaProgress(0)
       e.target.value = ''
     }
   }
@@ -105,14 +118,18 @@ export default function BalRegiePage() {
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
     setArtistePhotosUploading(true)
+    setArtistePhotosProgress(0)
     let lastFile = null
     try {
       // Upload séquentiel (plus doux pour Hostinger que parallèle sur gros fichiers)
       const newOnes = []
-      for (const file of files) {
-        lastFile = file
-        const url = await uploadBalMedia(file)
-        newOnes.push({ url, name: file.name })
+      for (let i = 0; i < files.length; i++) {
+        lastFile = files[i]
+        const url = await uploadBalMedia(files[i], (pct) => {
+          // Progrès global : (fichiers finis + progrès courant) / total
+          setArtistePhotosProgress(Math.round(((i + pct / 100) / files.length) * 100))
+        })
+        newOnes.push({ url, name: files[i].name })
       }
       setArtistePhotos((prev) => [...prev, ...newOnes])
       toast.success(`${newOnes.length} photo(s) uploadée(s)`)
@@ -121,6 +138,7 @@ export default function BalRegiePage() {
       toast.error(explainUploadError(err, lastFile), { duration: 6000 })
     } finally {
       setArtistePhotosUploading(false)
+      setArtistePhotosProgress(0)
       e.target.value = ''
     }
   }
@@ -314,7 +332,7 @@ export default function BalRegiePage() {
           <div className="flex flex-wrap items-center gap-2">
             <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
               {dancingMediaUploading ? (
-                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload…</>
+                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload {dancingMediaProgress}%</>
               ) : (
                 'Choisir un fichier'
               )}
@@ -330,6 +348,13 @@ export default function BalRegiePage() {
               <span className="text-xs text-zinc-500 italic truncate max-w-[240px]">
                 {dancingMediaUrl ? '✓ ' : ''}{dancingMediaName}
               </span>
+            )}
+            {dancingMediaUploading && (
+              <div className="w-full mt-1">
+                <div className="h-1 bg-zinc-200 rounded overflow-hidden">
+                  <div className="h-full bg-[color:var(--adm-accent)] transition-all" style={{ width: `${dancingMediaProgress}%` }}/>
+                </div>
+              </div>
             )}
             <button
               onClick={sendDancing}
@@ -381,7 +406,7 @@ export default function BalRegiePage() {
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
               {artistePhotosUploading ? (
-                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload…</>
+                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload {artistePhotosProgress}%</>
               ) : (
                 'Ajouter photo(s)'
               )}
