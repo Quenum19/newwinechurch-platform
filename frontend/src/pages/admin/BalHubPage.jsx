@@ -140,6 +140,14 @@ function EventCard({ event }) {
         >
           <FileText size={13}/> PDF supports de table (recto vote / verso follow us)
         </a>
+        <a
+          href={`${import.meta.env.VITE_API_URL || '/api'}/admin/events/${event.id}/bal/vote-qr-pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="col-span-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider bg-[#8B1A2F] text-white rounded hover:bg-[#6b1523] transition"
+        >
+          <FileText size={13}/> PDF A5 QR vote Roi &amp; Reine (imprimable en série)
+        </a>
       </div>
     </div>
   )

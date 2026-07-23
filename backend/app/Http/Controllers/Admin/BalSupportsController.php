@@ -54,6 +54,37 @@ class BalSupportsController extends Controller
         return $pdf->stream($filename);
     }
 
+    /**
+     * PDF A5 dédié uniquement au QR de vote Roi & Reine.
+     * Imprimable en plusieurs exemplaires pour multiplier les points d'affichage
+     * (tables, murs, entrée…) sans le verso "Follow us".
+     */
+    public function voteQrPdf(Request $request, int $eventId): Response
+    {
+        $user = $request->user();
+        if (! $user?->can('manage event tickets') && ! $user?->can('view attendance')) {
+            abort(403);
+        }
+
+        $event = Event::findOrFail($eventId);
+
+        $frontendUrl = rtrim(config('app.frontend_url', 'https://newinechurch.org'), '/');
+        $voteUrl = $frontendUrl . '/bal/vote/' . $event->id;
+
+        $voteQr = $this->generateQrSvg($voteUrl);
+        $logoDataUri = $this->resolveLogoDataUri();
+
+        $pdf = Pdf::loadView('pdfs.bal-vote-qr', [
+            'event'       => $event,
+            'voteUrl'     => $voteUrl,
+            'voteQr'      => $voteQr,
+            'logoDataUri' => $logoDataUri,
+        ])->setPaper('a5', 'portrait');
+
+        $filename = 'bal-vote-qr-' . now()->format('Ymd-Hi') . '.pdf';
+        return $pdf->stream($filename);
+    }
+
     /** Génère un QR code SVG en data URI. */
     private function generateQrSvg(string $url): string
     {

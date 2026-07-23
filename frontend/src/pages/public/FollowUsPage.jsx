@@ -2,24 +2,28 @@
  * FollowUsPage — Landing "Suivez-nous" pour le QR verso des supports de table.
  */
 import { useState, useEffect } from 'react'
-import { Camera, Share2, Video, Music, MessageCircle, Globe, ArrowRight, HeartHandshake } from 'lucide-react'
+import { Camera, Share2, Video, Music, MessageCircle, Globe, ArrowRight, HeartHandshake, Users, ChevronUp, ChevronDown } from 'lucide-react'
 import axios from 'axios'
 import BalEnrollmentModal from './BalEnrollmentModal'
 
 const baseURL = import.meta.env.VITE_API_URL || '/api'
 
-const PLATFORMS = [
+// Séparation site vs réseaux : le site est mis en avant, les réseaux sont
+// dépliés à la demande pour éviter le mur de boutons dès l'arrivée.
+const WEBSITE = { key: 'website_url', label: 'Notre site', icon: Globe, color: '#C9A961' }
+
+const SOCIALS = [
   { key: 'social_instagram', label: 'Instagram',  icon: Camera,        color: '#E1306C' },
   { key: 'social_facebook',  label: 'Facebook',   icon: Share2,        color: '#1877F2' },
   { key: 'social_tiktok',    label: 'TikTok',     icon: Music,         color: '#FF0050' },
   { key: 'social_youtube',   label: 'YouTube',    icon: Video,         color: '#FF0000' },
   { key: 'social_whatsapp',  label: 'WhatsApp',   icon: MessageCircle, color: '#25D366' },
-  { key: 'website_url',      label: 'Notre site', icon: Globe,         color: '#C9A961' },
 ]
 
 export default function FollowUsPage() {
   const [links, setLinks] = useState({})
   const [enrollmentOpen, setEnrollmentOpen] = useState(false)
+  const [socialsOpen, setSocialsOpen] = useState(false)
   // Lit ?event={id} du query string pour rattacher l'enrôlement à l'event source
   // (QR imprimé depuis l'admin d'un event → URL contient ?event=X)
   const eventId = (() => {
@@ -34,7 +38,8 @@ export default function FollowUsPage() {
       .catch(() => {})
   }, [])
 
-  const available = PLATFORMS.filter((p) => links[p.key])
+  const availableSocials = SOCIALS.filter((p) => links[p.key])
+  const websiteLink = links[WEBSITE.key]
 
   return (
     <div style={{
@@ -79,38 +84,100 @@ export default function FollowUsPage() {
           Restons en contact — retrouve-nous sur tes réseaux préférés
         </p>
 
-        {available.length === 0 ? (
-          <p style={{ opacity: 0.5, fontStyle: 'italic' }}>Liens à configurer dans l'admin.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-            {available.map((p) => (
-              <a
-                key={p.key}
-                href={links[p.key]}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1.2rem 1.4rem',
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '2px solid rgba(201,169,97,0.3)',
-                  borderRadius: '12px',
-                  color: '#F5E6C8',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s',
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                }}
-              >
-                <p.icon size={26} color={p.color} style={{ flexShrink: 0 }}/>
-                <span style={{ flex: 1, textAlign: 'left' }}>{p.label}</span>
-                <ArrowRight size={18} color="#C9A961"/>
-              </a>
-            ))}
-          </div>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+          {/* Site web en évidence */}
+          {websiteLink && (
+            <a
+              href={websiteLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                padding: '1.2rem 1.4rem',
+                background: 'rgba(255,255,255,0.08)',
+                border: '2px solid rgba(201,169,97,0.3)',
+                borderRadius: '12px',
+                color: '#F5E6C8',
+                textDecoration: 'none',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+              }}
+            >
+              <Globe size={26} color={WEBSITE.color} style={{ flexShrink: 0 }}/>
+              <span style={{ flex: 1, textAlign: 'left' }}>{WEBSITE.label}</span>
+              <ArrowRight size={18} color="#C9A961"/>
+            </a>
+          )}
+
+          {/* Bouton "Réseaux sociaux" — dépliable */}
+          {availableSocials.length > 0 && (
+            <button
+              onClick={() => setSocialsOpen((s) => !s)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                padding: '1.2rem 1.4rem',
+                background: 'rgba(255,255,255,0.08)',
+                border: '2px solid rgba(201,169,97,0.3)',
+                borderRadius: '12px',
+                color: '#F5E6C8',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                width: '100%',
+              }}
+            >
+              <Users size={26} color="#C9A961" style={{ flexShrink: 0 }}/>
+              <span style={{ flex: 1, textAlign: 'left' }}>Réseaux sociaux</span>
+              <span style={{
+                fontSize: '0.7rem',
+                color: '#C9A961',
+                letterSpacing: '0.1em',
+                marginRight: '0.5rem',
+                opacity: 0.7,
+              }}>
+                {availableSocials.length}
+              </span>
+              {socialsOpen ? <ChevronUp size={18} color="#C9A961"/> : <ChevronDown size={18} color="#C9A961"/>}
+            </button>
+          )}
+
+          {/* Liste dépliée */}
+          {socialsOpen && availableSocials.map((p) => (
+            <a
+              key={p.key}
+              href={links[p.key]}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                padding: '0.95rem 1.4rem',
+                marginLeft: '1rem',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(201,169,97,0.2)',
+                borderRadius: '10px',
+                color: '#F5E6C8',
+                textDecoration: 'none',
+                fontSize: '1rem',
+                fontWeight: 600,
+              }}
+            >
+              <p.icon size={22} color={p.color} style={{ flexShrink: 0 }}/>
+              <span style={{ flex: 1, textAlign: 'left' }}>{p.label}</span>
+              <ArrowRight size={16} color="#C9A961"/>
+            </a>
+          ))}
+
+          {!websiteLink && availableSocials.length === 0 && (
+            <p style={{ opacity: 0.5, fontStyle: 'italic' }}>Liens à configurer dans l'admin.</p>
+          )}
+        </div>
 
         {/* Séparateur */}
         <div style={{
