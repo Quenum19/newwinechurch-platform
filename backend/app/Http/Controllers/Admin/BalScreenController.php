@@ -7,6 +7,7 @@ use App\Models\BalScreenState;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Régie de l'écran live du Bal 2026.
@@ -117,6 +118,38 @@ class BalScreenController extends Controller
             'message' => 'Vote clôturé.',
             'state'   => $state->fresh(),
         ]);
+    }
+
+    /**
+     * POST /admin/events/{id}/bal/upload-media — upload d'un fichier (image OU vidéo)
+     * utilisé par les slides live (Dancing Stars, Rappeurs…). Retourne l'URL publique
+     * absolue à passer ensuite dans `config` de setSlide.
+     *
+     * Champ attendu : `file` (multipart/form-data).
+     * Formats acceptés : jpg, jpeg, png, webp, gif, mp4, webm, mov, m4v.
+     * Taille max : 100 Mo (vidéos possibles).
+     */
+    public function uploadMedia(Request $request, int $eventId): JsonResponse
+    {
+        $this->ensureAuthorized($request);
+        Event::findOrFail($eventId);
+
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'mimes:jpg,jpeg,png,webp,gif,mp4,webm,mov,m4v',
+                'max:102400', // 100 Mo
+            ],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('bal-media', 'public');
+
+        return response()->json([
+            'url'  => asset('storage/' . $path),
+            'path' => $path,
+        ], 201);
     }
 
     /** POST /admin/events/{id}/bal/proclamer — passe en mode proclamation. */

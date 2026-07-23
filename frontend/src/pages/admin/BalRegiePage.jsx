@@ -43,8 +43,61 @@ export default function BalRegiePage() {
   const qc = useQueryClient()
 
   const [customArtiste, setCustomArtiste] = useState('')
-  const [artistePhoto, setArtistePhoto] = useState('')
-  const [dancingMedia, setDancingMedia] = useState('')
+  const [artistePhotoUrl, setArtistePhotoUrl] = useState('')
+  const [artistePhotoName, setArtistePhotoName] = useState('')
+  const [artistePhotoUploading, setArtistePhotoUploading] = useState(false)
+  const [dancingMediaUrl, setDancingMediaUrl] = useState('')
+  const [dancingMediaName, setDancingMediaName] = useState('')
+  const [dancingMediaUploading, setDancingMediaUploading] = useState(false)
+
+  // Upload commun (image ou vidéo) via /admin/events/{id}/bal/upload-media
+  // Retourne l'URL publique absolue à passer ensuite en config de setSlide.
+  const uploadBalMedia = async (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const { data } = await api.post(
+      `/admin/events/${eventId}/bal/upload-media`,
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    )
+    return data.url
+  }
+
+  const handleDancingFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setDancingMediaUploading(true)
+    setDancingMediaName(file.name)
+    try {
+      const url = await uploadBalMedia(file)
+      setDancingMediaUrl(url)
+      toast.success(`Média uploadé (${file.name})`)
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Échec de l'upload.")
+      setDancingMediaName('')
+    } finally {
+      setDancingMediaUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleArtistePhotoFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setArtistePhotoUploading(true)
+    setArtistePhotoName(file.name)
+    try {
+      const url = await uploadBalMedia(file)
+      setArtistePhotoUrl(url)
+      toast.success(`Photo uploadée (${file.name})`)
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Échec de l'upload.")
+      setArtistePhotoName('')
+    } finally {
+      setArtistePhotoUploading(false)
+      e.target.value = ''
+    }
+  }
 
   // Query état actuel
   const { data: stateData, refetch } = useQuery({
@@ -100,17 +153,15 @@ export default function BalRegiePage() {
 
   const sendRappeur = (artiste) => {
     const cfg = { artiste }
-    const url = artistePhoto.trim()
-    if (url) cfg.artiste_photo = url
+    if (artistePhotoUrl) cfg.artiste_photo = artistePhotoUrl
     send('rappeurs', cfg)
-    toast.success(`Slide "${artiste}" envoyée${url ? ' (avec photo)' : ''}`)
+    toast.success(`Slide "${artiste}" envoyée${artistePhotoUrl ? ' (avec photo)' : ''}`)
   }
 
   const sendDancing = () => {
-    const url = dancingMedia.trim()
-    const cfg = url ? { dancing_media: url } : null
+    const cfg = dancingMediaUrl ? { dancing_media: dancingMediaUrl } : null
     send('dancing-stars', cfg)
-    toast.success(url ? 'Dancing Stars envoyée (avec média)' : 'Dancing Stars envoyée')
+    toast.success(dancingMediaUrl ? 'Dancing Stars envoyée (avec média)' : 'Dancing Stars envoyée')
   }
 
   const grouped = {
@@ -196,22 +247,35 @@ export default function BalRegiePage() {
           ))}
         </div>
 
-        {/* Sous-panneau Dancing Stars — URL photo / vidéo derrière le rideau */}
+        {/* Sous-panneau Dancing Stars — upload photo / vidéo derrière le rideau */}
         <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--adm-border)' }}>
           <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
             Dancing Stars — média derrière le rideau (photo ou vidéo) :
           </p>
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="url"
-              placeholder="https://… (URL vidéo .mp4/.webm ou image .jpg/.png)"
-              value={dancingMedia}
-              onChange={(e) => setDancingMedia(e.target.value)}
-              className="adm-input text-sm px-2 py-1.5 flex-1 min-w-[280px]"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
+              {dancingMediaUploading ? (
+                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload…</>
+              ) : (
+                'Choisir un fichier'
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                onChange={handleDancingFile}
+                disabled={dancingMediaUploading}
+                className="hidden"
+              />
+            </label>
+            {dancingMediaName && (
+              <span className="text-xs text-zinc-500 italic truncate max-w-[240px]">
+                {dancingMediaUrl ? '✓ ' : ''}{dancingMediaName}
+              </span>
+            )}
             <button
               onClick={sendDancing}
-              className="px-3 py-1.5 rounded text-sm font-semibold bg-[color:var(--adm-accent)] text-white"
+              disabled={dancingMediaUploading}
+              className="ml-auto px-3 py-1.5 rounded text-sm font-semibold bg-[color:var(--adm-accent)] text-white disabled:opacity-40"
             >
               Envoyer Dancing Stars
             </button>
@@ -223,14 +287,26 @@ export default function BalRegiePage() {
           <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
             Rappeur — nom de l'artiste + photo (optionnelle) :
           </p>
-          <div className="flex flex-wrap gap-2 mb-2">
-            <input
-              type="url"
-              placeholder="URL photo de l'artiste (optionnelle)"
-              value={artistePhoto}
-              onChange={(e) => setArtistePhoto(e.target.value)}
-              className="adm-input text-sm px-2 py-1.5 flex-1 min-w-[280px]"
-            />
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <label className="px-3 py-1.5 rounded text-sm font-semibold border-2 border-zinc-300 hover:border-[color:var(--adm-accent)] cursor-pointer">
+              {artistePhotoUploading ? (
+                <><Loader2 size={13} className="inline mr-1 animate-spin"/>Upload…</>
+              ) : (
+                'Choisir une photo'
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleArtistePhotoFile}
+                disabled={artistePhotoUploading}
+                className="hidden"
+              />
+            </label>
+            {artistePhotoName && (
+              <span className="text-xs text-zinc-500 italic truncate max-w-[240px]">
+                {artistePhotoUrl ? '✓ ' : ''}{artistePhotoName}
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {ARTISTES.map((a) => (
