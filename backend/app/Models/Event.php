@@ -126,8 +126,16 @@ class Event extends Model
     public function getTicketingIsOpenAttribute(): bool
     {
         if (! $this->ticketing_enabled) return false;
-        if ($this->tickets_closes_at && now()->gt($this->tickets_closes_at)) return false;
-        if ($this->starts_at && now()->gt($this->starts_at)) return false;
+        // Clôture EXPLICITE prioritaire : si tickets_closes_at est défini,
+        // c'est LA seule règle qui ferme la billetterie par date.
+        if ($this->tickets_closes_at) {
+            if (now()->gt($this->tickets_closes_at)) return false;
+        } else {
+            // Sinon fallback : fin de l'event (ends_at si défini, starts_at
+            // sinon). Permet aux gens en retard de s'inscrire pendant l'event.
+            $deadline = $this->ends_at ?: $this->starts_at;
+            if ($deadline && now()->gt($deadline)) return false;
+        }
         if ($this->tickets_capacity && $this->tickets_sold >= $this->tickets_capacity) return false;
         return true;
     }
