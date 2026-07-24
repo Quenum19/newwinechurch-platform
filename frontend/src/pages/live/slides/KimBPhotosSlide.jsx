@@ -20,6 +20,7 @@ export default function KimBPhotosSlide({ state }) {
   }, [state?.config])
 
   const photos = state?.config?.kim_b_photos ?? []
+  const eventTitle = state?.event?.title ?? 'A Dark Night in Elegance'
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
@@ -116,17 +117,59 @@ export default function KimBPhotosSlide({ state }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Overlay KIM B bas-gauche */}
+      {/* Bandeau bas : KIM B (Anton or) + ornement ✦ + nom event (Great Vibes or)
+          Sur fond dégradé sombre pour lisibilité même si la photo est claire en bas. */}
       <div style={{
-        position: 'absolute', bottom: '3vh', left: '3vw',
+        position: 'absolute', bottom: 0, left: 0, right: 0,
         zIndex: 4,
-        fontFamily: "'Anton', sans-serif",
-        fontSize: 'clamp(3rem, 5vw, 5.5rem)',
-        color: '#E6C877',
-        letterSpacing: '.08em',
-        textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.6)',
-        textTransform: 'uppercase',
-      }}>KIM B</div>
+        padding: '3vh 4vw 3vh',
+        background: 'linear-gradient(0deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.75) 55%, rgba(0,0,0,0) 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: '3vw',
+      }}>
+        {/* KIM B — gauche */}
+        <div style={{
+          fontFamily: "'Anton', sans-serif",
+          fontSize: 'clamp(3rem, 5vw, 5.5rem)',
+          color: '#E6C877',
+          letterSpacing: '.08em',
+          textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.6)',
+          textTransform: 'uppercase',
+          lineHeight: 1,
+        }}>KIM B</div>
+
+        {/* Ornement séparateur ✦ */}
+        <div style={{
+          flex: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: '1.5vw',
+        }}>
+          <span style={{
+            flex: 1, maxWidth: '20vw', height: 2,
+            background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.7), rgba(230,200,119,.7), transparent)',
+          }} />
+          <span style={{
+            fontFamily: "'Cinzel', serif",
+            fontSize: 'clamp(1.5rem, 2.4vw, 2.6rem)',
+            color: '#E6C877',
+            textShadow: '0 0 20px rgba(214,178,95,.6)',
+          }}>✦</span>
+          <span style={{
+            flex: 1, maxWidth: '20vw', height: 2,
+            background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.7), rgba(230,200,119,.7), transparent)',
+          }} />
+        </div>
+
+        {/* Nom event — droite (Great Vibes or) */}
+        <div style={{
+          textAlign: 'right',
+          fontFamily: "'Great Vibes', cursive",
+          fontSize: 'clamp(2.6rem, 4.4vw, 4.8rem)',
+          color: '#EECF80',
+          textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 40px rgba(201,169,97,.55)',
+          lineHeight: 1,
+        }}>{eventTitle}</div>
+      </div>
     </div>
   )
 }
