@@ -67,21 +67,23 @@ export default function DefaultSlide({ state }) {
           transform: 'scale(1.2)',
         }} />
 
-        {/* Affiche entière visible sans crop et sans flou — le cadre or, les
-            losanges, "24 JUILLET", brand, logo NWC et "A DARK NIGHT IN ELEGANCE"
-            sont préservés tels que dessinés sur l'affiche source.
-            Format STORY : affiche portrait centrée qui remplit la hauteur,
-            légèrement agrandie (scale 1.03) pour un rendu plus généreux. */}
+        {/* Affiche entière — FORMAT STORY (portrait vertical centré, ratio ~9:16).
+            Hauteur = 92% de la scène (994px), largeur = auto (préserve le
+            ratio portrait natif de l'affiche → ~560px de large centrés).
+            Résultat : affiche story bien VERTICALE, bandes floutées LARGES à
+            gauche et à droite (l'affiche n'occupe PLUS toute la largeur). */}
         <img
           src={bg}
           alt=""
           style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            objectFit: 'contain',
+            position: 'absolute',
+            top: '4%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            height: '92%',
+            width: 'auto',
+            maxWidth: '40%',
             display: 'block',
-            transform: 'scale(1.03)',
-            transformOrigin: 'center center',
             filter: 'drop-shadow(0 8px 40px rgba(0,0,0,.6))',
           }}
         />
