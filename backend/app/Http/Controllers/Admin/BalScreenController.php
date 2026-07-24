@@ -121,7 +121,8 @@ class BalScreenController extends Controller
     }
 
     /**
-     * POST /admin/events/{id}/bal/kim-b/upload — upload des photos de KIM B.
+     * POST /admin/events/{id}/bal/kim-b/upload — upload des photos de KIM B
+     * ET met à jour le state pour afficher la slide immédiatement (atomique).
      *
      * Accepte 1 à N images (champ `photos[]`), les stocke dans
      * storage/app/public/kim-b/ et retourne les URLs publiques.
@@ -137,18 +138,32 @@ class BalScreenController extends Controller
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:20480'], // 20 Mo/photo
         ]);
 
-        $urls = [];
-        // Nommage séquentiel (1, 2, 3…) pour écraser proprement à chaque upload
-        // et éviter l'accumulation de vieux fichiers.
-        foreach ($request->file('photos') as $i => $file) {
-            $filename = 'kim-b/' . ($i + 1) . '.' . $file->getClientOriginalExtension();
-            Storage::disk('public')->putFileAs('', $file, $filename);
-            $urls[] = asset('storage/' . $filename);
+        // Purge les anciennes photos (évite l'accumulation de fichiers orphelins)
+        $existing = Storage::disk('public')->files('kim-b');
+        foreach ($existing as $old) {
+            Storage::disk('public')->delete($old);
         }
 
+        $urls = [];
+        foreach ($request->file('photos') as $i => $file) {
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            $filename = ($i + 1) . '.' . $ext;
+            // storeAs crée le sous-dossier automatiquement (pattern Laravel standard)
+            $file->storeAs('kim-b', $filename, 'public');
+            $urls[] = asset('storage/kim-b/' . $filename);
+        }
+
+        // Met à jour le state atomiquement : slide active + photos en config
+        $state = $this->stateFor($eventId);
+        $state->current_slide = 'kim-b-photos';
+        $state->config        = ['kim_b_photos' => $urls];
+        $state->updated_at    = now();
+        $state->save();
+
         return response()->json([
-            'photos' => $urls,
-            'message' => count($urls) . ' photo(s) uploadée(s).',
+            'photos'  => $urls,
+            'state'   => $state->fresh(),
+            'message' => count($urls) . ' photo(s) uploadée(s) et slide activée.',
         ], 201);
     }
 

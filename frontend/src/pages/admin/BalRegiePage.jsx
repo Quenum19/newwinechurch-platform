@@ -68,11 +68,8 @@ export default function BalRegiePage() {
           },
         }
       )
-      // Envoie immédiatement la slide avec les nouvelles URLs
-      setSlideMutation.mutate({
-        slide: 'kim-b-photos',
-        config: { kim_b_photos: data.photos },
-      })
+      // L'endpoint backend met déjà le state à jour (atomique), juste refetch
+      qc.invalidateQueries({ queryKey: ['bal', 'state', eventId] })
       toast.success(`${data.photos.length} photo(s) KIM B uploadée(s) et affichées`)
     } catch (err) {
       console.error('Upload KIM B failed', err)

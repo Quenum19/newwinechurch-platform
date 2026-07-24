@@ -12,6 +12,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 const INTERVAL_MS = 6000
 
 export default function KimBPhotosSlide({ state }) {
+  // Debug : log ce que la slide reçoit (visible dans la console navigateur
+  // sur /live/bal/{id} pour comprendre pourquoi les photos ne s'affichent pas)
+  useEffect(() => {
+    console.log('[KimBPhotosSlide] state.config =', state?.config)
+  }, [state?.config])
+
   const photos = state?.config?.kim_b_photos ?? []
   const [index, setIndex] = useState(0)
 
