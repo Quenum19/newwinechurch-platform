@@ -117,17 +117,20 @@ export default function KimBPhotosSlide({ state }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Bandeau bas centré : KIM B ✦ nom event, alignés en baseline visuelle */}
+      {/* Bandeau bas : KIM B (gauche) ─── ✦ ─── A DARK NIGHT / IN / Elegance (droite) */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         zIndex: 4,
-        padding: '4vh 4vw 3vh',
-        background: 'linear-gradient(0deg, rgba(0,0,0,.95) 0%, rgba(0,0,0,.75) 60%, rgba(0,0,0,0) 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '2.4vw',
+        padding: '3.5vh 4vw 3vh',
+        background: 'linear-gradient(0deg, rgba(0,0,0,.96) 0%, rgba(0,0,0,.8) 60%, rgba(0,0,0,0) 100%)',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
+        gap: '2vw',
       }}>
-        {/* KIM B — Anton or */}
+        {/* KIM B — colonne gauche */}
         <div style={{
+          textAlign: 'left',
           fontFamily: "'Anton', sans-serif",
           fontSize: 'clamp(3rem, 5.5vw, 6rem)',
           color: '#E6C877',
@@ -135,15 +138,14 @@ export default function KimBPhotosSlide({ state }) {
           textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.6)',
           textTransform: 'uppercase',
           lineHeight: 1,
-          whiteSpace: 'nowrap',
         }}>KIM B</div>
 
-        {/* Séparateur ✦ or entouré de 2 filets courts */}
+        {/* Séparateur ✦ or — colonne centrale */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '1.2vw',
+          display: 'flex', alignItems: 'center', gap: '1vw',
         }}>
           <span style={{
-            width: '6vw', height: 2,
+            width: '5vw', height: 2,
             background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.85))',
           }} />
           <span style={{
@@ -154,22 +156,47 @@ export default function KimBPhotosSlide({ state }) {
             lineHeight: 1,
           }}>✦</span>
           <span style={{
-            width: '6vw', height: 2,
+            width: '5vw', height: 2,
             background: 'linear-gradient(90deg, rgba(230,200,119,.85), transparent)',
           }} />
         </div>
 
-        {/* Nom event — Great Vibes or (baseline compensée pour aligner visuellement
-            avec KIM B : Great Vibes a des descenders, on décale légèrement) */}
+        {/* Nom event — colonne droite, 3 lignes empilées "A DARK NIGHT / IN / Elegance" */}
         <div style={{
-          fontFamily: "'Great Vibes', cursive",
-          fontSize: 'clamp(3rem, 5.5vw, 6rem)',
-          color: '#EECF80',
-          textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 40px rgba(201,169,97,.55)',
+          textAlign: 'right',
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
           lineHeight: 1,
-          whiteSpace: 'nowrap',
-          transform: 'translateY(0.35em)',
-        }}>{eventTitle}</div>
+        }}>
+          <div style={{
+            fontFamily: "'Cinzel', serif", fontWeight: 700,
+            fontSize: 'clamp(1.4rem, 2.6vw, 2.8rem)',
+            letterSpacing: '.18em', textIndent: '.18em',
+            color: '#E6C877',
+            textShadow: '0 2px 12px rgba(0,0,0,.95)',
+            textTransform: 'uppercase',
+          }}>A Dark Night</div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.6vw',
+            margin: '0.4vh 0',
+          }}>
+            <span style={{ width: '2.5vw', height: 1, background: 'rgba(214,178,95,.7)' }} />
+            <span style={{
+              fontFamily: "'Cinzel', serif", fontWeight: 500,
+              fontSize: 'clamp(1rem, 1.6vw, 1.6rem)',
+              letterSpacing: '.4em', textIndent: '.4em',
+              color: '#E6C877',
+              textTransform: 'uppercase',
+            }}>in</span>
+            <span style={{ width: '2.5vw', height: 1, background: 'rgba(214,178,95,.7)' }} />
+          </div>
+          <div style={{
+            fontFamily: "'Great Vibes', cursive",
+            fontSize: 'clamp(2.6rem, 4.6vw, 5rem)',
+            color: '#EECF80',
+            textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 40px rgba(201,169,97,.55)',
+            lineHeight: 1,
+          }}>Elegance</div>
+        </div>
       </div>
     </div>
   )
