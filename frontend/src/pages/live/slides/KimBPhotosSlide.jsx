@@ -117,57 +117,58 @@ export default function KimBPhotosSlide({ state }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Bandeau bas : KIM B (Anton or) + ornement ✦ + nom event (Great Vibes or)
-          Sur fond dégradé sombre pour lisibilité même si la photo est claire en bas. */}
+      {/* Bandeau bas centré : KIM B ✦ nom event, alignés en baseline visuelle */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         zIndex: 4,
-        padding: '3vh 4vw 3vh',
-        background: 'linear-gradient(0deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.75) 55%, rgba(0,0,0,0) 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: '3vw',
+        padding: '4vh 4vw 3vh',
+        background: 'linear-gradient(0deg, rgba(0,0,0,.95) 0%, rgba(0,0,0,.75) 60%, rgba(0,0,0,0) 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '2.4vw',
       }}>
-        {/* KIM B — gauche */}
+        {/* KIM B — Anton or */}
         <div style={{
           fontFamily: "'Anton', sans-serif",
-          fontSize: 'clamp(3rem, 5vw, 5.5rem)',
+          fontSize: 'clamp(3rem, 5.5vw, 6rem)',
           color: '#E6C877',
           letterSpacing: '.08em',
           textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.6)',
           textTransform: 'uppercase',
           lineHeight: 1,
+          whiteSpace: 'nowrap',
         }}>KIM B</div>
 
-        {/* Ornement séparateur ✦ */}
+        {/* Séparateur ✦ or entouré de 2 filets courts */}
         <div style={{
-          flex: 1,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '1.5vw',
+          display: 'flex', alignItems: 'center', gap: '1.2vw',
         }}>
           <span style={{
-            flex: 1, maxWidth: '20vw', height: 2,
-            background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.7), rgba(230,200,119,.7), transparent)',
+            width: '6vw', height: 2,
+            background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.85))',
           }} />
           <span style={{
             fontFamily: "'Cinzel', serif",
-            fontSize: 'clamp(1.5rem, 2.4vw, 2.6rem)',
+            fontSize: 'clamp(1.6rem, 2.6vw, 2.8rem)',
             color: '#E6C877',
             textShadow: '0 0 20px rgba(214,178,95,.6)',
+            lineHeight: 1,
           }}>✦</span>
           <span style={{
-            flex: 1, maxWidth: '20vw', height: 2,
-            background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.7), rgba(230,200,119,.7), transparent)',
+            width: '6vw', height: 2,
+            background: 'linear-gradient(90deg, rgba(230,200,119,.85), transparent)',
           }} />
         </div>
 
-        {/* Nom event — droite (Great Vibes or) */}
+        {/* Nom event — Great Vibes or (baseline compensée pour aligner visuellement
+            avec KIM B : Great Vibes a des descenders, on décale légèrement) */}
         <div style={{
-          textAlign: 'right',
           fontFamily: "'Great Vibes', cursive",
-          fontSize: 'clamp(2.6rem, 4.4vw, 4.8rem)',
+          fontSize: 'clamp(3rem, 5.5vw, 6rem)',
           color: '#EECF80',
           textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 40px rgba(201,169,97,.55)',
           lineHeight: 1,
+          whiteSpace: 'nowrap',
+          transform: 'translateY(0.35em)',
         }}>{eventTitle}</div>
       </div>
     </div>
