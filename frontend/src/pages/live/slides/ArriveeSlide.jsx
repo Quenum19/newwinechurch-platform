@@ -2,27 +2,29 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Stage from '../components/Stage.jsx'
 
 /**
- * ArriveeSlide V3 — Compteur d'arrivées XXL, charte LED-safe (base MurStars).
+ * ArriveeSlide V4 — Compteur d'arrivées XXL, charte LED-safe STRICTE.
  * ------------------------------------------------------------------
- * Charte STRICTE écran LED :
- *   - Fond radial ambré identique MurStars — JAMAIS de rouge/bordeaux
- *     (le rouge cramé passe magenta sur LED d'église).
- *   - Palette : or plat #E6C877, highlights #FFE9A8/#EECF80, ivoire #F5E6C8.
- *   - Tailles XXL pour lisibilité longue distance : compteur Anton 400px,
- *     libellés Cinzel 44–60px, nom du dernier arrivé Anton 96px, message
- *     Playfair italic 46px. Aucun texte < 32px.
+ * Pattern MurStars (LA référence LED-safe) appliqué à la lettre :
+ *   1. Fond #000000 NOIR PUR (aucun #0A0A0A) + léger overlay radial ambré.
+ *   2. OR PLAT partout dans le texte : #E6C877 / #EECF80.
+ *      AUCUN WebkitBackgroundClip:'text' — les gradients texte disparaissent
+ *      sur un mur LED d'église (pixels espacés → texte illisible).
+ *   3. Glow via textShadow / drop-shadow uniquement, jamais via gradient clip.
+ *   4. Aucun texte < 60px (lisibilité longue distance sur écran LED).
+ *   5. Cadre or double filet + 4 losanges 20×20 aux coins.
  *
  * Composition :
  *   - Anneau or plat 720×720 autour du compteur (progression fluide
  *     synchronisée avec le count-up 1200ms ease-out cubic).
- *   - Compteur central gradient or "sur X invités attendus".
- *   - Ligne "DERNIER ARRIVÉ" encadrée de deux dots or pulsants + filets or.
- *   - Nom du dernier arrivé Anton 96px ivoire (léger float).
- *   - Message tournant (5s) Playfair italic — fade-in via keyframe & key.
+ *   - Compteur central Anton 400 OR PLAT #E6C877 + textShadow ample.
+ *   - Label "ARRIVÉES" Cinzel 60 or plat.
+ *   - "SUR X ATTENDUS" Cinzel 60 or terne (respect règle ≥ 60px).
+ *   - "DERNIER ARRIVÉ" Cinzel 60 or plat, encadré de dots pulsants et filets or.
+ *   - Nom du dernier arrivé Anton 96 ivoire (léger float).
+ *   - Message tournant (5s) Playfair italic 60 ivoire, fallback "Bienvenue…".
  *
  * Ambiance MurStars : 2 projecteurs balayants (nwSpotSweep), 22 particules
- * or montantes (nwRise), cadre présidentiel double filet + 4 losanges 20×20.
- * Aucune framer-motion, uniquement CSS.
+ * or montantes (nwRise). Aucune framer-motion, uniquement CSS.
  */
 export default function ArriveeSlide({ state }) {
   const stats = state?.stats ?? {}
@@ -109,13 +111,13 @@ export default function ArriveeSlide({ state }) {
   const currentMsg = messages[msgIdx % messages.length]
 
   return (
-    <Stage>
+    <Stage background="#000000">
       <style>{`
         @keyframes nwRise { 0%{transform:translateY(20px);opacity:0} 12%{opacity:.9} 88%{opacity:.9} 100%{transform:translateY(-1080px);opacity:0} }
         @keyframes nwSpotSweepA { 0%,100%{transform:translateX(-50%) rotate(-22deg); opacity:.55} 50%{transform:translateX(-50%) rotate(22deg); opacity:.85} }
         @keyframes nwSpotSweepC { 0%,100%{transform:translateX(-50%) rotate(-18deg); opacity:.5} 50%{transform:translateX(-50%) rotate(18deg); opacity:.8} }
         @keyframes nwRingGlow { 0%,100%{filter:drop-shadow(0 0 10px rgba(230,200,119,.5))} 50%{filter:drop-shadow(0 0 22px rgba(230,200,119,.85))} }
-        @keyframes nwCountGlow { 0%,100%{text-shadow:0 0 70px rgba(201,169,97,.4),0 3px 6px rgba(0,0,0,.7); filter:brightness(.98)} 50%{text-shadow:0 0 150px rgba(201,169,97,.75),0 3px 6px rgba(0,0,0,.7); filter:brightness(1.08)} }
+        @keyframes nwCountGlow { 0%,100%{text-shadow:0 0 60px rgba(230,200,119,.55), 0 0 20px rgba(230,200,119,.35), 0 3px 6px rgba(0,0,0,.9); filter:brightness(1)} 50%{text-shadow:0 0 120px rgba(230,200,119,.85), 0 0 40px rgba(230,200,119,.55), 0 3px 6px rgba(0,0,0,.9); filter:brightness(1.06)} }
         @keyframes nwPulseDot { 0%,100%{transform:scale(1); box-shadow:0 0 14px rgba(230,200,119,.75)} 50%{transform:scale(1.4); box-shadow:0 0 28px rgba(230,200,119,1)} }
         @keyframes nwFloatSlow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
         @keyframes nwMsgIn { 0%{opacity:0; transform:translateY(12px)} 45%{opacity:1; transform:none} 100%{opacity:1; transform:none} }
@@ -123,12 +125,13 @@ export default function ArriveeSlide({ state }) {
 
       <div style={{
         position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
-        background: '#0A0A0A', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
+        background: '#000000', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond radial ambré — copie exacte MurStars (JAMAIS de rouge) */}
+        {/* Overlay radial ambré très discret sur fond NOIR PUR */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
+          background: 'radial-gradient(120% 100% at 50% 40%, rgba(33,26,16,.85) 0%, rgba(13,10,6,.6) 56%, rgba(0,0,0,0) 100%)',
+          pointerEvents: 'none',
         }} />
 
         {/* Projecteurs balayants gauche + droite (screen blend, blur 22px) */}
@@ -165,7 +168,7 @@ export default function ArriveeSlide({ state }) {
           }} />
         ))}
 
-        {/* Cadre présidentiel double filet or + 4 losanges 20×20 */}
+        {/* Cadre présidentiel double filet or + 4 losanges 20×20 (pattern MurStars) */}
         <div style={{
           position: 'absolute', inset: 28,
           border: '3px solid rgba(214,178,95,.92)',
@@ -202,8 +205,8 @@ export default function ArriveeSlide({ state }) {
             }}>
               {/* Fond de piste discret */}
               <circle cx="360" cy="360" r={RING_R}
-                fill="none" stroke="rgba(214,178,95,.16)" strokeWidth="8" />
-              {/* Progression or plat (pas de dégradé — LED-safe) */}
+                fill="none" stroke="rgba(214,178,95,.18)" strokeWidth="8" />
+              {/* Progression or PLAT (aucun dégradé — LED-safe) */}
               <circle cx="360" cy="360" r={RING_R}
                 fill="none" stroke="#E6C877" strokeWidth="14" strokeLinecap="round"
                 strokeDasharray={ringCirc.toFixed(1)}
@@ -218,32 +221,32 @@ export default function ArriveeSlide({ state }) {
               alignItems: 'center', justifyContent: 'center',
               lineHeight: 1,
             }}>
-              {/* Compteur XXL Anton 400 (gradient or) */}
+              {/* Compteur XXL Anton 400 — OR PLAT (aucun gradient text) */}
               <div style={{
                 fontFamily: "'Anton',sans-serif",
                 fontSize: 400, lineHeight: 0.86,
-                background: 'linear-gradient(180deg,#FFF6D8,#E6C877 48%,#C9A961 66%,#8a6d2f)',
-                WebkitBackgroundClip: 'text', backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                color: '#E6C877',
                 animation: 'nwCountGlow 5s ease-in-out infinite',
                 letterSpacing: '.005em',
               }}>{countDisplay}</div>
 
-              {/* Libellé "ARRIVÉES" Cinzel 60 or highlight */}
+              {/* Libellé "ARRIVÉES" Cinzel 60 or plat */}
               <div style={{
                 fontFamily: "'Cinzel',serif", fontWeight: 700,
                 fontSize: 60, letterSpacing: '.14em', textIndent: '.14em',
                 color: '#EECF80',
-                textShadow: '0 0 30px rgba(201,169,97,.5)',
+                textShadow: '0 0 30px rgba(230,200,119,.55), 0 2px 4px rgba(0,0,0,.8)',
                 marginTop: 10,
               }}>ARRIVÉES</div>
 
-              {/* "SUR X ATTENDUS" Cinzel 34 (jamais < 32px) */}
+              {/* "SUR X ATTENDUS" Cinzel 60 or plat (respect règle ≥ 60px) */}
               <div style={{
                 fontFamily: "'Cinzel',serif", fontWeight: 500,
-                fontSize: 34, letterSpacing: '.22em', textIndent: '.22em',
-                color: '#D9CBB0',
+                fontSize: 60, letterSpacing: '.22em', textIndent: '.22em',
+                color: '#E6C877',
+                textShadow: '0 0 20px rgba(230,200,119,.4), 0 2px 4px rgba(0,0,0,.8)',
                 marginTop: 8,
+                opacity: .92,
               }}>SUR {totalDisplay} ATTENDUS</div>
             </div>
           </div>
@@ -265,9 +268,9 @@ export default function ArriveeSlide({ state }) {
               }} />
               <span style={{
                 fontFamily: "'Cinzel',serif", fontWeight: 700,
-                fontSize: 44, letterSpacing: '.28em', textIndent: '.28em',
+                fontSize: 60, letterSpacing: '.28em', textIndent: '.28em',
                 color: '#E6C877',
-                textShadow: '0 0 30px rgba(201,169,97,.5)',
+                textShadow: '0 0 30px rgba(230,200,119,.55), 0 2px 4px rgba(0,0,0,.8)',
               }}>DERNIER ARRIVÉ</span>
               <span style={{
                 width: 14, height: 14, borderRadius: '50%',
@@ -277,31 +280,31 @@ export default function ArriveeSlide({ state }) {
               <span style={{ width: 120, height: 2, background: 'rgba(214,178,95,.7)' }} />
             </div>
 
-            {/* Nom Anton 96 ivoire (float doux) */}
+            {/* Nom Anton 96 ivoire #F5E6C8 (float doux) */}
             <div style={{
               fontFamily: "'Anton',sans-serif",
               fontSize: 96, lineHeight: 1.02,
               color: '#F5E6C8',
               letterSpacing: '.01em', textTransform: 'uppercase',
-              textShadow: '0 0 40px rgba(245,230,200,.35), 0 3px 6px rgba(0,0,0,.75)',
+              textShadow: '0 0 40px rgba(245,230,200,.4), 0 3px 6px rgba(0,0,0,.85)',
               maxWidth: 1600,
               overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
               animation: 'nwFloatSlow 4s ease-in-out infinite',
             }}>
-              {latestArrival ?? 'En attente…'}
+              {latestArrival ?? 'EN ATTENTE…'}
             </div>
           </div>
 
-          {/* ---------- Message tournant Playfair italic 46 ---------- */}
+          {/* ---------- Message tournant Playfair italic 60 ivoire ---------- */}
           <div
             key={msgIdx}
             style={{
               fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-              fontSize: 46, lineHeight: 1.15,
-              color: '#F0E6CF',
-              textShadow: '0 0 24px rgba(201,169,97,.25)',
+              fontSize: 60, lineHeight: 1.15,
+              color: '#F5E6C8',
+              textShadow: '0 0 24px rgba(230,200,119,.3), 0 2px 4px rgba(0,0,0,.8)',
               animation: 'nwMsgIn .8s ease',
-              minHeight: 54,
+              minHeight: 72,
               maxWidth: 1500,
             }}
           >{currentMsg}</div>

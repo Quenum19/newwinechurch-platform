@@ -2,11 +2,15 @@ import { useMemo } from 'react'
 import Stage from '../components/Stage.jsx'
 
 /**
- * DefileSlide V2 — "Défilé".
- * Podium 3D en perspective (rotateX 64deg) + tapis rouge grenat, 3 mannequins
- * silhouettes qui défilent (nwWalkLady), 4 projecteurs qui balaient depuis le
- * haut, 8 twinkles ✦, cadre présidentiel + losanges, titre "Défilé" Anton
- * 220px avec glow qui respire, sous-titre Cinzel espacé.
+ * DefileSlide V2 LED-safe — "Défilé".
+ * Fond NOIR PUR #000, or PLAT #E6C877 sur tous les textes (aucun gradient de
+ * texte, aucun WebkitBackgroundClip), textes tous ≥ 60px. EXCEPTION scénique :
+ * le podium 3D (rotateX 64deg) conserve son tapis rouge grenat — c'est un
+ * moment fort, le rouge peut cramer légèrement (accepté).
+ * Podium en perspective 1200px + 3 mannequins silhouettes qui défilent
+ * (nwWalkLady 8–11s), 4 projecteurs qui balaient depuis le haut, 8 twinkles ✦
+ * or, cadre présidentiel double filet or + 4 losanges 20×20 (pattern MurStars
+ * strict).
  */
 export default function DefileSlide({ state }) {
   const st = state ?? {}
@@ -25,7 +29,7 @@ export default function DefileSlide({ state }) {
     return Array.from({ length: 8 }, (_, i) => {
       const left = rnd(i * 2.7) * 84 + 8
       const top = rnd(i * 3.9) * 40 + 8
-      const size = 16 + rnd(i * 1.5) * 20
+      const size = 60 + rnd(i * 1.5) * 30   // 60–90px (LED-safe : aucun texte < 60px)
       const dur = 2.5 + rnd(i * 4) * 2
       const delay = (-rnd(i * 3) * dur).toFixed(2)
       return { left, top, size, dur, delay }
@@ -45,22 +49,18 @@ export default function DefileSlide({ state }) {
         @keyframes nwBeamB { 0%,100%{transform:rotate(14deg); opacity:.35} 50%{transform:rotate(-8deg); opacity:.7} }
         @keyframes nwWalkLady { 0%{transform:translateX(-560px) scale(.62); opacity:0} 12%{opacity:.9} 84%{opacity:.9} 100%{transform:translateX(560px) scale(1.28); opacity:0} }
         @keyframes nwGown { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(1.5deg)} }
-        @keyframes nwGlowP { 0%,100%{text-shadow:0 0 70px rgba(201,169,97,.4),0 3px 6px rgba(0,0,0,.75)} 50%{text-shadow:0 0 140px rgba(201,169,97,.7),0 3px 6px rgba(0,0,0,.75)} }
         @keyframes nwTwinkle { 0%,100%{opacity:.3} 50%{opacity:1} }
+        @keyframes nwStarPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
       `}</style>
       <div style={{
         position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
-        background: '#0A0A0A', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
+        background: '#000000', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond radial nuit chaude */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(120% 100% at 50% 6%, #1a0f10 0%, #0d0a06 56%, #060402 100%)',
-        }} />
+        {/* LED-safe : fond NOIR PUR, aucun radial (retiré) */}
 
-        {/* SCENE + tapis rouge en perspective */}
+        {/* SCENE + tapis rouge en perspective (EXCEPTION scénique conservée) */}
         <div style={{ position: 'absolute', inset: 0, perspective: 1200, overflow: 'hidden' }}>
-          {/* Tapis rouge / podium */}
+          {/* Tapis rouge / podium — moment fort, rouge grenat conservé */}
           <div style={{
             position: 'absolute', left: '50%', bottom: 0,
             width: 760, height: 820,
@@ -125,21 +125,21 @@ export default function DefileSlide({ state }) {
           background: 'radial-gradient(62% 62% at 50% 40%, transparent 42%, rgba(0,0,0,.6) 100%)',
         }} />
 
-        {/* Twinkles ✦ */}
+        {/* Twinkles ✦ — LED-safe : 60px min */}
         {twinkles.map((t, i) => (
           <div key={i} style={{
             position: 'absolute',
             left: `${t.left}%`, top: `${t.top}%`,
             fontFamily: "'Cinzel',serif",
             fontSize: t.size,
-            color: 'rgba(230,200,119,.5)',
+            color: '#E6C877',
             animation: `nwTwinkle ${t.dur}s ease-in-out infinite`,
             animationDelay: `${t.delay}s`,
             pointerEvents: 'none',
           }}>✦</div>
         ))}
 
-        {/* Cadre présidentiel double filet or */}
+        {/* Cadre présidentiel double filet or (pattern MurStars strict) */}
         <div style={{
           position: 'absolute', inset: 28,
           border: '3px solid rgba(214,178,95,.92)',
@@ -151,19 +151,20 @@ export default function DefileSlide({ state }) {
           border: '1px solid rgba(214,178,95,.5)',
           pointerEvents: 'none',
         }} />
-        {/* 4 losanges */}
+        {/* 4 losanges 20×20 aux coins */}
         <div style={{ ...cornerBase, top: 56, left: 56 }} />
         <div style={{ ...cornerBase, top: 56, right: 56 }} />
         <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
         <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
 
-        {/* Bloc titre */}
+        {/* Bloc titre — TOUT en or PLAT, aucun gradient de texte */}
         <div style={{
           position: 'absolute', left: 0, right: 0, top: 150,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', textAlign: 'center',
           pointerEvents: 'none',
         }}>
+          {/* Sur-titre "Place à l'élégance" — Playfair italic 62px ivoire */}
           <div style={{
             fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
             fontSize: 62, color: '#F5E6C8',
@@ -171,28 +172,30 @@ export default function DefileSlide({ state }) {
           }}>Place à l'élégance</div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 60, marginTop: 8 }}>
+            {/* Étoile ★ Cinzel 110px or plat */}
             <span style={{
               fontFamily: "'Cinzel',serif", fontSize: 110, color: '#E6C877',
-              animation: 'nwTwinkle 3s ease-in-out infinite',
+              animation: 'nwStarPulse 3s ease-in-out infinite',
             }}>★</span>
+            {/* DÉFILÉ — Anton 340px OR PLAT #E6C877 (aucun gradient) */}
             <span style={{
               fontFamily: "'Anton',sans-serif", fontSize: 340,
               letterSpacing: '.05em', textTransform: 'uppercase', lineHeight: .95,
-              background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f)',
-              WebkitBackgroundClip: 'text', backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'nwGlowP 5s ease-in-out infinite',
+              color: '#E6C877',
+              textShadow: '0 4px 14px rgba(0,0,0,.85)',
             }}>Défilé</span>
+            {/* Étoile ★ Cinzel 110px or plat */}
             <span style={{
               fontFamily: "'Cinzel',serif", fontSize: 110, color: '#E6C877',
-              animation: 'nwTwinkle 3s ease-in-out infinite 1.5s',
+              animation: 'nwStarPulse 3s ease-in-out infinite 1.5s',
             }}>★</span>
           </div>
 
+          {/* Sous-titre "Le tapis rouge est à vous" — Cinzel 60px or plat */}
           <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 500, fontSize: 46,
+            fontFamily: "'Cinzel',serif", fontWeight: 500, fontSize: 60,
             letterSpacing: '.4em', textIndent: '.4em',
-            color: '#E6C877', marginTop: 20,
+            color: '#E6C877', marginTop: 24,
             textShadow: '0 2px 10px rgba(0,0,0,.9)',
           }}>{subtitle}</div>
         </div>
