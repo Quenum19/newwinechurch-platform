@@ -96,8 +96,10 @@ class BalScreenPublicController extends Controller
             $results = $this->computeResults($event->id);
         }
 
-        // Photos ambiance visibles — priorité à la version TV 16:9 (full écran)
-        // fallback landscape puis path original si les colonnes n'existent pas.
+        // Photos ambiance visibles — priorité à l'ORIGINAL (path) plutôt que la
+        // version TV 16:9 pré-composée qui crop les portraits (tête coupée).
+        // Le frontend affiche en object-fit: contain + fond flouté de la même
+        // image, donc l'original portrait/paysage rend proprement dans les 2 cas.
         $hasTv = \Schema::hasColumn('bal_photos', 'tv_path');
         $columns = array_filter(['path', 'landscape_path', $hasTv ? 'tv_path' : null]);
         $photos = BalPhoto::where('event_id', $event->id)
@@ -106,7 +108,7 @@ class BalScreenPublicController extends Controller
             ->orderByDesc('id')
             ->limit(30)
             ->get($columns)
-            ->map(fn ($p) => asset('storage/' . (($hasTv ? $p->tv_path : null) ?? $p->landscape_path ?? $p->path)))
+            ->map(fn ($p) => asset('storage/' . ($p->path ?? $p->landscape_path ?? ($hasTv ? $p->tv_path : null))))
             ->toArray();
 
         // QR de vote — injecté dans config pour que VoteSlide puisse afficher
