@@ -2,11 +2,15 @@ import { useMemo } from 'react'
 import Stage from '../components/Stage.jsx'
 
 /**
- * RappeursSlide V3 — « SUR SCÈNE MAINTENANT » (annonce prestation rappeur).
+ * RappeursSlide V4 — « SUR SCÈNE MAINTENANT » (annonce prestation rappeur).
  *
- * Layout centré classique : micro animé + sur-titre Cinzel + nom Anton + waveform.
- * Les photos du rappeur ont leur PROPRE slide dédiée (RappeurPhotosSlide, key
- * `rappeur-photos`) qui les affiche en diaporama plein écran.
+ * Refonte LED-safe : palette NOIR + OR uniquement (aucun rouge/bordeaux,
+ * qui vire au magenta cramé sur écrans LED). Fond radial ambré strict
+ * identique à MurStarsSlide, halo central or, waveform monochrome or.
+ *
+ * Layout centré classique : micro animé + sur-titre Cinzel + nom Anton XXL
+ * + waveform 32 barres or. Les photos du rappeur ont leur PROPRE slide
+ * dédiée (RappeurPhotosSlide) qui les affiche en diaporama plein écran.
  *
  * Micro SVG or ANIMÉ :
  *  - Balancement latéral (-5° ↔ +5°, 2s ease-in-out infinite)
@@ -17,12 +21,13 @@ import Stage from '../components/Stage.jsx'
 export default function RappeursSlide({ state }) {
   const artiste = (state?.config?.artiste ?? 'KIM B').toString()
 
-  // Taille dynamique du nom
+  // Taille dynamique du nom (Anton XXL — 260 à 300px)
   const nameSize = useMemo(() => {
     const len = artiste.length
-    if (len > 18) return '150px'
-    if (len > 12) return '200px'
-    return '260px'
+    if (len > 18) return '180px'
+    if (len > 12) return '230px'
+    if (len > 8)  return '270px'
+    return '300px'
   }, [artiste])
 
   // Waveform 32 barres — durées/délais pseudo-aléatoires déterministes
@@ -37,10 +42,10 @@ export default function RappeursSlide({ state }) {
 
   const cornerBase = {
     position: 'absolute',
-    width: 14, height: 14,
+    width: 20, height: 20,
     background: '#E6C877',
     transform: 'rotate(45deg)',
-    boxShadow: '0 0 8px rgba(214,178,95,.6)',
+    boxShadow: '0 0 12px rgba(214,178,95,.7)',
   }
 
   return (
@@ -49,7 +54,7 @@ export default function RappeursSlide({ state }) {
         @keyframes nwSpotSweep { 0%{transform:translateX(-42vw) rotate(-15deg)} 100%{transform:translateX(42vw) rotate(15deg)} }
         @keyframes nwHaloPulse { 0%,100%{opacity:.4; transform:translate(-50%,-50%) scale(1)} 50%{opacity:.8; transform:translate(-50%,-50%) scale(1.12)} }
         @keyframes nwLetterIn { 0%{opacity:0; transform:translateY(40px) rotateX(40deg)} 100%{opacity:1; transform:translateY(0) rotateX(0)} }
-        @keyframes nwGlowP { 0%,100%{text-shadow:0 0 60px rgba(201,169,97,.4),0 2px 4px rgba(0,0,0,.7)} 50%{text-shadow:0 0 120px rgba(201,169,97,.7),0 2px 4px rgba(0,0,0,.7)} }
+        @keyframes nwGlowP { 0%,100%{text-shadow:0 0 70px rgba(201,169,97,.4),0 3px 6px rgba(0,0,0,.7); filter:brightness(.98)} 50%{text-shadow:0 0 150px rgba(201,169,97,.75),0 3px 6px rgba(0,0,0,.7); filter:brightness(1.08)} }
         @keyframes nwWave { 0%,100%{height:20%} 50%{height:100%} }
         @keyframes nwMicSway { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
         @keyframes nwMicHalo { 0%,100%{opacity:.35; transform:translate(-50%,-50%) scale(1)} 50%{opacity:.85; transform:translate(-50%,-50%) scale(1.18)} }
@@ -59,19 +64,19 @@ export default function RappeursSlide({ state }) {
         position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
         background: '#0A0A0A', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond radial rouge sombre */}
+        {/* Fond radial ambré — LED-safe, identique MurStars */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(120% 100% at 50% 40%, #2a0f14 0%, #12080a 58%, #060402 100%)',
+          background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
         }} />
-        {/* Halo pulsé */}
+        {/* Halo or pulsé (remplace l'ancien halo rouge) */}
         <div style={{
           position: 'absolute', top: '50%', left: '50%',
           width: 900, height: 900, borderRadius: '50%',
-          background: 'radial-gradient(closest-side, rgba(139,26,47,.4), transparent 70%)',
+          background: 'radial-gradient(closest-side, rgba(230,200,119,.28), transparent 70%)',
           animation: 'nwHaloPulse 3s ease-in-out infinite',
         }} />
-        {/* Spot sweep */}
+        {/* Spot sweep or */}
         <div style={{
           position: 'absolute', top: '-30%', left: '50%',
           width: 340, height: '160%',
@@ -79,25 +84,26 @@ export default function RappeursSlide({ state }) {
           filter: 'blur(8px)',
           transformOrigin: 'top center',
           animation: 'nwSpotSweep 5s ease-in-out infinite alternate',
+          mixBlendMode: 'screen',
         }} />
 
-        {/* Cadre double filet or */}
+        {/* Cadre présidentiel double filet or */}
         <div style={{
-          position: 'absolute', inset: 22,
-          border: '2px solid rgba(214,178,95,.9)',
-          boxShadow: 'inset 0 0 70px rgba(0,0,0,.4)',
+          position: 'absolute', inset: 28,
+          border: '3px solid rgba(214,178,95,.92)',
+          boxShadow: 'inset 0 0 80px rgba(0,0,0,.4)',
           pointerEvents: 'none',
         }} />
         <div style={{
-          position: 'absolute', inset: 30,
+          position: 'absolute', inset: 40,
           border: '1px solid rgba(214,178,95,.5)',
           pointerEvents: 'none',
         }} />
         {/* Losanges des 4 coins */}
-        <div style={{ ...cornerBase, top: 44, left: 44 }} />
-        <div style={{ ...cornerBase, top: 44, right: 44 }} />
-        <div style={{ ...cornerBase, bottom: 44, left: 44 }} />
-        <div style={{ ...cornerBase, bottom: 44, right: 44 }} />
+        <div style={{ ...cornerBase, top: 56, left: 56 }} />
+        <div style={{ ...cornerBase, top: 56, right: 56 }} />
+        <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
+        <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
 
         {/* Bloc central : micro + sur-titre + nom + waveform */}
         <div style={{
@@ -108,25 +114,28 @@ export default function RappeursSlide({ state }) {
         }}>
           <AnimatedMic />
           <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 36,
+            fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 46,
             letterSpacing: '.5em', textIndent: '.5em',
-            color: '#E6C877', textShadow: '0 2px 10px rgba(0,0,0,.8)',
+            color: '#EECF80', textShadow: '0 2px 10px rgba(0,0,0,.8)',
+            marginTop: 4,
           }}>SUR SCÈNE MAINTENANT</div>
           <div style={{
-            fontFamily: "'Anton',sans-serif", fontSize: nameSize, lineHeight: .9,
-            textTransform: 'uppercase', letterSpacing: '.02em',
-            background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#B08A3F)',
+            fontFamily: "'Anton',sans-serif", fontSize: nameSize, lineHeight: .88,
+            textTransform: 'uppercase', letterSpacing: '.01em',
+            background: 'linear-gradient(180deg,#FFF6D8,#E6C877 48%,#C9A961 66%,#8a6d2f)',
             WebkitBackgroundClip: 'text', backgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            animation: 'nwLetterIn 1s cubic-bezier(.16,1,.3,1) both, nwGlowP 4s ease-in-out 1s infinite',
-            maxWidth: 1600, wordBreak: 'break-word',
+            animation: 'nwLetterIn 1s cubic-bezier(.16,1,.3,1) both, nwGlowP 6s ease-in-out 1s infinite',
+            maxWidth: 1700, wordBreak: 'break-word',
+            margin: '18px 0 6px',
           }}>{artiste}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, height: 80, marginTop: 34 }}>
+          {/* Waveform 32 barres — or plat uniquement (LED-safe) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 90, marginTop: 40 }}>
             {bars.map((b, i) => (
               <div key={i} style={{
-                width: 10, height: '40%', borderRadius: 6,
-                background: 'linear-gradient(180deg,#FFE9A8,#C9A961 60%,#8B1A2F)',
-                boxShadow: '0 0 8px rgba(230,200,119,.5)',
+                width: 12, height: '40%', borderRadius: 6,
+                background: 'linear-gradient(180deg,#FFE9A8,#C9A961 50%,#7E662E)',
+                boxShadow: '0 0 10px rgba(230,200,119,.55)',
                 animation: `nwWave ${b.dur}s ease-in-out infinite`,
                 animationDelay: `${b.delay}s`,
               }} />
@@ -139,7 +148,7 @@ export default function RappeursSlide({ state }) {
 }
 
 /**
- * Micro SVG or ANIMÉ (co-localisé).
+ * Micro SVG or ANIMÉ (co-localisé). Gradient or + shimmer <animate> SMIL.
  */
 function AnimatedMic() {
   return (
