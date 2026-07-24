@@ -144,7 +144,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     PAGE 2 — SUIS-NOUS (thème IVOIRE inchangé)
+     PAGE 2 — SUIS-NOUS (thème IVOIRE, épuré à la Roi & Reine)
      ══════════════════════════════════════════════════════════════ */
   .page-follow {
     width: 148mm; height: 210mm;
@@ -165,107 +165,101 @@
   }
   .page-follow .content {
     position: absolute;
-    top: 12mm; left: 14mm; right: 14mm; bottom: 28mm;
+    top: 14mm; left: 12mm; right: 12mm; bottom: 30mm;
     text-align: center;
   }
+  /* Brand — NEW WINE CHURCH · ABIDJAN */
   .page-follow .brand {
-    font-size: 7pt;
-    letter-spacing: 2.5pt;
+    font-size: 9pt;
+    letter-spacing: 4pt;
     color: #C9A961;
     text-transform: uppercase;
     font-weight: bold;
+    margin-top: 2mm;
   }
-  .page-follow .logo {
-    display: block;
-    margin: 3mm auto 0;
-    width: 24mm; height: 24mm;
-    object-fit: contain;
-  }
-  .page-follow .logo-placeholder {
-    display: block;
-    margin: 3mm auto 0;
-    width: 24mm; height: 24mm;
-    background: #8B1A2F;
-    color: #F5E6C8;
-    text-align: center; line-height: 24mm;
-    font-size: 16pt; font-weight: bold;
-    border-radius: 3mm;
-  }
+  /* Titre "Suis-nous" — Serif italique or dominant */
   .page-follow h1 {
     font-family: "DejaVu Serif", serif;
     font-style: italic;
-    font-size: 32pt;
+    font-size: 44pt;
     color: #C9A961;
-    margin-top: 3mm;
+    margin: 4mm 0 3mm;
     line-height: 1;
     letter-spacing: 0.5pt;
   }
-  .page-follow .subtitle {
-    font-size: 8.5pt;
-    color: #8B7960;
-    letter-spacing: 1.2pt;
+  /* Sous-titre "SUIS-NOUS SUR NOS RÉSEAUX" — petit letterSpacing large */
+  .page-follow .scan {
+    font-size: 8pt;
+    letter-spacing: 3.5pt;
+    color: #C9A961;
     text-transform: uppercase;
     font-weight: bold;
-    margin-top: 2.5mm;
+    margin-bottom: 6mm;
   }
-  .page-follow .divider {
-    color: #C9A961;
-    letter-spacing: 4pt;
-    font-size: 10pt;
-    margin: 3mm 0;
-  }
-  .page-follow .cta {
-    font-family: "DejaVu Serif", serif;
-    font-style: italic;
-    font-size: 11pt;
-    color: #4A3F32;
-    font-weight: bold;
-    margin: 2mm 0;
-    line-height: 1.3;
-  }
+  /* QR — encart blanc GÉANT + bordure or 2pt (aligné Roi & Reine) */
   .page-follow .qr-wrap {
     display: inline-block;
     background: #FFFFFF;
-    padding: 3mm;
-    border-radius: 2.5mm;
-    border: 0.5pt solid #C9A961;
-    margin-top: 3mm;
+    padding: 5mm;
+    border-radius: 3mm;
+    border: 2pt solid #C9A961;
   }
   .page-follow .qr-wrap img {
     display: block;
-    width: 50mm;
-    height: 50mm;
+    width: 100mm;
+    height: 100mm;
   }
-  .page-follow .tip {
-    margin-top: 3mm;
-    font-size: 8pt;
-    color: #8B7960;
-    letter-spacing: 1pt;
-    text-transform: uppercase;
+  /* Hint UNE ligne (aligné Roi & Reine) */
+  .page-follow .hint {
+    margin-top: 6mm;
+    font-family: "DejaVu Serif", serif;
+    font-style: italic;
+    font-size: 11pt;
+    color: #7A6B54;
+    letter-spacing: 0.3pt;
+  }
+  .page-follow .hint strong {
+    color: #8B1A2F;
+    font-style: normal;
     font-weight: bold;
+    letter-spacing: 0.8pt;
   }
+  /* Ornement filet + losange + filet */
+  .page-follow .ornament {
+    position: absolute;
+    left: 20mm; right: 20mm; bottom: 22mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4mm;
+  }
+  .page-follow .ornament .line {
+    flex: 1;
+    height: 0.8pt;
+    background: rgba(201, 169, 97, 0.5);
+  }
+  .page-follow .ornament .diamond {
+    width: 2.5mm;
+    height: 2.5mm;
+    background: #C9A961;
+    transform: rotate(45deg);
+  }
+  /* Footer "REJOINS LA FAMILLE NWC" — cadre bordé bordeaux (charte ivoire) */
   .page-follow .foot {
     position: absolute;
-    left: 0; right: 0; bottom: 10mm;
+    left: 0; right: 0; bottom: 12mm;
     text-align: center;
   }
   .page-follow .foot-line {
     display: inline-block;
-    padding: 2mm 5mm;
-    border: 0.7pt solid #8B1A2F;
+    padding: 2mm 6mm;
+    border: 1pt solid #8B1A2F;
     border-radius: 2mm;
-    font-size: 8pt;
+    font-size: 9pt;
     color: #8B1A2F;
-    letter-spacing: 1.8pt;
+    letter-spacing: 2pt;
     text-transform: uppercase;
     font-weight: bold;
-  }
-  .page-follow .foot-tag {
-    margin-top: 2.5mm;
-    font-size: 6.5pt;
-    color: #A89A82;
-    letter-spacing: 1.8pt;
-    text-transform: uppercase;
   }
 </style>
 </head>
@@ -303,7 +297,7 @@
   </div>
 </div>
 
-{{-- ═══════════════════ PAGE 2 — Suis-nous (thème IVOIRE inchangé) ═══════════════════ --}}
+{{-- ═══════════════════ PAGE 2 — Suis-nous (IVOIRE épuré, QR géant) ═══════════════════ --}}
 <div class="page-follow">
   <div class="frame"></div>
   <div class="frame-inner"></div>
@@ -311,31 +305,27 @@
   <div class="content">
     <div class="brand">New Wine Church &middot; Abidjan</div>
 
-    @if($logoDataUri)
-      <img src="{{ $logoDataUri }}" alt="NWC" class="logo">
-    @else
-      <div class="logo-placeholder">NWC</div>
-    @endif
-
     <h1>Suis-nous</h1>
-    <div class="subtitle">Restons en contact</div>
 
-    <div class="divider">&#9733; &#9733; &#9733;</div>
-
-    <div class="cta">
-      Retrouve-nous sur<br/>nos r&eacute;seaux sociaux
-    </div>
+    <div class="scan">Suis-nous sur nos r&eacute;seaux</div>
 
     <div class="qr-wrap">
       <img src="{{ $followQr }}" alt="QR Follow us">
     </div>
 
-    <div class="tip">Instagram &middot; Facebook &middot; TikTok &middot; YouTube</div>
+    <div class="hint">
+      Retrouve-nous sur <strong>Instagram &middot; Facebook &middot; TikTok</strong>
+    </div>
+  </div>
+
+  <div class="ornament">
+    <span class="line"></span>
+    <span class="diamond"></span>
+    <span class="line"></span>
   </div>
 
   <div class="foot">
     <div class="foot-line">Rejoins la famille NWC</div>
-    <div class="foot-tag">Verso &middot; R&eacute;seaux</div>
   </div>
 </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import Stage from '../components/Stage.jsx'
 
 /**
@@ -33,9 +34,25 @@ export default function VoteSlide({ state }) {
   const stats = state?.stats ?? {}
   const config = state?.config ?? {}
 
-  // ---- QR : SVG string (dangerouslySetInnerHTML) OU url/data-URI OU placeholder ----
+  // ---- QR : chaîne de fallback robuste ----
+  //   1. SVG string fourni par le backend (state.config.vote_qr_svg)
+  //   2. URL/data-URI (state.config.vote_qr)
+  //   3. Génération CÔTÉ CLIENT via qrcode.react à partir de l'URL de vote
+  //      (state.config.vote_url ou construite depuis state.event.id + origin)
+  //   4. Placeholder visuel si aucun eventId disponible
   const qrSvg = typeof config.vote_qr_svg === 'string' ? config.vote_qr_svg : null
   const qrSrc = typeof config.vote_qr === 'string' ? config.vote_qr : null
+  const eventId = state?.event?.id
+  const qrUrl =
+    config.vote_url ||
+    (eventId && typeof window !== 'undefined'
+      ? `${window.location.origin}/bal/vote/${eventId}`
+      : null)
+
+  // Debug : log ce qui arrive (console navigateur sur /live/bal/{id})
+  useEffect(() => {
+    console.log('[VoteSlide] config =', config, '| eventId =', eventId, '| qrUrl =', qrUrl)
+  }, [config, eventId, qrUrl])
 
   // ---- Compteur animé (count-up ease-out cubic, 1200 ms) ----
   const votesTarget = Number(stats.votes_count ?? 0)
@@ -246,8 +263,19 @@ export default function VoteSlide({ state }) {
                     alt="QR code vote"
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
+                ) : qrUrl ? (
+                  // FALLBACK CLIENT : génère le QR côté navigateur avec
+                  // qrcode.react — MÊME URL que le PDF supports.
+                  <QRCodeSVG
+                    value={qrUrl}
+                    size={396}
+                    bgColor="#F5E6C8"
+                    fgColor="#0A0A0A"
+                    level="M"
+                    style={{ width: '100%', height: '100%' }}
+                  />
                 ) : (
-                  // Placeholder ivoire avec bordure or — pas de vrai QR fourni
+                  // Placeholder ultime (aucun eventId dispo — cas très rare)
                   <div style={{
                     width: '100%', height: '100%',
                     display: 'flex', flexDirection: 'column',
