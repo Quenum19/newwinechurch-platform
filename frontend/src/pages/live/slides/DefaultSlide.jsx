@@ -67,24 +67,23 @@ export default function DefaultSlide({ state }) {
           transform: 'scale(1.2)',
         }} />
 
-        {/* Affiche entière — FORMAT STORY (portrait vertical centré, ratio ~9:16).
-            Hauteur = 92% de la scène (994px), largeur = auto (préserve le
-            ratio portrait natif de l'affiche → ~560px de large centrés).
-            Résultat : affiche story bien VERTICALE, bandes floutées LARGES à
-            gauche et à droite (l'affiche n'occupe PLUS toute la largeur). */}
+        {/* Affiche — FORMAT STORY compact au centre (pas trop zoomé).
+            Hauteur ~80% (864px), largeur auto (préserve ratio portrait) avec
+            maxWidth 30% (576px max). L'affiche apparaît PETITE et DIGNE
+            au centre, avec beaucoup de fond flouté autour (velours doré). */}
         <img
           src={bg}
           alt=""
           style={{
             position: 'absolute',
-            top: '4%',
+            top: '50%',
             left: '50%',
-            transform: 'translateX(-50%)',
-            height: '92%',
+            transform: 'translate(-50%, -50%)',
+            height: '80%',
             width: 'auto',
-            maxWidth: '40%',
+            maxWidth: '30%',
             display: 'block',
-            filter: 'drop-shadow(0 8px 40px rgba(0,0,0,.6))',
+            filter: 'drop-shadow(0 12px 48px rgba(0,0,0,.7))',
           }}
         />
       </div>
