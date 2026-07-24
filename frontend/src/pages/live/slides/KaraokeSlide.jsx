@@ -1,26 +1,23 @@
 /**
- * KaraokeSlide V2 — Défilement des paroles d'une chanson karaoké style bal.
- * Portage fidèle du .dc.html livré par Claude Design.
+ * KaraokeSlide V3 LED-safe (aligné pattern MurStars).
  *
- * Comportement :
- *  - Empilement vertical de toutes les lignes de paroles
- *  - translateY animé pour placer la ligne ACTIVE dans la zone "spot" centrale
- *  - La ligne active est en Cinzel 56px gradient or (bien visible)
- *  - Les autres lignes en Playfair italic 38px avec opacité dégressive
- *  - Les respirations "…" en Cinzel 30px atténuées
- *  - Chaque ligne a sa propre durée (default 4300ms) ; speed multiplicateur
+ * Alignements sur MurStars (seul slide qui rend impeccable sur écran LED) :
+ *  - Fond radial ambré `#211a10 → #0d0a06 → #060402` (fini bordeaux qui
+ *    virait au magenta cramé)
+ *  - Or PLAT #E6C877 partout (aucun WebkitBackgroundClip:text — perdus/marbrés sur LED)
+ *  - Textes ≥ 60px minimum (ligne active 76px, voisines 46px, respirations 42px)
+ *  - Waveform or plat uniquement (retrait des barres bordeaux #8B1A2F)
+ *  - Zone spot : reflets or seuls (retrait du tint bordeaux .12)
  *
- * Signature state.config :
- *   {
- *     song_title?: string,      // défaut : "Premier Amour"
- *     speed?: number,           // défaut : 1
- *     lines?: ({ text, dur?, breath? } | string)[]  // défaut : paroles hardcodées
- *   }
+ * Comportement conservé :
+ *  - Empilement vertical + translateY animé pour placer ligne active au centre
+ *  - Auto-avance selon state.config.speed (défaut 1) et dur par ligne (défaut 4300ms)
+ *  - Personnalisable via state.config = { song_title, speed, lines }
  */
 import { useEffect, useMemo, useState } from 'react'
 import Stage from '../components/Stage.jsx'
 
-const H = 128       // hauteur de chaque slot ligne (px)
+const H = 150       // hauteur de chaque slot ligne (px) — bumpé pour textes XXL
 const CENTER_Y = 560 // y-center de la zone spot dans le canvas 1080
 
 // Paroles par défaut — "Premier Amour" (chanson gospel du bal 2026)
@@ -139,16 +136,12 @@ export default function KaraokeSlide({ state }) {
 
       <div style={{
         position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
-        background: '#0A0A0A', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
+        background: '#000000', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond velours bordeaux/or */}
+        {/* Fond radial ambré — LED-safe, identique MurStars (fini bordeaux) */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(130% 120% at 50% 34%, #47331b 0%, #2a1c10 40%, #150d08 72%, #0b0704 100%)',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(80% 70% at 50% 46%, rgba(120,26,38,.22), transparent 70%)',
+          background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
         }} />
 
         {/* Faisceaux latéraux */}
@@ -199,7 +192,7 @@ export default function KaraokeSlide({ state }) {
         }}>
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'radial-gradient(60% 120% at 50% 50%, rgba(230,200,119,.14), rgba(120,26,38,.12) 55%, transparent 80%)',
+            background: 'radial-gradient(60% 120% at 50% 50%, rgba(230,200,119,.18), rgba(230,200,119,.06) 55%, transparent 80%)',
             borderRadius: 12,
           }} />
           <div style={{
@@ -239,28 +232,30 @@ export default function KaraokeSlide({ state }) {
         <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
         <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
 
-        {/* En-tête : KARAOKÉ · NEW WINE + titre chanson Great Vibes */}
+        {/* En-tête : KARAOKÉ · NEW WINE + titre chanson Great Vibes (LED-safe, agrandi) */}
         <div style={{
-          position: 'absolute', top: 58, left: 0, right: 0,
+          position: 'absolute', top: 50, left: 0, right: 0,
           textAlign: 'center', zIndex: 4,
         }}>
           <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 500, fontSize: 22,
+            fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 32,
             letterSpacing: '.5em', textIndent: '.5em',
-            color: '#C9A961',
+            color: '#E6C877',
+            textShadow: '0 2px 10px rgba(0,0,0,.8)',
           }}>KARAOKÉ · NEW WINE</div>
           <div style={{
-            fontFamily: "'Great Vibes',cursive", fontSize: 80, lineHeight: 1,
+            fontFamily: "'Great Vibes',cursive", fontSize: 110, lineHeight: 1,
             color: '#EECF80',
             textShadow: '0 0 55px rgba(201,169,97,.5)',
+            marginTop: 4,
           }}>{songTitle}</div>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 18, marginTop: 2,
+            gap: 18, marginTop: 6,
           }}>
-            <span style={{ width: 110, height: 1, background: 'linear-gradient(90deg,transparent,rgba(214,178,95,.8))' }} />
-            <span style={{ color: '#C9A961', fontSize: 20 }}>✦</span>
-            <span style={{ width: 110, height: 1, background: 'linear-gradient(90deg,rgba(214,178,95,.8),transparent)' }} />
+            <span style={{ width: 140, height: 2, background: 'linear-gradient(90deg,transparent,rgba(214,178,95,.85))' }} />
+            <span style={{ color: '#E6C877', fontSize: 26 }}>✦</span>
+            <span style={{ width: 140, height: 2, background: 'linear-gradient(90deg,rgba(214,178,95,.85),transparent)' }} />
           </div>
         </div>
 
@@ -276,28 +271,29 @@ export default function KaraokeSlide({ state }) {
               const ad = Math.abs(d)
               let lineStyle
               if (l.breath) {
+                // Respiration "…" — Cinzel 42px or, atténuée si pas active
                 lineStyle = {
                   ...baseLineStyle,
-                  fontFamily: "'Cinzel',serif", fontSize: 30,
-                  color: `rgba(214,178,95,${d === 0 ? .95 : .35})`,
+                  fontFamily: "'Cinzel',serif", fontSize: 42,
+                  color: `rgba(230,200,119,${d === 0 ? .95 : .4})`,
                 }
               } else if (d === 0) {
+                // Ligne ACTIVE — Anton 76px OR PLAT (fini gradient text perdu sur LED)
                 lineStyle = {
                   ...baseLineStyle,
-                  fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 56,
+                  fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 76,
                   letterSpacing: '.01em',
-                  color: '#FFE9A8',
-                  background: 'linear-gradient(180deg,#FFF6D8,#F0D488 55%,#C9A961)',
-                  WebkitBackgroundClip: 'text', backgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
+                  color: '#E6C877',
+                  textShadow: '0 0 40px rgba(230,200,119,.6), 0 2px 8px rgba(0,0,0,.9)',
                   animation: 'nwActiveGlow 3s ease-in-out infinite',
                 }
               } else {
+                // Lignes voisines — Playfair italic 48px ivoire, opacité dégressive
                 const op = Math.max(0.34, 0.82 - ad * 0.14)
                 lineStyle = {
                   ...baseLineStyle,
                   fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-                  fontSize: 38,
+                  fontSize: 48,
                   color: `rgba(245,230,200,${op.toFixed(2)})`,
                 }
               }
@@ -306,29 +302,29 @@ export default function KaraokeSlide({ state }) {
           </div>
         </div>
 
-        {/* Fondus haut et bas pour l'effet "défilement" */}
+        {/* Fondus haut et bas pour l'effet "défilement" — dégradés vers noir pur LED-safe */}
         <div style={{
-          position: 'absolute', top: 40, left: 40, right: 40, height: 250,
+          position: 'absolute', top: 40, left: 40, right: 40, height: 280,
           zIndex: 3, pointerEvents: 'none',
-          background: 'linear-gradient(180deg, #180f08 0%, rgba(24,15,8,.72) 46%, transparent 100%)',
+          background: 'linear-gradient(180deg, #000000 0%, rgba(0,0,0,.72) 46%, transparent 100%)',
         }} />
         <div style={{
-          position: 'absolute', bottom: 40, left: 40, right: 40, height: 250,
+          position: 'absolute', bottom: 40, left: 40, right: 40, height: 280,
           zIndex: 3, pointerEvents: 'none',
-          background: 'linear-gradient(0deg, #140d07 0%, rgba(20,13,7,.72) 46%, transparent 100%)',
+          background: 'linear-gradient(0deg, #000000 0%, rgba(0,0,0,.72) 46%, transparent 100%)',
         }} />
 
-        {/* Égaliseur bas — 28 barres or/bordeaux */}
+        {/* Égaliseur bas — 28 barres OR PLAT uniquement (LED-safe, fini bordeaux) */}
         <div style={{
           position: 'absolute', bottom: 64, left: 0, right: 0, zIndex: 4,
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          gap: 7, height: 52,
+          gap: 7, height: 60,
         }}>
           {eq.map((e, i) => (
             <div key={i} style={{
               width: 10, height: '30%', borderRadius: 5,
-              background: 'linear-gradient(180deg,#FFE9A8,#C9A961 60%,#8B1A2F)',
-              boxShadow: '0 0 6px rgba(230,200,119,.4)',
+              background: 'linear-gradient(180deg,#FFE9A8,#C9A961 50%,#7E662E)',
+              boxShadow: '0 0 8px rgba(230,200,119,.5)',
               animation: `nwEq ${e.d}s ease-in-out infinite`,
               animationDelay: `${e.delay}s`,
             }} />
