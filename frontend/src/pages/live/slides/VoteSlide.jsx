@@ -2,22 +2,25 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Stage from '../components/Stage.jsx'
 
 /**
- * VoteSlide V3 — LED-safe (NOIR + OR uniquement, aucun rouge/bordeaux).
- * Refonte inspirée de MurStarsSlide (référence LED impeccable).
+ * VoteSlide V4 — LED-SAFE STRICT (pattern MurStars).
+ * Fond NOIR PUR #000000 + radial ambré très sombre. OR PLAT #E6C877 uniquement
+ * (aucun gradient text WebkitBackgroundClip — perdus sur écran LED).
+ * Textes XXL uniquement (≥ 60px). Structure épurée : QR + accroche + compteur.
  *
  * Layout :
- *   - Titre "VOTE ROI & REINE" (Cinzel 60px, letterSpacing large)
+ *   - Titre "VOTE ROI & REINE" (Cinzel 90px, or plat)
  *   - Filet or ✦ filet or
- *   - QR central géant (vrai QR via state.config.vote_qr[_svg] sinon placeholder)
- *   - Sous-titre "Scanne pour voter" (Playfair italic 50px)
- *   - Signature "ton Roi & ta Reine" (Great Vibes 100px)
- *   - Compteur XXL "VOTES : 42" (Anton 220px, gradient or)
- *   - Médaillons candidats (jusqu'à 6) ronds 110px, bordure or + halo
+ *   - HERO 2 colonnes : QR 440×440 (ivoire + bordure or pulsante) | CTA
+ *       · "Scanne pour voter"     Playfair italic 82px ivoire
+ *       · "ton Roi & ta Reine"    Great Vibes 140px or plat
+ *   - Compteur : "VOTES 300"   Anton 300px or PLAT (no gradient)
  *
- * Ambiance : suspense + participation — 24 étincelles procédurales, 18 particules
- * or montantes, projecteur doux latéral, cadre présidentiel double filet + 4
- * losanges aux coins. Compteur animé en count-up (requestAnimationFrame,
- * ease-out cubic, 1200 ms) au montage et à chaque changement de votesCount.
+ * Ambiance MurStars-like : projecteur central sweep, 30 twinkles ✦, 22
+ * particules or montantes, cadre présidentiel double filet + 4 losanges.
+ * Compteur animé count-up ease-out cubic 1200 ms sur changement.
+ *
+ * PAS de médaillons candidats (trop petits sur LED).
+ * PAS de framer-motion. Keyframes préfixés nw…
  */
 
 // PRNG déterministe (positions stables entre renders)
@@ -26,26 +29,13 @@ const rnd = (s) => {
   return x - Math.floor(x)
 }
 
-// Fallback 4 candidats (2 roi, 2 reine)
-const DEFAULT_CANDIDATES = [
-  { id: 'd1', first_name: 'Emmanuel', last_name: 'N.', photo_url: null, role: 'roi' },
-  { id: 'd2', first_name: 'David',    last_name: 'T.', photo_url: null, role: 'roi' },
-  { id: 'd3', first_name: 'Grâce',    last_name: 'K.', photo_url: null, role: 'reine' },
-  { id: 'd4', first_name: 'Sarah',    last_name: 'M.', photo_url: null, role: 'reine' },
-]
-
 export default function VoteSlide({ state }) {
   const stats = state?.stats ?? {}
   const config = state?.config ?? {}
 
-  const rawCandidates =
-    state?.candidates && state.candidates.length > 0 ? state.candidates : DEFAULT_CANDIDATES
-  const candidates = rawCandidates.slice(0, 6)
-
-  // ---- QR : soit vrai SVG string, soit URL/data-URI, sinon placeholder or ----
+  // ---- QR : SVG string (dangerouslySetInnerHTML) OU url/data-URI OU placeholder ----
   const qrSvg = typeof config.vote_qr_svg === 'string' ? config.vote_qr_svg : null
   const qrSrc = typeof config.vote_qr === 'string' ? config.vote_qr : null
-  const hasRealQr = Boolean(qrSvg || qrSrc)
 
   // ---- Compteur animé (count-up ease-out cubic, 1200 ms) ----
   const votesTarget = Number(stats.votes_count ?? 0)
@@ -54,7 +44,6 @@ export default function VoteSlide({ state }) {
   const fromRef = useRef(0)
 
   useEffect(() => {
-    // On animate depuis la valeur actuellement affichée vers la cible
     fromRef.current = displayVotes
     const from = fromRef.current
     const to = votesTarget
@@ -77,28 +66,28 @@ export default function VoteSlide({ state }) {
 
   const votesFmt = displayVotes.toLocaleString('fr-FR')
 
-  // ---- Étincelles procédurales (24) ----
+  // ---- 30 étincelles procédurales scintillantes (comme MurStars) ----
   const twinkles = useMemo(() => {
-    return Array.from({ length: 24 }, (_, i) => {
+    return Array.from({ length: 30 }, (_, i) => {
       const left = rnd(i * 2.1) * 94 + 3
       const top = rnd(i * 3.3) * 86 + 6
-      const size = 14 + rnd(i * 1.7) * 46
-      const dur = 2 + rnd(i * 4) * 2.4
-      const upDur = (4 + rnd(i) * 3).toFixed(1)
+      const size = 15 + rnd(i * 1.7) * 60          // 15–75px
+      const dur = 1.8 + rnd(i * 4) * 2.6           // 1.8–4.4s
+      const upDur = (4 + rnd(i) * 3).toFixed(1)    // 4–7s
       const delay = (-rnd(i * 6) * dur).toFixed(2)
       const variant = i % 3
       return { left, top, size, dur, upDur, delay, variant }
     })
   }, [])
 
-  // ---- Particules or montantes (18) ----
+  // ---- 22 particules or montantes (comme MurStars) ----
   const particles = useMemo(() => {
-    return Array.from({ length: 18 }, (_, i) => {
+    return Array.from({ length: 22 }, (_, i) => {
       const size = 2 + rnd(i * 1.3) * 4
       const left = rnd(i * 2.1) * 100
-      const dur = 10 + rnd(i * 3.7) * 9
+      const dur = 9 + rnd(i * 3.7) * 10
       const delay = -rnd(i * 5.2) * dur
-      const startY = 240 + rnd(i * 1.9) * 800
+      const startY = 200 + rnd(i * 1.9) * 880
       return { size, left, dur, delay, startY }
     })
   }, [])
@@ -113,16 +102,6 @@ export default function VoteSlide({ state }) {
     boxShadow: '0 0 12px rgba(214,178,95,.7)',
   }
 
-  // ---- Helpers candidats ----
-  const nameOf = (c) => {
-    const base = [c.first_name, c.last_name].filter(Boolean).join(' ').trim()
-    return base || c.name || '—'
-  }
-  const initialOf = (c) => {
-    const n = nameOf(c)
-    return n && n !== '—' ? n.charAt(0).toUpperCase() : '?'
-  }
-
   return (
     <Stage>
       <style>{`
@@ -131,11 +110,10 @@ export default function VoteSlide({ state }) {
         @keyframes nwTwinkleC { 0%,100%{opacity:.25; transform:scale(1) rotate(0deg)} 50%{opacity:1; transform:scale(1.35) rotate(20deg)} }
         @keyframes nwUp { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
         @keyframes nwRise { 0%{transform:translateY(20px);opacity:0} 12%{opacity:.9} 88%{opacity:.9} 100%{transform:translateY(-1080px);opacity:0} }
-        @keyframes nwGlowP { 0%,100%{text-shadow:0 0 70px rgba(201,169,97,.4),0 3px 6px rgba(0,0,0,.7); filter:brightness(.98)} 50%{text-shadow:0 0 150px rgba(201,169,97,.75),0 3px 6px rgba(0,0,0,.7); filter:brightness(1.08)} }
-        @keyframes nwFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        @keyframes nwRipple { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.28);opacity:0} }
         @keyframes nwSpotSweep { 0%,100%{transform:translateX(-50%) rotate(-18deg); opacity:.55} 50%{transform:translateX(-50%) rotate(18deg); opacity:.8} }
+        @keyframes nwStarPulse { 0%,100%{transform:scale(1); text-shadow:0 0 30px rgba(214,178,95,.6)} 50%{transform:scale(1.14); text-shadow:0 0 55px rgba(214,178,95,.95)} }
         @keyframes nwQrPulse { 0%,100%{box-shadow:0 0 50px rgba(230,200,119,.4), 0 0 0 4px #E6C877} 50%{box-shadow:0 0 90px rgba(230,200,119,.7), 0 0 0 4px #FFE9A8} }
+        @keyframes nwCountGlow { 0%,100%{text-shadow:0 0 60px rgba(230,200,119,.55), 0 4px 8px rgba(0,0,0,.85)} 50%{text-shadow:0 0 120px rgba(230,200,119,.9), 0 4px 8px rgba(0,0,0,.85)} }
       `}</style>
 
       <div style={{
@@ -143,28 +121,21 @@ export default function VoteSlide({ state }) {
         width: 1920,
         height: 1080,
         overflow: 'hidden',
-        background: '#0A0A0A',
+        background: '#000000',
         color: '#F5E6C8',
         fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond radial LED-safe (identique MurStars) */}
+        {/* Fond radial ambré très sombre (comme MurStars) */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
+          background: 'radial-gradient(120% 100% at 50% 40%, #1a1408 0%, #0a0704 55%, #000000 100%)',
         }} />
 
-        {/* Halo or central très doux */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(38% 42% at 50% 50%, rgba(230,200,119,.10), transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Projecteur doux central (sweep) */}
+        {/* Projecteur central sweep */}
         <div style={{
           position: 'absolute', top: -80, left: '50%',
           width: 480, height: 1400,
-          background: 'linear-gradient(180deg, rgba(245,230,200,.22) 0%, rgba(230,200,119,.10) 40%, rgba(214,178,95,.03) 75%, transparent 100%)',
+          background: 'linear-gradient(180deg, rgba(245,230,200,.28) 0%, rgba(230,200,119,.12) 40%, rgba(214,178,95,.04) 75%, transparent 100%)',
           filter: 'blur(26px)',
           transformOrigin: 'top center',
           animation: 'nwSpotSweep 6.5s ease-in-out infinite',
@@ -172,7 +143,7 @@ export default function VoteSlide({ state }) {
           mixBlendMode: 'screen',
         }} />
 
-        {/* Particules or montantes */}
+        {/* Particules or montantes (22) */}
         {particles.map((p, i) => (
           <div key={`p-${i}`} style={{
             position: 'absolute',
@@ -186,7 +157,7 @@ export default function VoteSlide({ state }) {
           }} />
         ))}
 
-        {/* Étincelles ✦ scintillantes */}
+        {/* Étincelles ✦ scintillantes (30) */}
         {twinkles.map((t, i) => {
           const anim = t.variant === 0 ? 'nwTwinkleA' : t.variant === 1 ? 'nwTwinkleB' : 'nwTwinkleC'
           return (
@@ -194,8 +165,8 @@ export default function VoteSlide({ state }) {
               position: 'absolute',
               left: `${t.left}%`, top: `${t.top}%`,
               fontFamily: "'Cinzel',serif", fontSize: t.size,
-              color: 'rgba(230,200,119,.55)',
-              textShadow: '0 0 18px rgba(214,178,95,.55)',
+              color: 'rgba(230,200,119,.65)',
+              textShadow: '0 0 18px rgba(214,178,95,.6)',
               animation: `${anim} ${t.dur}s ease-in-out infinite, nwUp ${t.upDur}s ease-in-out infinite`,
               animationDelay: `${t.delay}s`,
               pointerEvents: 'none',
@@ -203,7 +174,7 @@ export default function VoteSlide({ state }) {
           )
         })}
 
-        {/* Cadre présidentiel */}
+        {/* Cadre présidentiel — double filet or + 4 losanges */}
         <div style={{
           position: 'absolute', inset: 28,
           border: '3px solid rgba(214,178,95,.92)',
@@ -224,47 +195,36 @@ export default function VoteSlide({ state }) {
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'flex-start',
-          textAlign: 'center', padding: '92px 90px 70px',
+          alignItems: 'center', justifyContent: 'center',
+          textAlign: 'center', padding: '80px 90px',
         }}>
-          {/* Titre "VOTE ROI & REINE" (Cinzel 60px, letterSpacing large) */}
+          {/* Titre "VOTE ROI & REINE" — Cinzel 90px OR PLAT */}
           <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 60,
-            letterSpacing: '.32em', textIndent: '.32em', color: '#EECF80',
-            textShadow: '0 0 30px rgba(201,169,97,.4)',
+            fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 90,
+            lineHeight: 1, letterSpacing: '.14em', textIndent: '.14em',
+            color: '#E6C877',
+            textShadow: '0 0 40px rgba(201,169,97,.5), 0 3px 6px rgba(0,0,0,.85)',
           }}>VOTE ROI &amp; REINE</div>
 
           {/* Filet or ✦ filet or */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 26, marginTop: 18,
+            display: 'flex', alignItems: 'center', gap: 30, marginTop: 24,
           }}>
-            <span style={{ width: 240, height: 2, background: 'rgba(214,178,95,.7)' }} />
-            <span style={{ fontFamily: "'Cinzel',serif", fontSize: 34, color: '#E6C877' }}>✦</span>
-            <span style={{ width: 240, height: 2, background: 'rgba(214,178,95,.7)' }} />
+            <span style={{ width: 260, height: 2, background: 'rgba(214,178,95,.75)' }} />
+            <span style={{
+              fontFamily: "'Cinzel',serif", fontSize: 60, color: '#E6C877',
+              animation: 'nwStarPulse 3s ease-in-out infinite',
+            }}>✦</span>
+            <span style={{ width: 260, height: 2, background: 'rgba(214,178,95,.75)' }} />
           </div>
 
-          {/* -------- HERO : QR + CTA + Compteur (3 colonnes) -------- */}
+          {/* HERO : QR + CTA (2 colonnes) */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 80, marginTop: 34,
+            gap: 90, marginTop: 46,
           }}>
-            {/* QR géant central */}
+            {/* QR géant 440×440 */}
             <div style={{ position: 'relative' }}>
-              {/* Ripples or (2 anneaux) */}
-              <div style={{
-                position: 'absolute', inset: -18, borderRadius: 24,
-                border: '3px solid rgba(230,200,119,.6)',
-                animation: 'nwRipple 2.6s ease-out infinite',
-                pointerEvents: 'none',
-              }} />
-              <div style={{
-                position: 'absolute', inset: -18, borderRadius: 24,
-                border: '3px solid rgba(230,200,119,.45)',
-                animation: 'nwRipple 2.6s ease-out infinite 1.3s',
-                pointerEvents: 'none',
-              }} />
-
-              {/* Cadre ivoire + bordure or 4pt (pulsante) */}
               <div style={{
                 position: 'relative',
                 width: 440, height: 440,
@@ -275,7 +235,6 @@ export default function VoteSlide({ state }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {qrSvg ? (
-                  // SVG string fourni par le back (billetterie)
                   <div
                     style={{ width: '100%', height: '100%' }}
                     // eslint-disable-next-line react/no-danger
@@ -288,57 +247,59 @@ export default function VoteSlide({ state }) {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
                 ) : (
-                  // Placeholder — pas de vrai QR
+                  // Placeholder ivoire avec bordure or — pas de vrai QR fourni
                   <div style={{
                     width: '100%', height: '100%',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
+                    border: '4px solid #C9A961',
+                    borderRadius: 8,
                     color: '#7E662E',
                   }}>
                     <div style={{
-                      fontFamily: "'Cinzel',serif", fontSize: 90, lineHeight: 1,
+                      fontFamily: "'Cinzel',serif", fontSize: 140, lineHeight: 1,
                     }}>▣</div>
                     <div style={{
-                      fontFamily: "'Anton',sans-serif", fontSize: 46,
-                      letterSpacing: '.14em', marginTop: 4,
+                      fontFamily: "'Anton',sans-serif", fontSize: 62,
+                      letterSpacing: '.14em', marginTop: 10,
                     }}>QR VOTE</div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* CTA droite — textes XXL uniquement */}
-            <div style={{ textAlign: 'left', maxWidth: 620 }}>
+            {/* CTA droite — textes XXL uniquement (≥ 82px) */}
+            <div style={{ textAlign: 'left', maxWidth: 720 }}>
               <div style={{
                 fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
                 fontSize: 82, color: '#F5E6C8', lineHeight: 1.05,
-                textShadow: '0 2px 12px rgba(0,0,0,.85)',
+                textShadow: '0 3px 12px rgba(0,0,0,.9)',
               }}>Scanne pour voter</div>
               <div style={{
                 fontFamily: "'Great Vibes',cursive", fontSize: 140, lineHeight: .95,
-                color: '#EECF80', textShadow: '0 0 60px rgba(201,169,97,.55)',
+                color: '#E6C877',
+                textShadow: '0 0 60px rgba(201,169,97,.55), 0 3px 8px rgba(0,0,0,.85)',
                 marginTop: 12,
               }}>ton Roi &amp; ta Reine</div>
             </div>
           </div>
 
-          {/* -------- COMPTEUR XXL -------- */}
+          {/* COMPTEUR XXL — OR PLAT (pas de gradient text) */}
           <div style={{
             display: 'flex', alignItems: 'baseline', justifyContent: 'center',
-            gap: 40, marginTop: 40,
+            gap: 48, marginTop: 40,
           }}>
             <div style={{
-              fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 90,
-              letterSpacing: '.22em', color: '#E6C877',
-              alignSelf: 'center', textShadow: '0 2px 14px rgba(0,0,0,.8)',
+              fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 96,
+              letterSpacing: '.22em', textIndent: '.22em', color: '#E6C877',
+              alignSelf: 'center',
+              textShadow: '0 0 35px rgba(201,169,97,.5), 0 3px 8px rgba(0,0,0,.85)',
             }}>VOTES</div>
             <div style={{
               fontFamily: "'Anton',sans-serif", fontSize: 300, lineHeight: .85,
               textTransform: 'uppercase',
-              background: 'linear-gradient(180deg,#FFF6D8,#E6C877 48%,#C9A961 68%,#8a6d2f)',
-              WebkitBackgroundClip: 'text', backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'nwGlowP 6s ease-in-out infinite',
+              color: '#E6C877',
+              animation: 'nwCountGlow 6s ease-in-out infinite',
             }}>{votesFmt}</div>
           </div>
         </div>

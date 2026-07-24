@@ -2,21 +2,25 @@ import { useMemo } from 'react'
 import Stage from '../components/Stage.jsx'
 
 /**
- * OuvertureBalSlide V2 — Slide "Ouverture du Bal".
- * Séquence cinématique :
- *   0.0s → radial gradient rouge sombre + feux d'artifice qui décollent
- *   1.6s → deux portes 3D s'ouvrent (perspective 1600px, rotateY ±88°)
- *   0.0s / 0.5s / 1.0s → countdown 3 · 2 · 1 (Anton 520px)
- *   2.4s → révélation du titre "C'EST PARTI / Ouverture / du Bal / ★★★"
- * Toutes durées/keyframes/perspective figées — fidélité au design handoff.
+ * OuvertureBalSlide V3 — Slide "Ouverture du Bal" refonte LED-safe.
+ * Fond NOIR PUR (#000) — plus aucun ton rouge/vin qui vire au magenta sur LED.
+ * Or PLAT (#E6C877, #C9A961, #FFE9A8) — pas de gradient dans le texte.
+ * Feux d'artifice OR/IVOIRE uniquement.
+ *
+ * Séquence cinématique (comportement conservé) :
+ *   0.0s → fond noir + feux d'artifice qui décollent
+ *   0.0s / 1.0s / 2.0s → countdown 3 · 2 · 1 (Anton 520px or plat)
+ *   3.0s → deux portes 3D bronze foncé s'ouvrent (perspective 1600px, rotateY ±88°)
+ *   3.6s → révélation du titre "C'EST PARTI / OUVERTURE / du Bal / ★★★"
+ * Keyframes conservés (nwDoorL/R, nwFireLaunch, nwFireBurst, nwCountPop, nwRevealUp).
  */
 export default function OuvertureBalSlide({ state }) {
   void state // slide 100% design, aucun state consommé
 
-  // Feux d'artifice — reproduit exactement renderVals() du .dc.html
+  // Feux d'artifice — palette OR/IVOIRE uniquement (LED-safe, aucun rouge)
   const fireworks = useMemo(() => {
     const rnd = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x) }
-    const cols = ['#FFE9A8', '#E6C877', '#FFF6D8', '#8B1A2F', '#F5E6C8', '#EECF80']
+    const cols = ['#FFE9A8', '#E6C877', '#FFF6D8', '#EECF80', '#F5E6C8', '#C9A961']
     return Array.from({ length: 14 }, (_, i) => {
       const left = 8 + rnd(i * 2.3) * 84
       const top = 8 + rnd(i * 3.1) * 40
@@ -61,19 +65,20 @@ export default function OuvertureBalSlide({ state }) {
     })
   }, [])
 
+  // 4 losanges 20×20 aux coins (LED-safe, or plat)
   const cornerBase = {
-    position: 'absolute', width: 14, height: 14,
+    position: 'absolute', width: 20, height: 20,
     background: '#E6C877', transform: 'rotate(45deg)',
-    boxShadow: '0 0 8px rgba(214,178,95,.6)',
+    boxShadow: '0 0 12px rgba(230,200,119,.7)',
     zIndex: 5,
   }
 
+  // Countdown 3-2-1 : Anton 520px or PLAT (aucun textShadow rouge)
   const countBase = {
     position: 'absolute',
     fontFamily: "'Anton',sans-serif",
     fontSize: 520,
-    color: '#ECCE7D',
-    textShadow: '0 0 120px rgba(201,169,97,.7)',
+    color: '#E6C877',
   }
 
   return (
@@ -83,25 +88,24 @@ export default function OuvertureBalSlide({ state }) {
         @keyframes nwDoorR { 0%{transform:perspective(1600px) rotateY(0deg)} 100%{transform:perspective(1600px) rotateY(88deg)} }
         @keyframes nwFireLaunch { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-380px);opacity:0} }
         @keyframes nwFireBurst { 0%,60%{transform:scale(0);opacity:0} 65%{transform:scale(.3);opacity:1} 100%{transform:scale(1.6);opacity:0} }
-        @keyframes nwGlowP { 0%,100%{text-shadow:0 0 60px rgba(201,169,97,.4),0 2px 4px rgba(0,0,0,.7)} 50%{text-shadow:0 0 130px rgba(201,169,97,.75),0 2px 4px rgba(0,0,0,.7)} }
         @keyframes nwCountPop { 0%{transform:scale(2.4);opacity:0} 30%{opacity:1} 100%{transform:scale(.4);opacity:0} }
         @keyframes nwRevealUp { 0%{transform:translateY(50px);opacity:0} 100%{transform:translateY(0);opacity:1} }
       `}</style>
 
       <div style={{
         position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
-        background: '#0A0A0A', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
+        background: '#000000', color: '#F5E6C8', fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond radial rouge sombre */}
+        {/* Fond NOIR PUR — plus aucun radial rouge/vin (LED-safe) */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(120% 100% at 50% 30%, #2a0f14 0%, #12080a 56%, #060402 100%)',
+          background: '#000000',
         }} />
 
-        {/* Portes 3D qui s'ouvrent — perspective 1600px, rotateY ±88° */}
+        {/* Portes 3D bronze foncé — matériau LED-safe (peu de rouge) */}
         <div style={{
           position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%',
-          background: 'linear-gradient(90deg,#160d10,#2a1a10)',
+          background: 'linear-gradient(90deg,#1a1108,#3a2a15)',
           borderRight: '3px solid rgba(230,200,119,.6)',
           transformOrigin: 'left center',
           animation: 'nwDoorL 2.6s cubic-bezier(.7,0,.3,1) 3s forwards',
@@ -109,14 +113,14 @@ export default function OuvertureBalSlide({ state }) {
         }} />
         <div style={{
           position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%',
-          background: 'linear-gradient(270deg,#160d10,#2a1a10)',
+          background: 'linear-gradient(270deg,#1a1108,#3a2a15)',
           borderLeft: '3px solid rgba(230,200,119,.6)',
           transformOrigin: 'right center',
           animation: 'nwDoorR 2.6s cubic-bezier(.7,0,.3,1) 3s forwards',
           boxShadow: 'inset 30px 0 60px rgba(0,0,0,.6)',
         }} />
 
-        {/* Feux d'artifice — 14 fusées + 18 rayons chacune */}
+        {/* Feux d'artifice OR/IVOIRE — 14 fusées + 18 rayons chacune */}
         {fireworks.map((f, i) => (
           <div key={i}>
             <div style={f.launch} />
@@ -128,24 +132,24 @@ export default function OuvertureBalSlide({ state }) {
           </div>
         ))}
 
-        {/* Cadre présidentiel double filet + 4 losanges */}
+        {/* Cadre présidentiel double filet or + 4 losanges 20×20 aux coins */}
         <div style={{
-          position: 'absolute', inset: 22,
-          border: '2px solid rgba(214,178,95,.9)',
-          boxShadow: 'inset 0 0 70px rgba(0,0,0,.4)',
+          position: 'absolute', inset: 28,
+          border: '3px solid rgba(230,200,119,.92)',
+          boxShadow: 'inset 0 0 80px rgba(0,0,0,.4)',
           pointerEvents: 'none', zIndex: 5,
         }} />
         <div style={{
-          position: 'absolute', inset: 30,
-          border: '1px solid rgba(214,178,95,.5)',
+          position: 'absolute', inset: 40,
+          border: '1px solid rgba(230,200,119,.5)',
           pointerEvents: 'none', zIndex: 5,
         }} />
-        <div style={{ ...cornerBase, top: 44, left: 44 }} />
-        <div style={{ ...cornerBase, top: 44, right: 44 }} />
-        <div style={{ ...cornerBase, bottom: 44, left: 44 }} />
-        <div style={{ ...cornerBase, bottom: 44, right: 44 }} />
+        <div style={{ ...cornerBase, top: 56, left: 56 }} />
+        <div style={{ ...cornerBase, top: 56, right: 56 }} />
+        <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
+        <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
 
-        {/* Countdown 3-2-1 — timings ralentis (feedback 2026-07-23) : 1s d'espacement */}
+        {/* Countdown 3-2-1 — Anton 520px or plat, timings 0s/1s/2s */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -156,7 +160,7 @@ export default function OuvertureBalSlide({ state }) {
           <div style={{ ...countBase, animation: 'nwCountPop 1.6s ease-in 2s 1 both' }}>1</div>
         </div>
 
-        {/* Titre révélé à 3.6s (après countdown ralenti) */}
+        {/* Titre révélé à 3.6s — or PLAT uniquement (aucun gradient text) */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', flexDirection: 'column',
@@ -168,21 +172,17 @@ export default function OuvertureBalSlide({ state }) {
           <div style={{
             fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 72,
             letterSpacing: '.5em', textIndent: '.5em',
-            color: '#E6C877', textShadow: '0 2px 12px rgba(0,0,0,.8)',
+            color: '#E6C877',
             marginBottom: 12,
           }}>C'EST PARTI</div>
           <div style={{
-            fontFamily: "'Anton',sans-serif", fontSize: 300, lineHeight: .9,
+            fontFamily: "'Anton',sans-serif", fontSize: 320, lineHeight: .9,
             textTransform: 'uppercase',
-            background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f)',
-            WebkitBackgroundClip: 'text', backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            animation: 'nwGlowP 4s ease-in-out infinite',
-          }}>Ouverture</div>
+            color: '#E6C877',
+          }}>OUVERTURE</div>
           <div style={{
             fontFamily: "'Great Vibes',cursive", fontSize: 260, lineHeight: .78,
             color: '#EECF80',
-            textShadow: '0 0 80px rgba(201,169,97,.55)',
           }}>du Bal</div>
           <div style={{
             display: 'flex', gap: 44, marginTop: 32,

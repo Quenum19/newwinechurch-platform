@@ -2,26 +2,27 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Stage from '../components/Stage.jsx'
 
 /**
- * ProclamationSlide V3 — Climax du bal : proclamation Roi & Reine 2026.
- * Version LED-SAFE : refonte totale sur fond ambré sombre (comme MurStarsSlide),
- * palette OR + IVOIRE uniquement — AUCUN rouge/bordeaux (les rouges virent au
- * magenta cramé sur les murs LED de scène).
+ * ProclamationSlide V4 — Climax du bal : proclamation Roi & Reine 2026.
+ * Refonte STRICTE LED-safe alignée sur MurStarsSlide : plus AUCUN gradient
+ * de texte (WebkitBackgroundClip perdu sur LED), plus AUCUN rouge/rubis
+ * (vire au magenta cramé), or PLAT #E6C877 partout, tous textes >= 60px.
  *
- * - Fond radial ambré identique MurStars (#211a10 → #060402)
- * - Couronne SVG géante (200×140) OR — rubis remplacés par points or/ivoire
- * - Titre "VOS MAJESTÉS 2026" (Cinzel 90px, letterSpacing .15em, or brillant)
- * - Sous-titre "couronnés par vos votes" (Playfair italic 42px, ivoire)
- * - 2 piédestaux 3D (perspective 1600px, rotateY ±6°, translateZ 40px)
- *   • Petite couronne 130×90 or au sommet
- *   • Médaillon 380×380 rond, anneau conic-gradient OR pur, halo or
- *   • Label "LE ROI" / "LA REINE" Cinzel 44px or
- *   • Nom Anton 110px ivoire
- *   • Compteur count-up Anton 100px or
- *   • Barre de progression fine (transition width 1.4s cubic-bezier)
- * - Confettis 30 pièces palette or/ivoire uniquement
- * - Halo pulsant or au centre + flash blanc initial (1.3s)
- * - Cadre présidentiel double filet or + 4 losanges 20×20
- * - Fallback typographique Great Vibes 150px ivoire si pas de photo
+ * - Fond radial ambré très sombre (identique MurStars : #211a10 -> #060402)
+ * - Halo pulsant OR au centre (nwHalo)
+ * - Flash blanc initial 1.3s (nwFlash)
+ * - Couronne SVG géante 200×140 en haut, or plat + perles or/ivoire
+ * - Titre "VOS MAJESTÉS 2026" Cinzel 90px OR PLAT #E6C877 (pas gradient)
+ * - Sous-titre "couronnés par vos votes" Playfair italic 60px ivoire
+ * - 2 piédestaux 3D (perspective 1600px, translateZ 40px, rotateY ±6°) :
+ *     • Petite couronne 100×70 or au sommet du médaillon
+ *     • Médaillon 380×380 rond, anneau conic-gradient OR pur, halo or
+ *     • Label "LE ROI" / "LA REINE" Cinzel 60px or plat (sous le médaillon)
+ *     • Nom Anton 130px or PLAT #E6C877 (pas gradient)
+ *     • Compteur count-up Anton 130px or PLAT #E6C877
+ *     • Barre or 380px transition width 1.4s cubic-bezier
+ * - 30 confettis palette OR/IVOIRE uniquement
+ * - Cadre présidentiel double filet or + 4 losanges 20×20 aux coins
+ * - Fallback photo : médaillon or + initiale Great Vibes 150px ivoire
  */
 export default function ProclamationSlide({ state }) {
   const st = state ?? {}
@@ -46,7 +47,7 @@ export default function ProclamationSlide({ state }) {
   }, [roi.votes, reine.votes])
 
   // 30 confettis pseudo-aléatoires déterministes — palette OR + IVOIRE UNIQUEMENT
-  // (retiré #8B1A2F qui vire au magenta cramé sur LED)
+  // (jamais #8B1A2F : rouge vire au magenta cramé sur LED)
   const confetti = useMemo(() => {
     const rnd = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x) }
     const cols = ['#FFE9A8', '#E6C877', '#C9A961', '#F5E6C8', '#FFF6D8']
@@ -62,7 +63,7 @@ export default function ProclamationSlide({ state }) {
     })
   }, [])
 
-  // Losange or aux 4 coins (identique MurStars pour cohérence de la série)
+  // Losange or aux 4 coins (identique MurStars pour cohérence de série)
   const cornerBase = {
     position: 'absolute',
     width: 20,
@@ -73,11 +74,10 @@ export default function ProclamationSlide({ state }) {
   }
 
   // Fabrique d'un piédestal (Roi ou Reine)
-  const buildRoyal = (d, label, labelColor, tz, ry) => {
+  const buildRoyal = (d, label, tz, ry) => {
     const votes = d.votes || 0
     return {
       label,
-      labelColor,
       tz,
       ry,
       hasPhoto: !!d.photo,
@@ -89,8 +89,8 @@ export default function ProclamationSlide({ state }) {
     }
   }
   const royals = [
-    buildRoyal(roi, 'LE ROI', '#E6C877', 40, 6),
-    buildRoyal(reine, 'LA REINE', '#F5E6C8', 40, -6),
+    buildRoyal(roi, 'LE ROI', 40, 6),
+    buildRoyal(reine, 'LA REINE', 40, -6),
   ]
 
   return (
@@ -111,17 +111,17 @@ export default function ProclamationSlide({ state }) {
         width: 1920,
         height: 1080,
         overflow: 'hidden',
-        background: '#0A0A0A',
+        background: '#000000',
         color: '#F5E6C8',
         fontFamily: "'Cormorant Garamond',serif",
       }}>
-        {/* Fond radial ambré LED-safe (IDENTIQUE MurStarsSlide) */}
+        {/* Fond radial ambré très sombre — IDENTIQUE MurStarsSlide (LED-safe) */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
         }} />
 
-        {/* Halo or qui respire au centre */}
+        {/* Halo OR qui respire au centre */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'radial-gradient(46% 46% at 50% 40%, rgba(230,200,119,.18), transparent 70%)',
@@ -137,7 +137,7 @@ export default function ProclamationSlide({ state }) {
           pointerEvents: 'none',
         }} />
 
-        {/* Confettis (30 pièces, or/ivoire uniquement) */}
+        {/* Confettis (30 pièces, OR/IVOIRE uniquement — aucun rouge) */}
         {confetti.map((c, i) => (
           <div key={i} style={{
             position: 'absolute',
@@ -178,7 +178,7 @@ export default function ProclamationSlide({ state }) {
         <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
         <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
 
-        {/* Colonne centrale (défs SVG partagées) */}
+        {/* Défs SVG partagées — gradients de FILL (OK sur LED, ce n'est pas du texte) */}
         <svg width="0" height="0" style={{ position: 'absolute' }}>
           <defs>
             <linearGradient id="nwCrownGold" x1="0" y1="0" x2="0" y2="1">
@@ -198,7 +198,7 @@ export default function ProclamationSlide({ state }) {
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
         }}>
-          {/* Couronne SVG géante 200×140 — points OR/IVOIRE (ex-rubis) */}
+          {/* Couronne SVG géante 200×140 — OR + perles OR/IVOIRE (ex-rubis rouges) */}
           <div style={{ animation: 'nwCrownShine 4s ease-in-out infinite' }}>
             <svg width="200" height="140" viewBox="0 0 200 140">
               <path
@@ -213,7 +213,7 @@ export default function ProclamationSlide({ state }) {
                 stroke="#7E662E"
                 strokeWidth="1.5"
               />
-              {/* Rubis remplacés par des perles OR + halo ivoire */}
+              {/* Perles OR/IVOIRE (jamais de rubis rouge) */}
               <circle cx="100" cy="18" r="9" fill="#FFF6D8" stroke="#E6C877" strokeWidth="2" />
               <circle cx="20" cy="40" r="6" fill="#FFE9A8" stroke="#E6C877" strokeWidth="1.5" />
               <circle cx="180" cy="40" r="6" fill="#FFE9A8" stroke="#E6C877" strokeWidth="1.5" />
@@ -229,29 +229,28 @@ export default function ProclamationSlide({ state }) {
             </svg>
           </div>
 
-          {/* Titre "VOS MAJESTÉS 2026" — Cinzel 90px, or brillant */}
+          {/* Titre "VOS MAJESTÉS 2026" — Cinzel 90px OR PLAT (aucun gradient texte) */}
           <div style={{
             fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 90,
             lineHeight: 1,
             letterSpacing: '.15em', textIndent: '.15em',
             marginTop: 18,
-            background: 'linear-gradient(180deg,#FFF6D8,#E6C877 48%,#C9A961 66%,#8a6d2f)',
-            WebkitBackgroundClip: 'text', backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: '#E6C877',
+            textShadow: '0 0 60px rgba(230,200,119,.55), 0 3px 8px rgba(0,0,0,.75)',
             animation: 'nwGlowP 5s ease-in-out infinite',
           }}>VOS MAJESTÉS 2026</div>
 
-          {/* Sous-titre Playfair italic 42px ivoire */}
+          {/* Sous-titre Playfair italic 60px ivoire */}
           <div style={{
             fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-            fontSize: 42, color: '#F5E6C8', marginTop: 14,
-            textShadow: '0 2px 8px rgba(0,0,0,.7)',
+            fontSize: 60, color: '#F5E6C8', marginTop: 18,
+            textShadow: '0 2px 10px rgba(0,0,0,.7)',
           }}>couronnés par vos votes</div>
 
           {/* Duo piédestaux 3D */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-            gap: 200, marginTop: 40, perspective: '1600px',
+            gap: 200, marginTop: 44, perspective: '1600px',
           }}>
             {royals.map((r, i) => (
               <div key={i} style={{
@@ -260,23 +259,15 @@ export default function ProclamationSlide({ state }) {
                 transform: `translateZ(${r.tz}px) rotateY(${r.ry}deg)`,
                 animation: 'nwRiseP .9s cubic-bezier(.16,1,.3,1) both',
               }}>
-                {/* Label "LE ROI" / "LA REINE" — Cinzel 44px or */}
-                <div style={{
-                  fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 44,
-                  letterSpacing: '.38em', textIndent: '.38em',
-                  color: r.labelColor,
-                  textShadow: '0 0 30px rgba(230,200,119,.55), 0 2px 6px rgba(0,0,0,.7)',
-                }}>{r.label}</div>
-
                 {/* Médaillon 380×380 */}
-                <div style={{ position: 'relative', width: 380, height: 380, margin: '30px 0 22px' }}>
-                  {/* Petite couronne 130×90 au sommet — points or/ivoire */}
+                <div style={{ position: 'relative', width: 380, height: 380, marginBottom: 22 }}>
+                  {/* Petite couronne 100×70 au sommet — perles OR/IVOIRE */}
                   <div style={{
-                    position: 'absolute', top: -96, left: '50%',
+                    position: 'absolute', top: -76, left: '50%',
                     transform: 'translateX(-50%)',
                     animation: 'nwCrownShine 4s ease-in-out infinite',
                   }}>
-                    <svg width="130" height="90" viewBox="0 0 200 140">
+                    <svg width="100" height="70" viewBox="0 0 200 140">
                       <path
                         d="M28 116 L20 44 L64 82 L100 24 L136 82 L180 44 L172 116 Z"
                         fill="url(#nwCrownGold)"
@@ -289,12 +280,12 @@ export default function ProclamationSlide({ state }) {
                         stroke="#7E662E"
                         strokeWidth="1.5"
                       />
-                      {/* Perle centrale OR (ex-rubis) */}
+                      {/* Perle centrale OR (jamais de rubis rouge) */}
                       <circle cx="100" cy="18" r="9" fill="#FFF6D8" stroke="#E6C877" strokeWidth="2" />
                     </svg>
                   </div>
 
-                  {/* Anneau conic-gradient OR pur (aucun rouge) */}
+                  {/* Anneau conic-gradient OR PUR — aucun stop rouge */}
                   <div style={{
                     position: 'absolute', inset: -16, borderRadius: '50%',
                     background: 'conic-gradient(from 0deg,#7E662E,#FFE9A8,#C9A961,#FFF6D8,#E6C877,#7E662E)',
@@ -315,13 +306,13 @@ export default function ProclamationSlide({ state }) {
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                   }} />
-                  {/* Bordure OR (ex-bordure rubis) */}
+                  {/* Bordure OR (aucun bordeaux) */}
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: '50%',
                     border: '3px solid rgba(230,200,119,.75)',
                     boxShadow: 'inset 0 0 30px rgba(0,0,0,.45)',
                   }} />
-                  {/* Fallback typographique Great Vibes 150px ivoire */}
+                  {/* Fallback typographique Great Vibes 150px IVOIRE (aucun bordeaux) */}
                   {!r.hasPhoto && (
                     <div style={{
                       position: 'absolute', inset: 0,
@@ -335,21 +326,42 @@ export default function ProclamationSlide({ state }) {
                   )}
                 </div>
 
-                {/* Nom (Anton 110px ivoire) */}
+                {/* Label "LE ROI" / "LA REINE" — Cinzel 60px OR PLAT (sous le médaillon) */}
                 <div style={{
-                  fontFamily: "'Anton',sans-serif", fontSize: 110,
+                  fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 60,
+                  lineHeight: 1,
+                  letterSpacing: '.36em', textIndent: '.36em',
+                  color: '#E6C877',
+                  textShadow: '0 0 30px rgba(230,200,119,.55), 0 2px 6px rgba(0,0,0,.75)',
+                  marginTop: 10,
+                }}>{r.label}</div>
+
+                {/* Nom — Anton 130px OR PLAT #E6C877 (aucun gradient texte) */}
+                <div style={{
+                  fontFamily: "'Anton',sans-serif", fontSize: 130,
                   lineHeight: .95,
                   letterSpacing: '.02em',
-                  color: '#F5E6C8',
-                  textShadow: '0 0 50px rgba(201,169,97,.5), 0 3px 8px rgba(0,0,0,.75)',
+                  color: '#E6C877',
+                  textShadow: '0 0 50px rgba(201,169,97,.55), 0 3px 10px rgba(0,0,0,.8)',
                   textTransform: 'uppercase',
                   textAlign: 'center',
-                  maxWidth: 520,
+                  maxWidth: 560,
+                  marginTop: 14,
                 }}>{r.name}</div>
 
-                {/* Barre de progression fine or (transition width 1.4s) */}
+                {/* Compteur votes — Anton 130px OR PLAT #E6C877 (aucun gradient texte) */}
                 <div style={{
-                  width: 320, height: 8, borderRadius: 99,
+                  fontFamily: "'Anton',sans-serif", fontSize: 130,
+                  lineHeight: 1,
+                  letterSpacing: '.04em',
+                  marginTop: 18,
+                  color: '#E6C877',
+                  textShadow: '0 0 60px rgba(201,169,97,.55), 0 3px 10px rgba(0,0,0,.8)',
+                }}>{r.votesDisplay}</div>
+
+                {/* Barre or 380px (transition width 1.4s cubic-bezier) */}
+                <div style={{
+                  width: 380, height: 8, borderRadius: 99,
                   background: 'rgba(214,178,95,.18)',
                   marginTop: 22, overflow: 'hidden',
                 }}>
@@ -357,29 +369,11 @@ export default function ProclamationSlide({ state }) {
                     height: '100%',
                     width: r.barPct,
                     borderRadius: 99,
-                    background: 'linear-gradient(90deg,#FFE9A8,#E6C877,#C9A961)',
-                    boxShadow: '0 0 16px rgba(230,200,119,.8)',
+                    background: '#E6C877',
+                    boxShadow: '0 0 16px rgba(230,200,119,.85)',
                     transition: 'width 1.4s cubic-bezier(.16,1,.3,1)',
                   }} />
                 </div>
-
-                {/* Compteur votes Anton 100px or */}
-                <div style={{
-                  fontFamily: "'Anton',sans-serif", fontSize: 100,
-                  lineHeight: 1,
-                  letterSpacing: '.04em',
-                  marginTop: 16,
-                  background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#C9A961)',
-                  WebkitBackgroundClip: 'text', backgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  textShadow: '0 0 60px rgba(201,169,97,.5)',
-                }}>{r.votesDisplay}</div>
-                <div style={{
-                  fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 24,
-                  letterSpacing: '.34em', textIndent: '.34em',
-                  color: '#EECF80',
-                  marginTop: 4,
-                }}>VOTES</div>
               </div>
             ))}
           </div>
