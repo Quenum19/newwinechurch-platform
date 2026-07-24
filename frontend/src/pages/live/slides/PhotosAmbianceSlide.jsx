@@ -2,11 +2,11 @@
  * PhotosAmbianceSlide — Défilé plein écran des photos brandées uploadées
  * par les photographes pendant l'événement.
  *
- * Fonctionnement :
- *  - Récupère state.photos (URLs déjà brandées 16:9 côté backend)
- *  - Fait défiler avec un fondu enchaîné toutes les 6 secondes
- *  - Overlay minimal : hashtag + compteur discret
- *  - Si aucune photo : invitation à en uploader
+ * Cadrage identique KimBPhotos : object-fit:contain sur l'image nette + la
+ * MÊME image floutée (blur 40px + scale 1.15) en fond pour meubler
+ * élégamment les bords. Aucun crop du contenu de la photo.
+ * Fondu enchaîné 6s + Ken Burns léger.
+ * Overlay hashtag discret bas-gauche.
  */
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -26,7 +26,6 @@ export default function PhotosAmbianceSlide({ state }) {
     return () => clearInterval(timer)
   }, [photos.length])
 
-  // Reset l'index si le nombre de photos change (nouvelle uploadée)
   useEffect(() => {
     if (index >= photos.length) setIndex(0)
   }, [photos.length, index])
@@ -81,24 +80,45 @@ export default function PhotosAmbianceSlide({ state }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', overflow: 'hidden' }}>
-      {/* Photo en fondu enchaîné, cover full écran (les cadres 16:9 sont pré-générés
-          côté backend avec le bon layout, pas besoin d'overlay ici). */}
+      {/* Photo en fondu enchaîné — contain + fond flou (aucun crop) */}
       <AnimatePresence mode="sync">
         <motion.div
           key={currentPhoto + index}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 1.6, ease: 'easeInOut' }}
-          style={{
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          {/* Fond flouté de la même image */}
+          <div style={{
             position: 'absolute', inset: 0,
             backgroundImage: `url("${currentPhoto}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#0A0A0A',
-          }}
-        />
+            filter: 'blur(40px) brightness(.55)',
+            transform: 'scale(1.15)',
+          }} />
+          {/* Voile noir léger pour contraste */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(0,0,0,0.35)',
+          }} />
+          {/* Image nette centrée — aucun crop */}
+          <motion.img
+            src={currentPhoto}
+            alt=""
+            initial={{ scale: 1.03 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 6, ease: 'linear' }}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        </motion.div>
       </AnimatePresence>
     </div>
   )

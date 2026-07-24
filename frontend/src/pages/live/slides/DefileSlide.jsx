@@ -166,33 +166,33 @@ export default function DefileSlide({ state }) {
         }}>
           <div style={{
             fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-            fontSize: 46, color: '#F5E6C8',
+            fontSize: 62, color: '#F5E6C8',
             textShadow: '0 2px 12px rgba(0,0,0,.9)',
           }}>Place à l'élégance</div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 50, marginTop: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 60, marginTop: 8 }}>
             <span style={{
-              fontFamily: "'Cinzel',serif", fontSize: 80, color: '#E6C877',
+              fontFamily: "'Cinzel',serif", fontSize: 110, color: '#E6C877',
               animation: 'nwTwinkle 3s ease-in-out infinite',
             }}>★</span>
             <span style={{
-              fontFamily: "'Anton',sans-serif", fontSize: 220,
-              letterSpacing: '.05em', textTransform: 'uppercase',
+              fontFamily: "'Anton',sans-serif", fontSize: 340,
+              letterSpacing: '.05em', textTransform: 'uppercase', lineHeight: .95,
               background: 'linear-gradient(180deg,#FFF6D8,#E6C877 50%,#8a6d2f)',
               WebkitBackgroundClip: 'text', backgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               animation: 'nwGlowP 5s ease-in-out infinite',
             }}>Défilé</span>
             <span style={{
-              fontFamily: "'Cinzel',serif", fontSize: 80, color: '#E6C877',
+              fontFamily: "'Cinzel',serif", fontSize: 110, color: '#E6C877',
               animation: 'nwTwinkle 3s ease-in-out infinite 1.5s',
             }}>★</span>
           </div>
 
           <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 500, fontSize: 34,
+            fontFamily: "'Cinzel',serif", fontWeight: 500, fontSize: 46,
             letterSpacing: '.4em', textIndent: '.4em',
-            color: '#E6C877', marginTop: 14,
+            color: '#E6C877', marginTop: 20,
             textShadow: '0 2px 10px rgba(0,0,0,.9)',
           }}>{subtitle}</div>
         </div>
