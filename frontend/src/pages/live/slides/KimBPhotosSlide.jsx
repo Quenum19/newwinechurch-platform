@@ -86,19 +86,15 @@ export default function KimBPhotosSlide({ state }) {
           transition={{ duration: 1.6, ease: 'easeInOut' }}
           style={{ position: 'absolute', inset: 0 }}
         >
-          {/* Fond flouté de la même image — remplit élégamment les bords en portrait */}
+          {/* Fond flouté de la même image — remplit élégamment les bords en portrait
+              (assez lumineux pour être visible, plus juste du noir) */}
           <div style={{
             position: 'absolute', inset: 0,
             backgroundImage: `url("${currentPhoto}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(40px) brightness(.55)',
-            transform: 'scale(1.15)',
-          }} />
-          {/* Voile noir léger pour renforcer contraste */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.35)',
+            filter: 'blur(28px) brightness(.85) saturate(1.25)',
+            transform: 'scale(1.2)',
           }} />
           {/* Image nette centrée (contain — aucun crop du visage) */}
           <motion.img

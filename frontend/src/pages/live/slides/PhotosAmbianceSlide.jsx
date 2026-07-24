@@ -90,19 +90,15 @@ export default function PhotosAmbianceSlide({ state }) {
           transition={{ duration: 1.6, ease: 'easeInOut' }}
           style={{ position: 'absolute', inset: 0 }}
         >
-          {/* Fond flouté de la même image */}
+          {/* Fond flouté de la même image — VISIBLE (assez lumineux pour meubler
+              les bandes latérales avec les couleurs floues de la photo, pas du noir) */}
           <div style={{
             position: 'absolute', inset: 0,
             backgroundImage: `url("${currentPhoto}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(40px) brightness(.55)',
-            transform: 'scale(1.15)',
-          }} />
-          {/* Voile noir léger pour contraste */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.35)',
+            filter: 'blur(28px) brightness(.85) saturate(1.25)',
+            transform: 'scale(1.2)',
           }} />
           {/* Image nette centrée — aucun crop */}
           <motion.img
