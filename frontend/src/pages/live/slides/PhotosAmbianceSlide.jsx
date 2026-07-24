@@ -15,67 +15,9 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Stage from '../components/Stage.jsx'
 import GoldParticles from '../components/GoldParticles.jsx'
+import EventFrame from '../components/EventFrame.jsx'
 
 const INTERVAL_MS = 6000
-
-const cornerBase = {
-  position: 'absolute', width: 20, height: 20,
-  background: '#E6C877', transform: 'rotate(45deg)',
-  boxShadow: '0 0 12px rgba(214,178,95,.7)',
-  zIndex: 6,
-}
-
-/**
- * Cadre présidentiel + losanges + bandeau bas — overlay par-dessus les
- * photos (pointer-events:none, z-index élevé).
- */
-function GoldFrame() {
-  return (
-    <>
-      {/* Cadre or double filet */}
-      <div style={{
-        position: 'absolute', inset: 28,
-        border: '3px solid rgba(214,178,95,.92)',
-        boxShadow: 'inset 0 0 80px rgba(0,0,0,.4)',
-        pointerEvents: 'none',
-        zIndex: 5,
-      }} />
-      <div style={{
-        position: 'absolute', inset: 40,
-        border: '1px solid rgba(214,178,95,.5)',
-        pointerEvents: 'none',
-        zIndex: 5,
-      }} />
-
-      {/* 4 losanges or aux coins */}
-      <div style={{ ...cornerBase, top: 56, left: 56 }} />
-      <div style={{ ...cornerBase, top: 56, right: 56 }} />
-      <div style={{ ...cornerBase, bottom: 56, left: 56 }} />
-      <div style={{ ...cornerBase, bottom: 56, right: 56 }} />
-
-      {/* Bandeau bas discret événement */}
-      <div style={{
-        position: 'absolute', left: 40, right: 40, bottom: 40,
-        height: 76,
-        background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.85) 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        pointerEvents: 'none',
-        zIndex: 6,
-      }}>
-        <span style={{
-          fontFamily: "'Cinzel',serif",
-          fontSize: 46,
-          letterSpacing: '.14em',
-          color: '#E6C877',
-          textShadow: '0 0 24px rgba(214,178,95,.5), 0 2px 4px rgba(0,0,0,.7)',
-          textTransform: 'uppercase',
-        }}>
-          A Dark Night in Elegance&nbsp;&nbsp;✦&nbsp;&nbsp;24 Juillet
-        </span>
-      </div>
-    </>
-  )
-}
 
 export default function PhotosAmbianceSlide({ state }) {
   const photos = state?.photos ?? []
@@ -140,7 +82,7 @@ export default function PhotosAmbianceSlide({ state }) {
             </p>
           </div>
 
-          <GoldFrame />
+          <EventFrame />
         </div>
       </Stage>
     )
@@ -193,7 +135,7 @@ export default function PhotosAmbianceSlide({ state }) {
         </AnimatePresence>
 
         {/* Cadre or présidentiel + losanges + bandeau bas événement */}
-        <GoldFrame />
+        <EventFrame />
       </div>
     </Stage>
   )

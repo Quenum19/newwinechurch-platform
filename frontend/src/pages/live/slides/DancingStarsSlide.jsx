@@ -55,36 +55,26 @@ export default function DancingStarsSlide({ state }) {
   return (
     <Stage>
       <style>{`
-        /* Rideau — cycle 9s DYNAMIQUE.
-           0-8% fermé → 8-22% OUVERTURE rapide+freinage → 22-70% ouvert (titre)
-           → 70-84% FERMETURE rapide+freinage → 84-100% fermé.
-           Courbe cubic-bezier(.5,0,.1,1) : accélère fort puis décélère.
-           Combine translateX (ouverture) + wobble (balancement latéral repos). */
+        /* Rideau — cycle 10s PENDULAIRE FLUIDE.
+           Mouvement CONTINU sans paliers plats (fini le "blocage" aux extrémités).
+           0%   → fermé
+           25%  → complètement ouvert (2.5s d'ouverture progressive)
+           50%  → toujours ouvert (2.5s de scène visible, titre au max)
+           75%  → toujours ouvert (0s de plus)
+           100% → fermé (2.5s de fermeture progressive)
+           Courbe ease-in-out : accélère au départ, décélère à l'arrivée,
+           mouvement organique de rideau réel. */
         @keyframes nwOpenL {
-          0%, 8%      { transform: translateX(0) }
-          22%, 70%    { transform: translateX(-101%) }
-          84%, 100%   { transform: translateX(0) }
+          0%   { transform: translateX(0) }
+          25%  { transform: translateX(-101%) }
+          75%  { transform: translateX(-101%) }
+          100% { transform: translateX(0) }
         }
         @keyframes nwOpenR {
-          0%, 8%      { transform: translateX(0) }
-          22%, 70%    { transform: translateX(101%) }
-          84%, 100%   { transform: translateX(0) }
-        }
-        /* Wobble : très léger balancement latéral quand ouvert.
-           Superposé au translateX principal via ANIMATION multiple (2 keyframes
-           s'additionnent : le browser applique la dernière — ici on encapsule
-           le wobble dans un WRAPPER pour composer les transforms). */
-        @keyframes nwCurtainWobbleL {
-          0%, 100% { transform: translateX(-101%) }
-          25%      { transform: translateX(calc(-101% - 3px)) }
-          50%      { transform: translateX(-101%) }
-          75%      { transform: translateX(calc(-101% + 3px)) }
-        }
-        @keyframes nwCurtainWobbleR {
-          0%, 100% { transform: translateX(101%) }
-          25%      { transform: translateX(calc(101% + 3px)) }
-          50%      { transform: translateX(101%) }
-          75%      { transform: translateX(calc(101% - 3px)) }
+          0%   { transform: translateX(0) }
+          25%  { transform: translateX(101%) }
+          75%  { transform: translateX(101%) }
+          100% { transform: translateX(0) }
         }
         /* Sheen or qui traverse chaque pan — plus rapide (3.5s au lieu de 6s)
            pour un mouvement bien plus vivant. */
@@ -98,21 +88,17 @@ export default function DancingStarsSlide({ state }) {
           40%  { opacity: .55 }
           100% { transform: translateX(-120%) skewX(16deg); opacity: 0 }
         }
-        /* Titre : sync sur les 9s du rideau.
-           0-15% caché (rideau fermé) → 25% pop (rideau ouvert, spring 1.05)
-           → 30-65% stable → 75% micro-pop avant fermeture → 85-100% caché */
+        /* Titre : sync sur les 10s du rideau (visible quand rideau ouvert 25-75%) */
         @keyframes nwTitleShow {
-          0%, 15%   { opacity: 0; transform: scale(.85) }
-          25%       { opacity: 1; transform: scale(1.05) }
-          30%, 65%  { opacity: 1; transform: scale(1) }
-          75%       { opacity: 1; transform: scale(1.02) }
-          85%, 100% { opacity: 0; transform: scale(.9) }
+          0%, 20%  { opacity: 0; transform: scale(.92) }
+          30%      { opacity: 1; transform: scale(1) }
+          70%      { opacity: 1; transform: scale(1) }
+          80%, 100%{ opacity: 0; transform: scale(.92) }
         }
-        /* Flash or plein écran au moment d'ouverture max (~26% = 2.34s).
-           Très bref (opacity max .18), mix-blend screen → "réveille scène". */
+        /* Flash or plein écran au moment où le rideau atteint l'ouverture max (~25%) */
         @keyframes nwStageFlash {
-          0%, 22%, 30%, 100% { opacity: 0 }
-          26%                { opacity: .18 }
+          0%, 20%, 32%, 100% { opacity: 0 }
+          25%                { opacity: .18 }
         }
         @keyframes nwSpotSweepA { 0%,100%{transform:translateX(-50%) rotate(-22deg); opacity:.55} 50%{transform:translateX(-50%) rotate(22deg); opacity:.85} }
         @keyframes nwSpotSweepB { 0%,100%{transform:translateX(-50%) rotate(20deg); opacity:.7} 50%{transform:translateX(-50%) rotate(-20deg); opacity:.4} }
@@ -195,7 +181,7 @@ export default function DancingStarsSlide({ state }) {
             color: '#E6C877',
             textShadow: '0 0 24px rgba(201,169,97,.55), 0 2px 12px rgba(0,0,0,.95)',
             marginBottom: 22,
-            animation: 'nwTitleShow 9s cubic-bezier(.16,1,.3,1) infinite',
+            animation: 'nwTitleShow 10s ease-in-out infinite',
             transformOrigin: 'center center',
             willChange: 'opacity, transform',
           }}>LE RIDEAU SE LÈVE</div>
@@ -203,7 +189,7 @@ export default function DancingStarsSlide({ state }) {
           {/* Bloc DANCING + Stars animé ensemble (pop synchronisé) */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            animation: 'nwTitleShow 9s cubic-bezier(.16,1,.3,1) infinite',
+            animation: 'nwTitleShow 10s ease-in-out infinite',
             transformOrigin: 'center center',
             willChange: 'opacity, transform',
           }}>
@@ -234,7 +220,7 @@ export default function DancingStarsSlide({ state }) {
           background: '#FFE9A8',
           mixBlendMode: 'screen',
           pointerEvents: 'none',
-          animation: 'nwStageFlash 9s ease-out infinite',
+          animation: 'nwStageFlash 10s ease-out infinite',
           willChange: 'opacity',
         }} />
 
@@ -248,7 +234,7 @@ export default function DancingStarsSlide({ state }) {
             position: 'absolute', top: 0, bottom: 0, left: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset -30px 0 40px rgba(0,0,0,.7)',
-            animation: 'nwOpenL 9s cubic-bezier(.5,0,.1,1) infinite',
+            animation: 'nwOpenL 10s ease-in-out infinite',
             willChange: 'transform',
             overflow: 'hidden',
           }}>
@@ -272,7 +258,7 @@ export default function DancingStarsSlide({ state }) {
             position: 'absolute', top: 0, bottom: 0, right: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset 30px 0 40px rgba(0,0,0,.7)',
-            animation: 'nwOpenR 9s cubic-bezier(.5,0,.1,1) infinite',
+            animation: 'nwOpenR 10s ease-in-out infinite',
             willChange: 'transform',
             overflow: 'hidden',
           }}>

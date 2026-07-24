@@ -1,16 +1,16 @@
 /**
- * KimBPhotosSlide — Diaporama plein écran des photos de KIM B pendant sa
- * prestation. Les URLs sont livrées via `state.config.kim_b_photos`.
+ * KimBPhotosSlide — Diaporama plein écran des photos de KIM B, avec le cadre
+ * "affiche du bal" (EventFrame) par-dessus : cadre or, losanges, badge
+ * 24 JUILLET, logo NewWine, bloc titre "BAL & DINE GALA / A DARK NIGHT / IN /
+ * Elegance". Overlay "KIM B" (Anton or) discret bas-gauche.
  *
- * Cadrage adapté aux photos portrait ET paysage :
- *   - fond flouté de la MÊME image (blur 40px + scale 1.15) pour meubler
- *     élégamment les bords quand la photo est portrait
- *   - image nette en object-fit: contain par-dessus (aucun crop du visage)
- *   - fondu enchaîné 6s + Ken Burns léger
- * Overlay "KIM B" (Anton or) en bas-gauche.
+ * Cadrage : object-fit:contain (aucun crop du visage) + fond flouté de la
+ * MÊME image pour meubler élégamment les bords en portrait/story.
  */
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Stage from '../components/Stage.jsx'
+import EventFrame from '../components/EventFrame.jsx'
 
 const INTERVAL_MS = 6000
 
@@ -20,7 +20,6 @@ export default function KimBPhotosSlide({ state }) {
   }, [state?.config])
 
   const photos = state?.config?.kim_b_photos ?? []
-  const eventTitle = state?.event?.title ?? 'A Dark Night in Elegance'
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
@@ -35,165 +34,106 @@ export default function KimBPhotosSlide({ state }) {
     if (index >= photos.length) setIndex(0)
   }, [photos.length, index])
 
+  // === Cas vide : invitation typographique + cadre événement ===
   if (photos.length === 0) {
     return (
-      <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', overflow: 'hidden' }}>
+      <Stage>
         <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          zIndex: 3, textAlign: 'center', padding: '5vh',
+          position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
+          background: '#000000',
         }}>
-          <h1 style={{
-            fontFamily: "'Anton', Impact, sans-serif",
-            fontSize: 'clamp(4rem, 10vw, 11rem)',
-            color: '#E6C877',
-            letterSpacing: '0.02em',
-            margin: 0, lineHeight: 1,
-          }}>KIM B</h1>
-          <p style={{
-            fontFamily: '"Playfair Display", serif',
-            fontStyle: 'italic',
-            fontSize: 'clamp(1.5rem, 2.4vw, 2.4rem)',
-            color: '#F5E6C8',
-            marginTop: '3vh',
-          }}>Aucune photo pour l'instant.</p>
-          <p style={{
-            fontFamily: '"Cormorant Garamond", serif',
-            fontSize: 'clamp(1rem, 1.4vw, 1.4rem)',
-            color: '#8B7960',
-            marginTop: '1vh',
-          }}>Régie : uploade les photos KIM B dans le panneau prévu.</p>
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            zIndex: 3, textAlign: 'center', padding: 80,
+          }}>
+            <h1 style={{
+              fontFamily: "'Anton', Impact, sans-serif",
+              fontSize: 220, color: '#E6C877',
+              letterSpacing: '.02em', margin: 0, lineHeight: 1,
+            }}>KIM B</h1>
+            <p style={{
+              fontFamily: '"Playfair Display", serif',
+              fontStyle: 'italic', fontSize: 60, color: '#F5E6C8',
+              marginTop: 40,
+            }}>Aucune photo pour l'instant.</p>
+          </div>
+          <EventFrame />
         </div>
-      </div>
+      </Stage>
     )
   }
 
   const currentPhoto = photos[index]
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', overflow: 'hidden' }}>
-      <AnimatePresence mode="sync">
-        <motion.div
-          key={currentPhoto + index}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.6, ease: 'easeInOut' }}
-          style={{ position: 'absolute', inset: 0 }}
-        >
-          {/* Fond flouté de la même image — remplit élégamment les bords en portrait
-              (assez lumineux pour être visible, plus juste du noir) */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: `url("${currentPhoto}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(28px) brightness(.85) saturate(1.25)',
-            transform: 'scale(1.2)',
-          }} />
-          {/* Image nette centrée (contain — aucun crop du visage) */}
-          <motion.img
-            src={currentPhoto}
-            alt=""
-            initial={{ scale: 1.03 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 6, ease: 'linear' }}
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'contain',
-              display: 'block',
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Bandeau bas : KIM B (gauche) ─── ✦ ─── A DARK NIGHT / IN / Elegance (droite) */}
+    <Stage>
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        zIndex: 4,
-        padding: '3.5vh 4vw 3vh',
-        background: 'linear-gradient(0deg, rgba(0,0,0,.96) 0%, rgba(0,0,0,.8) 60%, rgba(0,0,0,0) 100%)',
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center',
-        gap: '2vw',
+        position: 'relative', width: 1920, height: 1080, overflow: 'hidden',
+        background: '#000000',
       }}>
-        {/* KIM B — colonne gauche */}
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={currentPhoto + index}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.6, ease: 'easeInOut' }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            {/* Fond flouté de la même image */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              backgroundImage: `url("${currentPhoto}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'blur(28px) brightness(.85) saturate(1.25)',
+              transform: 'scale(1.2)',
+            }} />
+            {/* Image nette centrée — aucun crop */}
+            <motion.img
+              src={currentPhoto}
+              alt=""
+              initial={{ scale: 1.03 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 6, ease: 'linear' }}
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain',
+                display: 'block',
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Overlay "KIM B" discret bas-centre-gauche (entre logo et bloc titre) */}
         <div style={{
-          textAlign: 'left',
+          position: 'absolute', bottom: 120, left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 8,
+          padding: '10px 32px',
+          background: 'rgba(0,0,0,.55)',
+          border: '1pt solid rgba(214,178,95,.6)',
+          borderRadius: 6,
           fontFamily: "'Anton', sans-serif",
-          fontSize: 'clamp(3rem, 5.5vw, 6rem)',
+          fontSize: 60,
           color: '#E6C877',
-          letterSpacing: '.08em',
-          textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.6)',
+          letterSpacing: '.12em',
+          textShadow: '0 2px 12px rgba(0,0,0,.9)',
           textTransform: 'uppercase',
           lineHeight: 1,
+          pointerEvents: 'none',
         }}>KIM B</div>
 
-        {/* Séparateur ✦ or — colonne centrale */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '1vw',
-        }}>
-          <span style={{
-            width: '5vw', height: 2,
-            background: 'linear-gradient(90deg, transparent, rgba(230,200,119,.85))',
-          }} />
-          <span style={{
-            fontFamily: "'Cinzel', serif",
-            fontSize: 'clamp(1.6rem, 2.6vw, 2.8rem)',
-            color: '#E6C877',
-            textShadow: '0 0 20px rgba(214,178,95,.6)',
-            lineHeight: 1,
-          }}>✦</span>
-          <span style={{
-            width: '5vw', height: 2,
-            background: 'linear-gradient(90deg, rgba(230,200,119,.85), transparent)',
-          }} />
-        </div>
-
-        {/* Nom event — colonne droite, 3 lignes empilées "A DARK NIGHT / IN / Elegance" */}
-        <div style={{
-          textAlign: 'right',
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-          lineHeight: 1,
-        }}>
-          <div style={{
-            fontFamily: "'Cinzel', serif", fontWeight: 700,
-            fontSize: 'clamp(1.4rem, 2.6vw, 2.8rem)',
-            letterSpacing: '.18em', textIndent: '.18em',
-            color: '#E6C877',
-            textShadow: '0 2px 12px rgba(0,0,0,.95)',
-            textTransform: 'uppercase',
-          }}>A Dark Night</div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.6vw',
-            margin: '0.4vh 0',
-          }}>
-            <span style={{ width: '2.5vw', height: 1, background: 'rgba(214,178,95,.7)' }} />
-            <span style={{
-              fontFamily: "'Cinzel', serif", fontWeight: 500,
-              fontSize: 'clamp(1rem, 1.6vw, 1.6rem)',
-              letterSpacing: '.4em', textIndent: '.4em',
-              color: '#E6C877',
-              textTransform: 'uppercase',
-            }}>in</span>
-            <span style={{ width: '2.5vw', height: 1, background: 'rgba(214,178,95,.7)' }} />
-          </div>
-          <div style={{
-            fontFamily: "'Great Vibes', cursive",
-            fontSize: 'clamp(2.6rem, 4.6vw, 5rem)',
-            color: '#EECF80',
-            textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 40px rgba(201,169,97,.55)',
-            lineHeight: 1,
-          }}>Elegance</div>
-        </div>
+        {/* Cadre "affiche du bal" complet par-dessus */}
+        <EventFrame />
       </div>
-    </div>
+    </Stage>
   )
 }
