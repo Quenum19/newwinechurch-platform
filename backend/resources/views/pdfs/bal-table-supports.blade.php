@@ -1,9 +1,9 @@
 {{--
   Support de table imprimable — A5 portrait, 2 pages :
-    - Page 1 : Roi & Reine (thème NOIR — mêmes infos que l'original ivoire,
-      juste la palette adaptée + QR légèrement agrandi 50→65mm)
-    - Page 2 : Suis-nous  (thème IVOIRE inchangé — brand, logo, ★★★, CTA,
-      QR 50mm, tip, footer bordeaux)
+    - Page 1 : Roi & Reine (thème NOIR épuré — brand + titre italique dominant
+      + "SCANNE POUR VOTER" + QR GÉANT + ticket-hint 1 ligne + footer BAL 2026
+      dans cadre bordé or)
+    - Page 2 : Suis-nous  (thème IVOIRE inchangé)
 --}}
 <!DOCTYPE html>
 <html lang="fr">
@@ -17,12 +17,12 @@
   body { font-family: "DejaVu Sans", sans-serif; }
 
   /* ══════════════════════════════════════════════════════════════
-     PAGE 1 — VOTE ROI & REINE (thème NOIR, structure originale)
+     PAGE 1 — VOTE ROI & REINE (thème NOIR épuré, QR géant)
      ══════════════════════════════════════════════════════════════ */
   .page-vote {
     width: 148mm; height: 210mm;
     position: relative;
-    background: linear-gradient(180deg, #0A0A0A 0%, #1a0f14 55%, #0A0A0A 100%);
+    background: #0A0A0A;
     color: #F5E6C8;
     overflow: hidden;
     page-break-after: always;
@@ -39,111 +39,108 @@
   }
   .page-vote .content {
     position: absolute;
-    top: 12mm; left: 14mm; right: 14mm; bottom: 28mm;
+    top: 14mm; left: 12mm; right: 12mm; bottom: 30mm;
     text-align: center;
   }
+
+  /* Brand — NEW WINE CHURCH · ABIDJAN */
   .page-vote .brand {
-    font-size: 7pt;
-    letter-spacing: 2.5pt;
+    font-size: 9pt;
+    letter-spacing: 4pt;
     color: #C9A961;
     text-transform: uppercase;
     font-weight: bold;
+    margin-top: 2mm;
   }
-  .page-vote .logo {
-    display: block;
-    margin: 3mm auto 0;
-    width: 24mm; height: 24mm;
-    object-fit: contain;
-  }
-  .page-vote .logo-placeholder {
-    display: block;
-    margin: 3mm auto 0;
-    width: 24mm; height: 24mm;
-    background: #C9A961;
-    color: #0A0A0A;
-    text-align: center; line-height: 24mm;
-    font-size: 16pt; font-weight: bold;
-    border-radius: 3mm;
-  }
+
+  /* Titre "Roi & Reine" — Serif italique or dominant */
   .page-vote h1 {
     font-family: "DejaVu Serif", serif;
     font-style: italic;
-    font-size: 32pt;
+    font-size: 44pt;
     color: #EECF80;
-    margin-top: 3mm;
+    margin: 4mm 0 3mm;
     line-height: 1;
     letter-spacing: 0.5pt;
   }
-  .page-vote .subtitle {
-    font-size: 8.5pt;
+
+  /* Sous-titre "SCANNE POUR VOTER" — petit, letterSpacing large */
+  .page-vote .scan {
+    font-size: 8pt;
+    letter-spacing: 3.5pt;
     color: #C9A961;
-    letter-spacing: 1.2pt;
     text-transform: uppercase;
     font-weight: bold;
-    margin-top: 2.5mm;
+    margin-bottom: 6mm;
   }
-  .page-vote .divider {
-    color: #E6C877;
-    letter-spacing: 4pt;
-    font-size: 10pt;
-    margin: 3mm 0;
-  }
-  .page-vote .cta {
-    font-family: "DejaVu Serif", serif;
-    font-style: italic;
-    font-size: 11pt;
-    color: #F5E6C8;
-    font-weight: bold;
-    margin: 2mm 0;
-    line-height: 1.3;
-  }
+
+  /* QR — encart ivoire GÉANT + bordure or 2pt */
   .page-vote .qr-wrap {
     display: inline-block;
     background: #F5E6C8;
-    padding: 3mm;
-    border-radius: 2.5mm;
-    border: 0.7pt solid #C9A961;
-    margin-top: 3mm;
+    padding: 5mm;
+    border-radius: 3mm;
+    border: 2pt solid #C9A961;
   }
   .page-vote .qr-wrap img {
     display: block;
-    width: 65mm;
-    height: 65mm;
+    width: 100mm;
+    height: 100mm;
   }
-  .page-vote .ticket-hint {
-    margin-top: 3mm;
-    padding: 2mm 4mm;
-    display: inline-block;
-    border: 0.6pt dashed #C9A961;
-    border-radius: 1.5mm;
-    font-size: 8pt;
-    color: #F5E6C8;
-    line-height: 1.4;
-    background: rgba(201, 169, 97, 0.06);
+
+  /* Ticket-hint — UNE ligne discrète sous le QR */
+  .page-vote .hint {
+    margin-top: 6mm;
+    font-family: "DejaVu Serif", serif;
+    font-style: italic;
+    font-size: 11pt;
+    color: #D9CBB0;
+    letter-spacing: 0.3pt;
   }
-  .page-vote .ticket-hint strong { color: #E6C877; }
+  .page-vote .hint strong {
+    color: #E6C877;
+    font-style: normal;
+    font-weight: bold;
+    letter-spacing: 0.8pt;
+  }
+
+  /* Ornement filet + losange + filet AU-DESSUS du footer */
+  .page-vote .ornament {
+    position: absolute;
+    left: 20mm; right: 20mm; bottom: 22mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4mm;
+  }
+  .page-vote .ornament .line {
+    flex: 1;
+    height: 0.8pt;
+    background: rgba(201, 169, 97, 0.5);
+  }
+  .page-vote .ornament .diamond {
+    width: 2.5mm;
+    height: 2.5mm;
+    background: #C9A961;
+    transform: rotate(45deg);
+  }
+
+  /* Footer "BAL 2026 — A DARK NIGHT IN ELEGANCE" — cadre bordé or */
   .page-vote .foot {
     position: absolute;
-    left: 0; right: 0; bottom: 10mm;
+    left: 0; right: 0; bottom: 12mm;
     text-align: center;
   }
   .page-vote .foot-line {
     display: inline-block;
-    padding: 2mm 5mm;
-    border: 0.7pt solid #C9A961;
+    padding: 2mm 6mm;
+    border: 1pt solid #C9A961;
     border-radius: 2mm;
-    font-size: 8pt;
+    font-size: 9pt;
     color: #E6C877;
-    letter-spacing: 1.8pt;
+    letter-spacing: 2pt;
     text-transform: uppercase;
     font-weight: bold;
-  }
-  .page-vote .foot-tag {
-    margin-top: 2.5mm;
-    font-size: 6.5pt;
-    color: #8B7960;
-    letter-spacing: 1.8pt;
-    text-transform: uppercase;
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -274,7 +271,7 @@
 </head>
 <body>
 
-{{-- ═══════════════════ PAGE 1 — Roi & Reine (thème NOIR) ═══════════════════ --}}
+{{-- ═══════════════════ PAGE 1 — Roi & Reine (NOIR épuré) ═══════════════════ --}}
 <div class="page-vote">
   <div class="frame"></div>
   <div class="frame-inner"></div>
@@ -282,35 +279,27 @@
   <div class="content">
     <div class="brand">New Wine Church &middot; Abidjan</div>
 
-    @if($logoDataUri)
-      <img src="{{ $logoDataUri }}" alt="NWC" class="logo">
-    @else
-      <div class="logo-placeholder">NWC</div>
-    @endif
-
     <h1>Roi &amp; Reine</h1>
-    <div class="subtitle">BAL 2026 &mdash; A Dark Night in Elegance</div>
 
-    <div class="divider">&#9733; &#9733; &#9733;</div>
-
-    <div class="cta">
-      Scanne pour voter<br/>ton Roi &amp; ta Reine
-    </div>
+    <div class="scan">Scanne pour voter</div>
 
     <div class="qr-wrap">
       <img src="{{ $voteQr }}" alt="QR Vote">
     </div>
 
-    <div class="ticket-hint">
-      &Agrave; l'ouverture du vote, saisis ton <strong>code ticket</strong>
-      re&ccedil;u par email (ex&nbsp;: <strong>NWC-EBXB</strong>).<br/>
-      1 ticket = 1 vote unique.
+    <div class="hint">
+      Saisis ton <strong>code ticket</strong> re&ccedil;u par email &middot; 1 vote unique
     </div>
   </div>
 
+  <div class="ornament">
+    <span class="line"></span>
+    <span class="diamond"></span>
+    <span class="line"></span>
+  </div>
+
   <div class="foot">
-    <div class="foot-line">Un vote max par ticket</div>
-    <div class="foot-tag">Recto &middot; Vote</div>
+    <div class="foot-line">BAL 2026 &mdash; A Dark Night in Elegance</div>
   </div>
 </div>
 

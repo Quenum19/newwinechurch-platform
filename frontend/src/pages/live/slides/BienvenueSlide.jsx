@@ -191,16 +191,7 @@ export default function BienvenueSlide({ state }) {
           alignItems: 'center', justifyContent: 'center',
           textAlign: 'center', padding: '0 100px',
         }}>
-          {/* Sur-titre décoratif "— NEW WINE CHURCH —" Cinzel 46px or */}
-          <div style={{
-            fontFamily: "'Cinzel',serif", fontWeight: 700,
-            fontSize: 46, letterSpacing: '.42em',
-            color: '#E6C877',
-            textShadow: '0 2px 8px rgba(0,0,0,.7)',
-            marginBottom: 8,
-            opacity: 0,
-            animation: 'nwFadeUp .9s ease-out .3s forwards',
-          }}>— NEW WINE CHURCH —</div>
+          {/* Sur-titre "— NEW WINE CHURCH —" retiré (feedback user) */}
 
           {/* TITRE "Bienvenue" — Great Vibes 420px, OR PLAT #EECF80, dominant */}
           <div style={{

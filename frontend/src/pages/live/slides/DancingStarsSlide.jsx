@@ -55,26 +55,19 @@ export default function DancingStarsSlide({ state }) {
   return (
     <Stage>
       <style>{`
-        /* Rideau — cycle 10s PENDULAIRE FLUIDE.
-           Mouvement CONTINU sans paliers plats (fini le "blocage" aux extrémités).
+        /* Rideau — cycle 8s PENDULAIRE PUR (aucun palier plat, mouvement continu).
            0%   → fermé
-           25%  → complètement ouvert (2.5s d'ouverture progressive)
-           50%  → toujours ouvert (2.5s de scène visible, titre au max)
-           75%  → toujours ouvert (0s de plus)
-           100% → fermé (2.5s de fermeture progressive)
-           Courbe ease-in-out : accélère au départ, décélère à l'arrivée,
-           mouvement organique de rideau réel. */
+           50%  → complètement ouvert (4s d'ouverture continue)
+           100% → fermé (4s de fermeture continue)
+           Le rideau BOUGE en permanence, jamais immobile.
+           Courbe ease-in-out : accélère au départ, décélère à l'arrivée. */
         @keyframes nwOpenL {
-          0%   { transform: translateX(0) }
-          25%  { transform: translateX(-101%) }
-          75%  { transform: translateX(-101%) }
-          100% { transform: translateX(0) }
+          0%, 100% { transform: translateX(0) }
+          50%      { transform: translateX(-101%) }
         }
         @keyframes nwOpenR {
-          0%   { transform: translateX(0) }
-          25%  { transform: translateX(101%) }
-          75%  { transform: translateX(101%) }
-          100% { transform: translateX(0) }
+          0%, 100% { transform: translateX(0) }
+          50%      { transform: translateX(101%) }
         }
         /* Sheen or qui traverse chaque pan — plus rapide (3.5s au lieu de 6s)
            pour un mouvement bien plus vivant. */
@@ -88,17 +81,17 @@ export default function DancingStarsSlide({ state }) {
           40%  { opacity: .55 }
           100% { transform: translateX(-120%) skewX(16deg); opacity: 0 }
         }
-        /* Titre : sync sur les 10s du rideau (visible quand rideau ouvert 25-75%) */
+        /* Titre : sync sur les 8s du rideau — apparaît PROGRESSIVEMENT en même
+           temps que le rideau s'ouvre, disparaît quand il se ferme.
+           Pas de "temps mort" : le titre suit le mouvement du rideau. */
         @keyframes nwTitleShow {
-          0%, 20%  { opacity: 0; transform: scale(.92) }
-          30%      { opacity: 1; transform: scale(1) }
-          70%      { opacity: 1; transform: scale(1) }
-          80%, 100%{ opacity: 0; transform: scale(.92) }
+          0%, 100% { opacity: 0; transform: scale(.92) }
+          40%, 60% { opacity: 1; transform: scale(1) }
         }
-        /* Flash or plein écran au moment où le rideau atteint l'ouverture max (~25%) */
+        /* Flash or plein écran au moment où le rideau atteint l'ouverture max (50%) */
         @keyframes nwStageFlash {
-          0%, 20%, 32%, 100% { opacity: 0 }
-          25%                { opacity: .18 }
+          0%, 42%, 58%, 100% { opacity: 0 }
+          50%                { opacity: .18 }
         }
         @keyframes nwSpotSweepA { 0%,100%{transform:translateX(-50%) rotate(-22deg); opacity:.55} 50%{transform:translateX(-50%) rotate(22deg); opacity:.85} }
         @keyframes nwSpotSweepB { 0%,100%{transform:translateX(-50%) rotate(20deg); opacity:.7} 50%{transform:translateX(-50%) rotate(-20deg); opacity:.4} }
@@ -181,7 +174,7 @@ export default function DancingStarsSlide({ state }) {
             color: '#E6C877',
             textShadow: '0 0 24px rgba(201,169,97,.55), 0 2px 12px rgba(0,0,0,.95)',
             marginBottom: 22,
-            animation: 'nwTitleShow 10s ease-in-out infinite',
+            animation: 'nwTitleShow 8s ease-in-out infinite',
             transformOrigin: 'center center',
             willChange: 'opacity, transform',
           }}>LE RIDEAU SE LÈVE</div>
@@ -189,7 +182,7 @@ export default function DancingStarsSlide({ state }) {
           {/* Bloc DANCING + Stars animé ensemble (pop synchronisé) */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            animation: 'nwTitleShow 10s ease-in-out infinite',
+            animation: 'nwTitleShow 8s ease-in-out infinite',
             transformOrigin: 'center center',
             willChange: 'opacity, transform',
           }}>
@@ -220,7 +213,7 @@ export default function DancingStarsSlide({ state }) {
           background: '#FFE9A8',
           mixBlendMode: 'screen',
           pointerEvents: 'none',
-          animation: 'nwStageFlash 10s ease-out infinite',
+          animation: 'nwStageFlash 8s ease-out infinite',
           willChange: 'opacity',
         }} />
 
@@ -234,7 +227,7 @@ export default function DancingStarsSlide({ state }) {
             position: 'absolute', top: 0, bottom: 0, left: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset -30px 0 40px rgba(0,0,0,.7)',
-            animation: 'nwOpenL 10s ease-in-out infinite',
+            animation: 'nwOpenL 8s ease-in-out infinite',
             willChange: 'transform',
             overflow: 'hidden',
           }}>
@@ -258,7 +251,7 @@ export default function DancingStarsSlide({ state }) {
             position: 'absolute', top: 0, bottom: 0, right: 0, width: '52%',
             background: velvet,
             boxShadow: 'inset 30px 0 40px rgba(0,0,0,.7)',
-            animation: 'nwOpenR 10s ease-in-out infinite',
+            animation: 'nwOpenR 8s ease-in-out infinite',
             willChange: 'transform',
             overflow: 'hidden',
           }}>

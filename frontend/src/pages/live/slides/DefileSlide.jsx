@@ -164,23 +164,26 @@ export default function DefileSlide({ state }) {
           alignItems: 'center', textAlign: 'center',
           pointerEvents: 'none',
         }}>
-          {/* Sur-titre "Place à l'élégance" — Playfair italic 62px ivoire */}
+          {/* Sur-titre "Place à l'élégance" — Playfair italic 62px ivoire
+              (marge basse importante pour NE PAS chevaucher DÉFILÉ) */}
           <div style={{
             fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
             fontSize: 62, color: '#F5E6C8',
             textShadow: '0 2px 12px rgba(0,0,0,.9)',
+            marginBottom: 40,
           }}>Place à l'élégance</div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 60, marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 60 }}>
             {/* Étoile ★ Cinzel 110px or plat */}
             <span style={{
               fontFamily: "'Cinzel',serif", fontSize: 110, color: '#E6C877',
               animation: 'nwStarPulse 3s ease-in-out infinite',
+              lineHeight: 1,
             }}>★</span>
             {/* DÉFILÉ — Anton 340px OR PLAT #E6C877 (aucun gradient) */}
             <span style={{
               fontFamily: "'Anton',sans-serif", fontSize: 340,
-              letterSpacing: '.05em', textTransform: 'uppercase', lineHeight: .95,
+              letterSpacing: '.05em', textTransform: 'uppercase', lineHeight: 1,
               color: '#E6C877',
               textShadow: '0 4px 14px rgba(0,0,0,.85)',
             }}>Défilé</span>
@@ -188,6 +191,7 @@ export default function DefileSlide({ state }) {
             <span style={{
               fontFamily: "'Cinzel',serif", fontSize: 110, color: '#E6C877',
               animation: 'nwStarPulse 3s ease-in-out infinite 1.5s',
+              lineHeight: 1,
             }}>★</span>
           </div>
 
