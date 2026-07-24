@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BalScreenState;
+use App\Models\BalVote;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -100,6 +102,26 @@ class BalScreenController extends Controller
         return response()->json([
             'message' => 'Vote ouvert.',
             'state'   => $state->fresh(),
+        ]);
+    }
+
+    /**
+     * POST /admin/events/{id}/bal/vote/reset — supprime tous les votes.
+     * Utile pour repartir de zéro après les tests / entre 2 événements.
+     */
+    public function resetVotes(int $eventId): JsonResponse
+    {
+        $this->ensureAuthorized(request());
+        Event::findOrFail($eventId);
+
+        $deleted = BalVote::where('event_id', $eventId)->delete();
+
+        // Purge le cache du state public pour refléter immédiatement 0 votes
+        Cache::forget("bal:public-state:{$eventId}");
+
+        return response()->json([
+            'message' => "{$deleted} vote(s) supprimé(s). Compteur remis à 0.",
+            'deleted' => $deleted,
         ]);
     }
 

@@ -128,6 +128,15 @@ export default function BalRegiePage() {
       qc.invalidateQueries({ queryKey: ['bal', 'state', eventId] })
     },
   })
+  const voteReset = useMutation({
+    mutationFn: () => api.post(`/admin/events/${eventId}/bal/vote/reset`),
+    onSuccess: (res) => {
+      toast.success(res?.data?.message || 'Votes remis à 0 ✓')
+      qc.invalidateQueries({ queryKey: ['bal', 'state', eventId] })
+      qc.invalidateQueries({ queryKey: ['bal', 'results', eventId] })
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Erreur reset votes.'),
+  })
   const proclamerMutation = useMutation({
     mutationFn: () => api.post(`/admin/events/${eventId}/bal/proclamer`),
     onSuccess: () => {
@@ -328,9 +337,20 @@ export default function BalRegiePage() {
             Fermer le vote
           </button>
           <button
+            onClick={() => {
+              if (window.confirm('Supprimer TOUS les votes de cet événement ? (Compteur remis à 0 — irréversible)')) {
+                voteReset.mutate()
+              }
+            }}
+            disabled={voteReset.isPending}
+            className="adm-btn adm-btn-ghost text-red-600 border-red-300 hover:border-red-500"
+          >
+            Reset votes (0)
+          </button>
+          <button
             onClick={() => proclamerMutation.mutate()}
             disabled={proclamerMutation.isPending}
-            className="adm-btn adm-btn-primary col-span-2"
+            className="adm-btn adm-btn-primary"
             style={{ background: 'linear-gradient(135deg, #C9A961 0%, #8B1A2F 100%)' }}
           >
             <Crown size={14}/> Proclamer résultats

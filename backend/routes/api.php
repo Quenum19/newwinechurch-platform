@@ -634,6 +634,7 @@ Route::middleware(['auth:sanctum'])
     Route::post('/events/{id}/bal/kim-b/upload',          [\App\Http\Controllers\Admin\BalScreenController::class, 'uploadKimBPhotos'])->whereNumber('id');
     Route::post('/events/{id}/bal/vote/open',             [\App\Http\Controllers\Admin\BalScreenController::class, 'openVote'])->whereNumber('id');
     Route::post('/events/{id}/bal/vote/close',            [\App\Http\Controllers\Admin\BalScreenController::class, 'closeVote'])->whereNumber('id');
+    Route::post('/events/{id}/bal/vote/reset',            [\App\Http\Controllers\Admin\BalScreenController::class, 'resetVotes'])->whereNumber('id');
     Route::post('/events/{id}/bal/proclamer',             [\App\Http\Controllers\Admin\BalScreenController::class, 'proclamer'])->whereNumber('id');
     Route::get ('/events/{id}/bal/results',               [\App\Http\Controllers\Admin\BalResultsController::class, 'results'])->whereNumber('id');
     // CRUD candidats
