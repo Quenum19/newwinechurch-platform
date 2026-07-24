@@ -1,10 +1,13 @@
 /**
  * KimBPhotosSlide — Diaporama plein écran des photos de KIM B pendant sa
- * prestation. Les URLs sont livrées via `state.config.kim_b_photos` (array
- * d'URLs, uploadées depuis la régie via /admin/events/{id}/bal/kim-b/upload).
+ * prestation. Les URLs sont livrées via `state.config.kim_b_photos`.
  *
- * Comportement calqué sur PhotosAmbianceSlide : fondu enchaîné 6s + scale
- * Ken Burns léger. Overlay "KIM B" en Anton bas-gauche.
+ * Cadrage adapté aux photos portrait ET paysage :
+ *   - fond flouté de la MÊME image (blur 40px + scale 1.15) pour meubler
+ *     élégamment les bords quand la photo est portrait
+ *   - image nette en object-fit: contain par-dessus (aucun crop du visage)
+ *   - fondu enchaîné 6s + Ken Burns léger
+ * Overlay "KIM B" (Anton or) en bas-gauche.
  */
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -12,8 +15,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 const INTERVAL_MS = 6000
 
 export default function KimBPhotosSlide({ state }) {
-  // Debug : log ce que la slide reçoit (visible dans la console navigateur
-  // sur /live/bal/{id} pour comprendre pourquoi les photos ne s'affichent pas)
   useEffect(() => {
     console.log('[KimBPhotosSlide] state.config =', state?.config)
   }, [state?.config])
@@ -29,18 +30,16 @@ export default function KimBPhotosSlide({ state }) {
     return () => clearInterval(timer)
   }, [photos.length])
 
-  // Reset l'index si les photos changent (nouvel upload)
   useEffect(() => {
     if (index >= photos.length) setIndex(0)
   }, [photos.length, index])
 
-  // === Cas vide : invitation à uploader ===
   if (photos.length === 0) {
     return (
       <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at center, #2a0f14 0%, #0A0A0A 80%)',
+          background: 'radial-gradient(120% 100% at 50% 40%, #211a10 0%, #0d0a06 56%, #060402 100%)',
         }} />
         <div style={{
           position: 'absolute', inset: 0,
@@ -51,10 +50,9 @@ export default function KimBPhotosSlide({ state }) {
           <h1 style={{
             fontFamily: "'Anton', Impact, sans-serif",
             fontSize: 'clamp(4rem, 10vw, 11rem)',
-            color: '#C9A961',
+            color: '#E6C877',
             letterSpacing: '0.02em',
-            margin: 0,
-            lineHeight: 1,
+            margin: 0, lineHeight: 1,
           }}>KIM B</h1>
           <p style={{
             fontFamily: '"Playfair Display", serif',
@@ -62,17 +60,13 @@ export default function KimBPhotosSlide({ state }) {
             fontSize: 'clamp(1.5rem, 2.4vw, 2.4rem)',
             color: '#F5E6C8',
             marginTop: '3vh',
-          }}>
-            Aucune photo pour l'instant.
-          </p>
+          }}>Aucune photo pour l'instant.</p>
           <p style={{
             fontFamily: '"Cormorant Garamond", serif',
             fontSize: 'clamp(1rem, 1.4vw, 1.4rem)',
             color: '#8B7960',
             marginTop: '1vh',
-          }}>
-            Régie : uploade les photos KIM B dans le panneau prévu.
-          </p>
+          }}>Régie : uploade les photos KIM B dans le panneau prévu.</p>
         </div>
       </div>
     )
@@ -85,34 +79,54 @@ export default function KimBPhotosSlide({ state }) {
       <AnimatePresence mode="sync">
         <motion.div
           key={currentPhoto + index}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 1.6, ease: 'easeInOut' }}
-          style={{
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          {/* Fond flouté de la même image — remplit élégamment les bords en portrait */}
+          <div style={{
             position: 'absolute', inset: 0,
             backgroundImage: `url("${currentPhoto}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#0A0A0A',
-          }}
-        />
+            filter: 'blur(40px) brightness(.55)',
+            transform: 'scale(1.15)',
+          }} />
+          {/* Voile noir léger pour renforcer contraste */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(0,0,0,0.35)',
+          }} />
+          {/* Image nette centrée (contain — aucun crop du visage) */}
+          <motion.img
+            src={currentPhoto}
+            alt=""
+            initial={{ scale: 1.03 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 6, ease: 'linear' }}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        </motion.div>
       </AnimatePresence>
 
-      {/* Nom artiste en overlay bas-gauche */}
+      {/* Overlay KIM B bas-gauche */}
       <div style={{
         position: 'absolute', bottom: '3vh', left: '3vw',
         zIndex: 4,
         fontFamily: "'Anton', sans-serif",
-        fontSize: 'clamp(2.5rem, 4vw, 4.5rem)',
+        fontSize: 'clamp(3rem, 5vw, 5.5rem)',
         color: '#E6C877',
         letterSpacing: '.08em',
-        textShadow: '0 2px 16px rgba(0,0,0,.95)',
+        textShadow: '0 2px 20px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.6)',
         textTransform: 'uppercase',
-      }}>
-        KIM B
-      </div>
+      }}>KIM B</div>
     </div>
   )
 }
