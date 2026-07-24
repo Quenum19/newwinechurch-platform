@@ -50,8 +50,17 @@ class BalSupportsController extends Controller
             'logoDataUri' => $logoDataUri,
         ])->setPaper('a5', 'portrait');
 
-        $filename = 'bal-supports-table-' . now()->format('Ymd-Hi') . '.pdf';
-        return $pdf->stream($filename);
+        // Timestamp dans le nom du fichier + headers no-cache : force le
+        // navigateur à télécharger toujours la dernière version (fini le PDF
+        // caché après une refonte du template).
+        $filename = 'bal-supports-table-' . now()->format('Ymd-His') . '.pdf';
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ]);
     }
 
     /**
@@ -81,8 +90,14 @@ class BalSupportsController extends Controller
             'logoDataUri' => $logoDataUri,
         ])->setPaper('a5', 'portrait');
 
-        $filename = 'bal-vote-qr-' . now()->format('Ymd-Hi') . '.pdf';
-        return $pdf->stream($filename);
+        $filename = 'bal-vote-qr-' . now()->format('Ymd-His') . '.pdf';
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ]);
     }
 
     /** Génère un QR code SVG en data URI. */
