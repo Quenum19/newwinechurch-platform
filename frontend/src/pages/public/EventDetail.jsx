@@ -44,7 +44,13 @@ export default function EventDetail() {
     return <div className="bg-public-bone min-h-screen container-nwc py-32 text-center text-public-ink/60">{t('events.notFound', 'Événement introuvable.')}</div>
   }
 
-  const isPast = event.starts_at && new Date(event.starts_at) < new Date()
+  // Un event est "passé" quand sa FIN est atteinte (ends_at), pas juste son
+  // début. Ça laisse l'inscription/billetterie ouverte pendant tout l'événement
+  // (utile pour arrivées tardives, achats sur place). Fallback starts_at si
+  // ends_at absent.
+  const isPast = event.ends_at
+    ? new Date(event.ends_at) < new Date()
+    : (event.starts_at && new Date(event.starts_at) < new Date())
 
   const hasCover = !! event.cover_image
 
