@@ -67,23 +67,18 @@ export default function DefaultSlide({ state }) {
           transform: 'scale(1.2)',
         }} />
 
-        {/* Affiche — FORMAT STORY compact au centre (pas trop zoomé).
-            Hauteur ~80% (864px), largeur auto (préserve ratio portrait) avec
-            maxWidth 30% (576px max). L'affiche apparaît PETITE et DIGNE
-            au centre, avec beaucoup de fond flouté autour (velours doré). */}
+        {/* Affiche entière — FULL ÉCRAN contain (l'affiche portrait remplit
+            toute la hauteur 1080px, largeur auto = ratio préservé, bandes
+            latérales remplies par le fond flouté). */}
         <img
           src={bg}
           alt=""
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            height: '80%',
-            width: 'auto',
-            maxWidth: '30%',
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'contain',
             display: 'block',
-            filter: 'drop-shadow(0 12px 48px rgba(0,0,0,.7))',
+            filter: 'drop-shadow(0 8px 40px rgba(0,0,0,.6))',
           }}
         />
       </div>
