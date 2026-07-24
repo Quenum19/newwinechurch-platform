@@ -12,6 +12,7 @@ use App\Models\EventTicket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 /**
  * Endpoint public pour l'écran fullscreen live du Bal.
@@ -108,9 +109,27 @@ class BalScreenPublicController extends Controller
             ->map(fn ($p) => asset('storage/' . (($hasTv ? $p->tv_path : null) ?? $p->landscape_path ?? $p->path)))
             ->toArray();
 
+        // QR de vote — injecté dans config pour que VoteSlide puisse afficher
+        // le VRAI QR sur l'écran live (au lieu du placeholder).
+        $config = $state->config ?? [];
+        if (! is_array($config)) $config = json_decode(json_encode($config), true) ?: [];
+        $frontendUrl = rtrim(config('app.frontend_url', 'https://newinechurch.org'), '/');
+        $voteUrl = $frontendUrl . '/bal/vote/' . $event->id;
+        $config['vote_url'] = $voteUrl;
+        $config['vote_qr_svg'] = Cache::remember(
+            "bal:vote-qr-svg:{$event->id}",
+            3600,
+            fn () => QrCode::size(400)
+                ->margin(1)
+                ->format('svg')
+                ->color(10, 10, 10)
+                ->backgroundColor(245, 230, 200)
+                ->generate($voteUrl)
+        );
+
         return [
             'current_slide' => $state->current_slide,
-            'config'        => $state->config ?? new \stdClass(),
+            'config'        => $config,
             'vote_status'   => $state->vote_status,
             'stats' => [
                 'arrivees_count' => $arrivees,

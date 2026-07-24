@@ -267,8 +267,8 @@ export default function VoteSlide({ state }) {
               {/* Cadre ivoire + bordure or 4pt (pulsante) */}
               <div style={{
                 position: 'relative',
-                width: 340, height: 340,
-                padding: 22,
+                width: 440, height: 440,
+                padding: 26,
                 background: '#F5E6C8',
                 borderRadius: 12,
                 animation: 'nwQrPulse 3.4s ease-in-out infinite',
@@ -307,36 +307,33 @@ export default function VoteSlide({ state }) {
               </div>
             </div>
 
-            {/* CTA droite */}
-            <div style={{ textAlign: 'left', maxWidth: 520 }}>
+            {/* CTA droite — textes XXL uniquement */}
+            <div style={{ textAlign: 'left', maxWidth: 620 }}>
               <div style={{
                 fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-                fontSize: 50, color: '#F5E6C8', lineHeight: 1.05,
+                fontSize: 82, color: '#F5E6C8', lineHeight: 1.05,
+                textShadow: '0 2px 12px rgba(0,0,0,.85)',
               }}>Scanne pour voter</div>
               <div style={{
-                fontFamily: "'Great Vibes',cursive", fontSize: 100, lineHeight: .95,
-                color: '#EECF80', textShadow: '0 0 60px rgba(201,169,97,.45)',
-                marginTop: 6,
+                fontFamily: "'Great Vibes',cursive", fontSize: 140, lineHeight: .95,
+                color: '#EECF80', textShadow: '0 0 60px rgba(201,169,97,.55)',
+                marginTop: 12,
               }}>ton Roi &amp; ta Reine</div>
-              <div style={{
-                fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
-                fontSize: 28, color: '#D9CBB0', marginTop: 14, letterSpacing: '.03em',
-              }}>Code ticket reçu par email · 1 vote unique</div>
             </div>
           </div>
 
           {/* -------- COMPTEUR XXL -------- */}
           <div style={{
             display: 'flex', alignItems: 'baseline', justifyContent: 'center',
-            gap: 34, marginTop: 26,
+            gap: 40, marginTop: 40,
           }}>
             <div style={{
-              fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: 46,
-              letterSpacing: '.28em', color: '#C9A961',
-              alignSelf: 'center',
+              fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 90,
+              letterSpacing: '.22em', color: '#E6C877',
+              alignSelf: 'center', textShadow: '0 2px 14px rgba(0,0,0,.8)',
             }}>VOTES</div>
             <div style={{
-              fontFamily: "'Anton',sans-serif", fontSize: 220, lineHeight: .85,
+              fontFamily: "'Anton',sans-serif", fontSize: 300, lineHeight: .85,
               textTransform: 'uppercase',
               background: 'linear-gradient(180deg,#FFF6D8,#E6C877 48%,#C9A961 68%,#8a6d2f)',
               WebkitBackgroundClip: 'text', backgroundClip: 'text',
@@ -344,58 +341,6 @@ export default function VoteSlide({ state }) {
               animation: 'nwGlowP 6s ease-in-out infinite',
             }}>{votesFmt}</div>
           </div>
-
-          {/* -------- MÉDAILLONS CANDIDATS -------- */}
-          {candidates.length > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-              gap: 46, marginTop: 18,
-            }}>
-              {candidates.map((c, i) => {
-                const name = nameOf(c)
-                const initial = initialOf(c)
-                const isReine = String(c.role || '').toLowerCase() === 'reine'
-                const roleLabel = isReine ? 'REINE' : 'ROI'
-                const roleGlyph = isReine ? '♕' : '♔'
-                const animDur = (4 + i * 0.5).toFixed(1)
-                const animDelay = (i * 0.28).toFixed(2)
-                const avatarBg = c.photo_url
-                  ? `url("${c.photo_url}") center/cover`
-                  : 'linear-gradient(135deg,#7E662E,#C9A961 55%,#E6C877)'
-                return (
-                  <div key={c.id ?? i} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    animation: `nwFloat ${animDur}s ease-in-out infinite`,
-                    animationDelay: `${animDelay}s`,
-                    minWidth: 140,
-                  }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: 110, height: 110, borderRadius: '50%',
-                      background: avatarBg,
-                      border: '2px solid #E6C877',
-                      boxShadow: '0 0 20px rgba(230,200,119,.4), 0 0 0 4px rgba(10,10,10,.6) inset',
-                      fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 46,
-                      color: '#0d0a06', textShadow: '0 1px 0 rgba(255,233,168,.4)',
-                      overflow: 'hidden',
-                    }}>{c.photo_url ? '' : initial}</div>
-                    <div style={{
-                      fontFamily: "'Cinzel',serif", fontSize: 16, fontWeight: 600,
-                      letterSpacing: '.22em', color: '#C9A961',
-                      marginTop: 10,
-                    }}>
-                      <span style={{ marginRight: 6 }}>{roleGlyph}</span>{roleLabel}
-                    </div>
-                    <div style={{
-                      fontFamily: "'Anton',sans-serif", fontSize: 30, lineHeight: 1,
-                      color: '#F5E6C8', marginTop: 4, letterSpacing: '.02em',
-                      textTransform: 'uppercase',
-                    }}>{name}</div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
         </div>
       </div>
     </Stage>
