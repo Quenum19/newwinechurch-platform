@@ -11,7 +11,9 @@
  * Évite vite-plugin-pwa (incompatible Vite 8) — implémentation manuelle.
  */
 
-const CACHE_VERSION = 'nwc-v2-2026-05-24'
+// BUMP à chaque refonte importante pour forcer la purge côté client (SW cache-first).
+// Sinon les visiteurs voient l'ancien bundle malgré un nouveau deploy.
+const CACHE_VERSION = 'nwc-v3-2026-07-24'
 const STATIC_CACHE  = `static-${CACHE_VERSION}`
 const PAGES_CACHE   = `pages-${CACHE_VERSION}`
 
@@ -66,6 +68,9 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/mon-espace')) return
   if (url.pathname.startsWith('/gouverneur')) return
   if (url.pathname.startsWith('/leader')) return
+  // Skip /live/* : l'écran live du bal DOIT toujours servir le dernier code
+  // (sinon les corrections de slides ne s'appliquent jamais sans vider le cache).
+  if (url.pathname.startsWith('/live')) return
 
   // 5. Ignorer les routes API / sanctum si quelqu'un tape via le racine.
   if (url.pathname.startsWith('/api/'))     return
