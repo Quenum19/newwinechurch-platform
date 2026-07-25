@@ -31,6 +31,11 @@ export default function ProclamationSlide({ state }) {
   const reine = res.reine ?? { name: '—', votes: 0, photo: null }
   const maxV = Math.max(roi.votes || 0, reine.votes || 0, 1)
 
+  // Debug (console navigateur sur /live/bal/{id})
+  useEffect(() => {
+    console.log('[Proclamation] state.results =', res)
+  }, [res])
+
   // Count-up progression p ∈ [0,1] — durée 1500ms, ease-out cubic
   const [p, setP] = useState(0)
   const rafRef = useRef(null)
@@ -302,34 +307,49 @@ export default function ProclamationSlide({ state }) {
                     position: 'absolute', inset: -3, borderRadius: '50%',
                     background: '#0d0a06',
                   }} />
-                  {/* Photo — ou fond médaillon or si absente */}
+                  {/* Fond or par défaut (visible tant que la photo n'a pas chargé
+                      OU si elle échoue) */}
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: '50%',
-                    backgroundImage: r.hasPhoto ? `url("${r.photo}")` : 'none',
-                    background: r.hasPhoto
-                      ? undefined
-                      : 'conic-gradient(from 45deg,#7E662E,#E6C877,#FFE9A8,#C9A961,#FFF6D8,#E6C877,#7E662E)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    background: 'conic-gradient(from 45deg,#7E662E,#E6C877,#FFE9A8,#C9A961,#FFF6D8,#E6C877,#7E662E)',
                   }} />
-                  {/* Bordure OR (aucun bordeaux) */}
+                  {/* Initiale ivoire — fallback visible si pas de photo (ou pendant chargement) */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Great Vibes',cursive",
+                    fontSize: 150,
+                    lineHeight: 1,
+                    color: '#F5E6C8',
+                    textShadow: '0 4px 24px rgba(0,0,0,.7), 0 0 40px rgba(230,200,119,.5)',
+                    pointerEvents: 'none',
+                  }}>{r.initial}</div>
+                  {/* Photo en <img> (couvre initiale + gradient si charge OK).
+                      Si l'URL échoue, l'img reste invisible et on garde l'initiale. */}
+                  {r.hasPhoto && (
+                    <img
+                      src={r.photo}
+                      alt=""
+                      onError={(e) => {
+                        console.error('[Proclamation] Photo failed:', r.photo)
+                        e.currentTarget.style.display = 'none'
+                      }}
+                      style={{
+                        position: 'absolute', inset: 0,
+                        width: '100%', height: '100%',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                  {/* Bordure OR (au-dessus de la photo, aucun bordeaux) */}
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: '50%',
                     border: '3px solid rgba(230,200,119,.75)',
                     boxShadow: 'inset 0 0 30px rgba(0,0,0,.45)',
+                    pointerEvents: 'none',
                   }} />
-                  {/* Fallback typographique Great Vibes 150px IVOIRE (aucun bordeaux) */}
-                  {!r.hasPhoto && (
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: "'Great Vibes',cursive",
-                      fontSize: 150,
-                      lineHeight: 1,
-                      color: '#F5E6C8',
-                      textShadow: '0 4px 24px rgba(0,0,0,.7), 0 0 40px rgba(230,200,119,.5)',
-                    }}>{r.initial}</div>
-                  )}
                 </div>
 
                 {/* Label "LE ROI" / "LA REINE" — Cinzel 60px OR PLAT (sous le médaillon) */}
