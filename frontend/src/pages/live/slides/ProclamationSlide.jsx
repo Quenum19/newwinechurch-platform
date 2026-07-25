@@ -73,17 +73,23 @@ export default function ProclamationSlide({ state }) {
     boxShadow: '0 0 12px rgba(214,178,95,.7)',
   }
 
-  // Fabrique d'un piédestal (Roi ou Reine)
+  // Fabrique d'un piédestal (Roi ou Reine) — accepte 2 formats backend :
+  //   1. { name, photo, votes }         (contrat minimal historique)
+  //   2. { first_name, last_name, photo_url, votes } (contrat BalResultsController)
   const buildRoyal = (d, label, tz, ry) => {
     const votes = d.votes || 0
+    const name = (d.name
+      || [d.first_name, d.last_name].filter(Boolean).join(' ').trim()
+      || '—')
+    const photo = d.photo || d.photo_url || null
     return {
       label,
       tz,
       ry,
-      hasPhoto: !!d.photo,
-      photo: d.photo || null,
-      initial: (d.name || '?').trim().charAt(0).toUpperCase(),
-      name: d.name || '—',
+      hasPhoto: !!photo,
+      photo,
+      initial: name.trim().charAt(0).toUpperCase() || '?',
+      name,
       barPct: ((votes / maxV) * 100 * p).toFixed(1) + '%',
       votesDisplay: Math.round(votes * p).toLocaleString('fr-FR'),
     }
