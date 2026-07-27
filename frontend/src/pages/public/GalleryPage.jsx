@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2 } from 'lucide-react'
+import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { publicDepartments, publicEvents, publicMedia } from '@/api/public'
@@ -419,14 +419,29 @@ function Lightbox({ items, index, onClose, onNavigate }) {
         <span className="font-mono text-xs uppercase tracking-widest text-public-bone/60 tabular-nums">
           {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
         </span>
-        <button
-          onClick={onClose}
-          className="p-2 rounded text-public-bone/80 hover:text-public-bone hover:bg-public-bone/10 transition"
-          aria-label={t('common.close', 'Fermer')}
-          title={t('common.close', 'Fermer')}
-        >
-          <X size={20}/>
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Bouton télécharger — force download via attribut natif.
+              Fonctionne pour images ET vidéos servies same-origin. */}
+          <a
+            href={item.file_path}
+            download
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
+            aria-label={t('gallery.downloadFile', 'Télécharger')}
+            title={t('gallery.downloadFile', 'Télécharger')}
+          >
+            <Download size={16}/>
+            <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
+          </a>
+          <button
+            onClick={onClose}
+            className="p-2 rounded text-public-bone/80 hover:text-public-bone hover:bg-public-bone/10 transition"
+            aria-label={t('common.close', 'Fermer')}
+            title={t('common.close', 'Fermer')}
+          >
+            <X size={20}/>
+          </button>
+        </div>
       </div>
 
       {/* Média + flèches — encadré pour respirer */}
