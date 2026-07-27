@@ -45,6 +45,9 @@ class EventResource extends JsonResource
             'attendees_count'       => $this->whenCounted('registrations'),
             // Pour décider d'afficher le bouton "Galerie" côté public/admin.
             'media_count'           => $this->whenCounted('media'),
+            // Compteur photos post-événement (générique) — utilisé pour
+            // afficher le bouton "Voir la galerie" sur EventDetail public.
+            'gallery_count'         => $this->whenCounted('galleryPhotos'),
             // === Billetterie (Phase 1) ===
             'ticketing_enabled'     => (bool) $this->ticketing_enabled,
             'tickets_capacity'      => $this->tickets_capacity,

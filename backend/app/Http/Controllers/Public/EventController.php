@@ -69,6 +69,8 @@ class EventController extends Controller
                 // Compteur médias publiés — utile au frontend pour décider d'afficher
                 // ou non le bouton "Voir la galerie de l'événement".
                 'media as media_count' => fn ($q) => $q->where('is_published', true),
+                // Compteur photos de galerie visibles (générique tous events)
+                'galleryPhotos as gallery_count' => fn ($q) => $q->where('is_visible', true),
             ])
             ->firstOrFail();
 

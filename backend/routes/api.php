@@ -188,6 +188,10 @@ Route::get('/donation-methods',       [DonationMethodController::class, 'index']
 Route::get('/auth-images/random',     [AuthImageController::class, 'random']);
 
 // === Bal 2026 — endpoints publics (écran live + vote) ===
+// Galerie publique post-événement (générique — tout event avec bal_photos visibles)
+Route::get ('/public/events/{id}/gallery',                     [\App\Http\Controllers\Public\EventGalleryController::class, 'index'])->whereNumber('id');
+Route::get ('/public/events/{id}/gallery/{photoId}/download',  [\App\Http\Controllers\Public\EventGalleryController::class, 'download'])->whereNumber('id')->whereNumber('photoId');
+
 Route::get ('/public/events/{id}/bal/state', [\App\Http\Controllers\Public\BalScreenPublicController::class, 'state'])
     ->whereNumber('id');
 Route::get ('/public/events/{id}/bal/vote',  [\App\Http\Controllers\Public\BalVoteController::class, 'show'])

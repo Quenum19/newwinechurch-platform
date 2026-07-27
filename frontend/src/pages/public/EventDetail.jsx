@@ -106,22 +106,37 @@ export default function EventDetail() {
               </p>
             </div>
 
-            {/* Bouton "Voir la galerie" — apparaît uniquement si des médias
-                sont rattachés à cet événement (count exposé par EventResource). */}
-            {event.media_count > 0 && (
-              <div className="mt-8">
+            {/* Boutons "Voir la galerie" — 2 sources potentielles :
+                1. gallery_count → photos post-événement (BalPhoto générique,
+                   uploadées par les photographes le jour J, avec cadre event
+                   appliqué par le composer). Prioritaire car dédiée à l'event.
+                2. media_count → médiathèque générale du site. */}
+            <div className="mt-8 flex flex-wrap gap-3">
+              {event.gallery_count > 0 && (
+                <Link
+                  to={`/evenements/${event.slug}/galerie`}
+                  className="group inline-flex items-center gap-2 px-5 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
+                >
+                  <ImageIcon size={14} strokeWidth={2.2}/>
+                  {t('events.viewGallery', 'Voir la galerie')}
+                  <span className="px-2 py-0.5 bg-public-bone text-public-flame group-hover:bg-public-flame group-hover:text-public-bone transition">
+                    {event.gallery_count}
+                  </span>
+                </Link>
+              )}
+              {event.media_count > 0 && (
                 <Link
                   to={`/galerie?event=${event.slug}`}
                   className="group inline-flex items-center gap-2 px-5 py-3 bg-public-ink text-public-bone hover:bg-public-flame transition font-mono text-xs uppercase tracking-widest font-semibold"
                 >
                   <ImageIcon size={14} strokeWidth={2.2}/>
-                  {t('events.viewGallery', 'Voir la galerie')}
+                  {t('events.mediaGallery', 'Médiathèque')}
                   <span className="px-2 py-0.5 bg-public-flame text-public-bone group-hover:bg-public-bone group-hover:text-public-flame transition">
                     {event.media_count}
                   </span>
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <aside>

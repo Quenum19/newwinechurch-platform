@@ -79,6 +79,14 @@ class Event extends Model
         return $this->hasMany(MediaGallery::class, 'event_id');
     }
 
+    /** Photos de galerie (bal_photos) uploadées par les photographes.
+     *  Générique : marche pour tout event (nom historique "Bal" mais l'API
+     *  publique GalleryController est agnostique). */
+    public function galleryPhotos(): HasMany
+    {
+        return $this->hasMany(BalPhoto::class, 'event_id');
+    }
+
     /** Tickets émis (Phase 1 billetterie). */
     public function tickets(): HasMany
     {
