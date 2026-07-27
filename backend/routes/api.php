@@ -170,6 +170,8 @@ Route::get('/live/next',              [LiveStreamController::class, 'next']);
 // Rate limit doux pour empêcher le scraping massif de médias.
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('/media',              [PublicMediaController::class, 'index']);
+    // Download avec option ?branded=1 (applique le cadre event à la volée)
+    Route::get('/media/{id}/download', [PublicMediaController::class, 'download'])->whereNumber('id');
 });
 
 // Mur de prière publique

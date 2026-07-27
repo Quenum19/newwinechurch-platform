@@ -420,11 +420,13 @@ function Lightbox({ items, index, onClose, onNavigate }) {
           {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
         </span>
         <div className="flex items-center gap-1">
-          {/* Bouton télécharger — force download via attribut natif.
-              Fonctionne pour images ET vidéos servies same-origin. */}
+          {/* Bouton télécharger — passe par l'endpoint backend qui envoie
+              Content-Disposition: attachment (l'attribut HTML `download` est
+              ignoré en cross-origin api.newinechurch.org). Pour les images
+              rattachées à un event, ?branded=1 applique le cadre software
+              (BalPhotoComposer) à la volée avant renvoi. */}
           <a
-            href={item.file_path}
-            download
+            href={`${import.meta.env.VITE_API_URL || '/api'}/public/media/${item.id}/download${item.file_type === 'image' && item.event ? '?branded=1' : ''}`}
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
             aria-label={t('gallery.downloadFile', 'Télécharger')}

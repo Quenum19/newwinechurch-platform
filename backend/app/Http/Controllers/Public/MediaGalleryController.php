@@ -7,8 +7,11 @@ use App\Http\Resources\MediaGalleryResource;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\MediaGallery;
+use App\Services\BalPhotoComposer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Endpoint public — galerie photos/vidéos.
@@ -101,5 +104,71 @@ class MediaGalleryController extends Controller
         }
 
         return MediaGalleryResource::collection($query->paginate($perPage));
+    }
+
+    /**
+     * GET /public/media/{id}/download?branded=1
+     *
+     * Sert le fichier avec Content-Disposition: attachment (contourne le pb
+     * cross-origin où l'attribut HTML `download` est ignoré).
+     *
+     * Si ?branded=1 ET le média :
+     *   - est une image
+     *   - est rattaché à un event
+     *   - un frame overlay TV existe pour cet event (resources/frames/*)
+     * alors on applique le composer à la volée (cadre software par-dessus).
+     * Sinon on renvoie le fichier brut.
+     */
+    public function download(Request $request, int $id, BalPhotoComposer $composer): Response
+    {
+        $media = MediaGallery::where('is_published', true)->findOrFail($id);
+
+        $path = $media->file_path;
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            abort(404, 'Fichier introuvable.');
+        }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg');
+        $isImage = $media->file_type === 'image' || in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
+        $shouldBrand = $request->boolean('branded') && $isImage && $media->event_id;
+
+        // Nom de fichier élégant
+        $eventSlug = $media->event?->slug ?? 'nwc';
+        $suffix = $shouldBrand ? '-brande' : '';
+        $filename = 'nwc-' . $eventSlug . '-' . $media->id . $suffix . '.' . ($shouldBrand ? 'jpg' : $ext);
+
+        // Cas 1 : brande à la volée
+        if ($shouldBrand) {
+            $absolute = Storage::disk('public')->path($path);
+            $event = Event::find($media->event_id);
+            if ($event) {
+                // Détection orientation : portrait → cadre story (1080x1920 avec
+                // fond flouté, photo entière visible) ; paysage/carré → tv (1920x1080).
+                // Sans ça, une photo portrait subit un cover 16:9 qui coupe visages/pieds.
+                $isPortrait = false;
+                $dim = @getimagesize($absolute);
+                if ($dim && $dim[0] > 0 && $dim[1] > 0) {
+                    $isPortrait = $dim[1] > $dim[0];
+                }
+
+                $composed = $isPortrait
+                    ? $composer->composeStoryPublic($absolute, $event)
+                    : $composer->composeTvPublic($absolute, $event);
+
+                if ($composed) {
+                    return response($composed, 200, [
+                        'Content-Type'        => 'image/jpeg',
+                        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                        'Cache-Control'       => 'public, max-age=3600',
+                    ]);
+                }
+                // Si composer échoue (frame absent), on tombe sur le brut plutôt qu'une 500.
+            }
+        }
+
+        // Cas 2 : fichier brut avec headers attachment
+        return Storage::disk('public')->download($path, $filename, [
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
     }
 }
