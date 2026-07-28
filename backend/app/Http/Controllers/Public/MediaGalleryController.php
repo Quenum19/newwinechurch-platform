@@ -144,12 +144,15 @@ class MediaGalleryController extends Controller
         $event = Event::where('slug', $slug)->firstOrFail();
         $format = $this->normalizeFormat($request->query('format', 'auto'));
 
+        // Injecte l'event pré-chargé sur chaque média pour éviter le SELECT
+        // dans la boucle ZIP + pour que $m->event soit dispo dans buildZipResponse.
         $medias = MediaGallery::where('event_id', $event->id)
             ->where('is_published', true)
             ->where('file_type', 'image')
             ->orderBy('id')
             ->limit(300)
-            ->get();
+            ->get()
+            ->each(fn ($m) => $m->setRelation('event', $event));
 
         if ($medias->isEmpty()) {
             abort(404, 'Aucune photo à télécharger.');
@@ -215,7 +218,10 @@ class MediaGalleryController extends Controller
 
                 $fmt = $format === 'auto' ? $cache->pickAutoFormat($abs) : $format;
 
-                $relPath = ($fmt === 'original' || ! $event)
+                // Même check anti-fallback qu'en serve() : un event sans
+                // brand_frames défini ne doit PAS recevoir le cadre par défaut.
+                $hasBrand = $event && is_array($event->brand_frames) && ! empty($event->brand_frames);
+                $relPath = ($fmt === 'original' || ! $hasBrand)
                     ? $m->file_path
                     : $cache->ensure($m, $fmt, $event);
 
@@ -258,16 +264,22 @@ class MediaGalleryController extends Controller
         // ?branded=0 permet de forcer l'original (pour cas particuliers UI).
         if ($request->query('branded') === '0') $format = 'original';
 
-        $shouldBrand = $isImage && $format !== 'original' && $media->event_id;
+        // === Vérification "l'event a-t-il vraiment un cadre à appliquer ?" ===
+        // Sans ce check, le composer utilisait les frames "dark-night-*" par
+        // défaut sur TOUS les events (bug : les photos d'autres events
+        // sortaient avec le cadre du Bal). Un event doit avoir été
+        // explicitement configuré avec brand_frames pour être brandable.
+        $event = $media->event_id ? Event::find($media->event_id) : null;
+        $hasBrand = $event && is_array($event->brand_frames) && ! empty($event->brand_frames);
+        $shouldBrand = $isImage && $format !== 'original' && $hasBrand;
 
-        $eventSlug = $media->event?->slug ?? 'nwc';
+        $eventSlug = $event?->slug ?? 'nwc';
         $suffix = $shouldBrand ? '-brande' : '';
         $ext2  = $shouldBrand ? 'jpg' : $ext;
         $filename = "nwc-{$eventSlug}-{$media->id}{$suffix}.{$ext2}";
 
         // === Cas 1 : version brandée depuis le cache disque ===
         if ($shouldBrand) {
-            $event = Event::find($media->event_id);
             $absolute = Storage::disk('public')->path($path);
             $effectiveFormat = $format === 'auto' ? $cache->pickAutoFormat($absolute) : $format;
 

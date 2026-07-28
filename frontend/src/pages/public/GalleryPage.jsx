@@ -603,12 +603,13 @@ function Lightbox({ items, index, onClose, onNavigate }) {
               </p>
             </video>
           ) : (
-            // Preview BRANDÉE si le média est rattaché à un event → l'utilisateur
-            // voit exactement ce qu'il téléchargera. Sinon original.
+            // Preview BRANDÉE uniquement si l'event a des cadres configurés —
+            // sinon /preview renverrait l'original de toute façon, aucun
+            // intérêt de faire un aller-retour serveur.
             // onError = fallback vers l'original si la génération brandée échoue.
             <img
               src={
-                item.event
+                item.event?.has_brand_frames
                   ? `${API_BASE}/media/${item.id}/preview?format=auto`
                   : item.file_path
               }
@@ -697,8 +698,11 @@ function DownloadMenu({ item }) {
   const btnRef = useRef(null)
   const menuRef = useRef(null)
 
-  // Formats disponibles selon le contexte. Pas d'event → juste original.
-  const hasBrand = item.file_type === 'image' && !! item.event
+  // Formats disponibles selon le contexte. Un event doit avoir des cadres
+  // configurés (has_brand_frames) pour qu'on affiche les variantes brandées ;
+  // sinon on ne montre que "Original" (sinon toutes les options renverraient
+  // la même image originale, expérience trompeuse).
+  const hasBrand = item.file_type === 'image' && item.event?.has_brand_frames
   const formats = hasBrand ? DOWNLOAD_FORMATS : DOWNLOAD_FORMATS.filter((f) => f.key === 'original')
 
   // Fermeture clic extérieur + Escape.

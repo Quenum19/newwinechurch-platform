@@ -38,6 +38,11 @@ class MediaGalleryResource extends JsonResource
                 'id'    => $this->event->id,
                 'title' => $this->event->title,
                 'slug'  => $this->event->slug,
+                // Le frontend s'en sert pour savoir s'il doit afficher les
+                // formats brandés (story/carré/…) ou uniquement l'original.
+                // Un event sans brand_frames configurés ne peut PAS produire
+                // de version brandée — les autres options seraient trompeuses.
+                'has_brand_frames' => ! empty($this->event->brand_frames),
             ] : null),
 
             'department' => $this->whenLoaded('department', fn () => $this->department ? [
