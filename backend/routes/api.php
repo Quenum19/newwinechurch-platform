@@ -175,9 +175,11 @@ Route::middleware('throttle:60,1')->group(function () {
     // Preview inline (pour <img src>) — même image brandée mais Content-Disposition: inline
     Route::get('/media/{id}/preview',          [PublicMediaController::class, 'preview'])->whereNumber('id');
 });
-// ZIP toutes les photos d'un event — rate limit serré (coûteux : 300 photos × composition).
+// ZIP toutes les photos d'un event OU sélection arbitraire — rate limit serré
+// (coûteux : jusqu'à 300 photos × composition).
 Route::middleware('throttle:3,1')->group(function () {
-    Route::get('/events/{slug}/gallery-zip',   [PublicMediaController::class, 'downloadZip']);
+    Route::get('/events/{slug}/gallery-zip', [PublicMediaController::class, 'downloadZip']);
+    Route::get('/media/zip',                 [PublicMediaController::class, 'downloadZipSelection']);
 });
 
 // Mur de prière publique

@@ -148,37 +148,84 @@ class MediaGalleryController extends Controller
             ->where('is_published', true)
             ->where('file_type', 'image')
             ->orderBy('id')
+            ->limit(300)
             ->get();
 
         if ($medias->isEmpty()) {
             abort(404, 'Aucune photo à télécharger.');
         }
 
-        // Cap dur pour éviter les ZIP monstrueux qui timeout le worker PHP.
-        $medias = $medias->take(300);
+        return $this->buildZipResponse($medias, $format, "nwc-{$event->slug}-photos.zip", $cache);
+    }
 
-        $zipName = "nwc-{$event->slug}-photos.zip";
+    /**
+     * ZIP d'une sélection arbitraire de photos.
+     *
+     * GET /api/media/zip?ids=1,2,3&format=auto
+     *
+     * Cap 50 IDs par requête (URL sinon trop longue + coût compo).
+     * Groupe par event pour appliquer le bon cadre à chaque photo — la sélection
+     * peut mixer plusieurs events. Rate-limité throttle:3,1.
+     */
+    public function downloadZipSelection(Request $request, GalleryDownloadCache $cache): StreamedResponse
+    {
+        $format = $this->normalizeFormat($request->query('format', 'auto'));
+        $idsRaw = (string) $request->query('ids', '');
+        $ids = collect(explode(',', $idsRaw))
+            ->map(fn ($s) => (int) trim($s))
+            ->filter(fn ($n) => $n > 0)
+            ->unique()
+            ->take(50)
+            ->values()
+            ->all();
 
-        return response()->streamDownload(function () use ($medias, $format, $event, $cache) {
+        if (empty($ids)) {
+            abort(422, 'Aucun média sélectionné.');
+        }
+
+        $medias = MediaGallery::whereIn('id', $ids)
+            ->where('is_published', true)
+            ->where('file_type', 'image')
+            ->with('event:id,slug,brand_frames')
+            ->orderBy('id')
+            ->get();
+
+        if ($medias->isEmpty()) {
+            abort(404, 'Aucune photo à télécharger.');
+        }
+
+        return $this->buildZipResponse($medias, $format, 'nwc-selection.zip', $cache);
+    }
+
+    /**
+     * Pipeline commun : compose (via cache) + ajoute au ZIP + stream download.
+     * Passe l'event de chaque média au composer pour que le bon cadre s'applique.
+     */
+    private function buildZipResponse($medias, string $format, string $zipName, GalleryDownloadCache $cache): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($medias, $format, $cache) {
             $tmp = tempnam(sys_get_temp_dir(), 'nwczip');
             $zip = new \ZipArchive();
             $zip->open($tmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 
             foreach ($medias as $m) {
-                $fmt = $format === 'auto'
-                    ? $cache->pickAutoFormat(Storage::disk('public')->path($m->file_path))
-                    : $format;
+                $event = $m->event; // eager-loaded ou null
+                $abs = Storage::disk('public')->path($m->file_path);
+                if (! is_file($abs)) continue;
 
-                $relPath = $fmt === 'original'
+                $fmt = $format === 'auto' ? $cache->pickAutoFormat($abs) : $format;
+
+                $relPath = ($fmt === 'original' || ! $event)
                     ? $m->file_path
                     : $cache->ensure($m, $fmt, $event);
 
                 if (! $relPath) continue;
-                $abs = Storage::disk('public')->path($relPath);
-                if (! is_file($abs)) continue;
+                $absFinal = Storage::disk('public')->path($relPath);
+                if (! is_file($absFinal)) continue;
 
-                $ext = pathinfo($abs, PATHINFO_EXTENSION) ?: 'jpg';
-                $zip->addFile($abs, "nwc-{$event->slug}-{$m->id}-{$fmt}.{$ext}");
+                $ext = pathinfo($absFinal, PATHINFO_EXTENSION) ?: 'jpg';
+                $slug = $event?->slug ?: 'nwc';
+                $zip->addFile($absFinal, "nwc-{$slug}-{$m->id}-{$fmt}.{$ext}");
             }
             $zip->close();
 

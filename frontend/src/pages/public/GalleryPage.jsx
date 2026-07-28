@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive } from 'lucide-react'
+import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive, Check, CheckSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { publicDepartments, publicEvents, publicMedia } from '@/api/public'
@@ -42,6 +42,19 @@ export default function GalleryPage() {
   const [filter, setFilter] = useState('') // '' | 'image' | 'video'
   const [page, setPage] = useState(1)
   const [openIndex, setOpenIndex] = useState(null)
+  // Sélection multi pour download ZIP à la carte. Set d'IDs (int).
+  // Cap à 50 côté serveur ; on aligne côté UI pour éviter le rejet.
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const MAX_SELECTION = 50
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else if (next.size < MAX_SELECTION) next.add(id)
+      return next
+    })
+  }
+  const clearSelection = () => setSelectedIds(new Set())
 
   // Filtres via URL : ?event=slug ou ?departement=slug (exclusifs).
   const eventSlug = searchParams.get('event') ?? ''
@@ -237,6 +250,8 @@ export default function GalleryPage() {
               <MediaTile
                 key={m.id}
                 item={m}
+                selected={selectedIds.has(m.id)}
+                onToggleSelect={() => toggleSelect(m.id)}
                 onClick={() => setOpenIndex(i)}
               />
             ))}
@@ -275,6 +290,64 @@ export default function GalleryPage() {
           onNavigate={(d) => setOpenIndex((openIndex + d + items.length) % items.length)}
         />
       )}
+
+      {/* Barre d'action flottante — visible dès qu'au moins 1 photo est
+          sélectionnée. On ne stocke que les IDs → la sélection survit à un
+          changement de page pagination (utile pour un event avec 100+ photos). */}
+      {selectedIds.size > 0 && (
+        <SelectionBar
+          count={selectedIds.size}
+          max={MAX_SELECTION}
+          ids={Array.from(selectedIds)}
+          onClear={clearSelection}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Barre flottante bottom — action de téléchargement de la sélection.
+ * Le download passe par l'endpoint backend qui construit un ZIP à la volée
+ * (chaque photo est brandée via GalleryDownloadCache si l'event a un cadre).
+ */
+function SelectionBar({ count, max, ids, onClear }) {
+  const { t } = useTranslation()
+  const zipUrl = `${API_BASE}/media/zip?ids=${ids.join(',')}&format=auto`
+  const almostMax = count >= max - 3
+
+  return (
+    <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+      <div className="container-nwc pb-4">
+        <div className="pointer-events-auto bg-public-ink text-public-bone shadow-2xl border-2 border-public-flame flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
+          <div className="flex items-center gap-2">
+            <CheckSquare size={18} className="text-public-flame"/>
+            <span className="font-mono text-sm uppercase tracking-widest">
+              {count} {count > 1 ? t('gallery.selectedPlural', 'sélectionnées') : t('gallery.selectedSingular', 'sélectionnée')}
+              {almostMax && (
+                <span className="ml-2 text-public-flame text-[10px]">
+                  ({t('gallery.selectionMax', 'max {{n}}', { n: max })})
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClear}
+              className="px-3 py-2 text-public-bone/70 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
+            >
+              {t('common.cancel', 'Annuler')}
+            </button>
+            <a
+              href={zipUrl}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-public-flame text-public-bone hover:bg-public-bone hover:text-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
+            >
+              <Archive size={14}/>
+              {t('gallery.downloadSelection', 'Télécharger .zip')} ({count})
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -295,10 +368,13 @@ function FilterTab({ active, onClick, children }) {
   )
 }
 
-/** Tile avec ratio carré uniforme + autoplay vidéo on intersection. */
-function MediaTile({ item, onClick }) {
+/** Tile avec ratio carré uniforme + autoplay vidéo on intersection.
+ *  Prop `selected` + `onToggleSelect` = mode sélection multi pour download ZIP.
+ *  La checkbox n'est affichée que sur les images (vidéos = pas de cadre appliqué). */
+function MediaTile({ item, onClick, selected = false, onToggleSelect }) {
   const { t } = useTranslation()
   const isVideo = item.file_type === 'video'
+  const canSelect = !isVideo && typeof onToggleSelect === 'function'
   const videoRef = useAutoplayVideo({ threshold: 0.4 })
 
   return (
@@ -310,7 +386,10 @@ function MediaTile({ item, onClick }) {
       // aspectRatio inline = filet de sécurité au cas où l'utilitaire Tailwind échoue
       // sur un élément peu standard (était <button> avant — collapse à 0×0 chez certains).
       style={{ aspectRatio: '1 / 1' }}
-      className="w-full group relative bg-public-coffee overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-public-flame focus:ring-offset-2 focus:ring-offset-public-bone"
+      className={cn(
+        'w-full group relative bg-public-coffee overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-public-flame focus:ring-offset-2 focus:ring-offset-public-bone transition',
+        selected && 'ring-4 ring-public-flame ring-offset-2 ring-offset-public-bone',
+      )}
       aria-label={item.title || (isVideo ? t('media.video', 'Vidéo') : t('media.photo', 'Photo'))}
     >
       {isVideo ? (
@@ -369,6 +448,27 @@ function MediaTile({ item, onClick }) {
             {item.title}
           </p>
         </div>
+      )}
+
+      {/* Checkbox sélection — visible en permanence si déjà sélectionnée,
+          sinon apparaît au hover. Stop propagation pour ne pas ouvrir la
+          lightbox quand on clique dessus. */}
+      {canSelect && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleSelect() }}
+          aria-pressed={selected}
+          aria-label={selected ? t('gallery.deselect', 'Désélectionner') : t('gallery.select', 'Sélectionner')}
+          title={selected ? t('gallery.deselect', 'Désélectionner') : t('gallery.select', 'Sélectionner')}
+          className={cn(
+            'absolute top-2 left-2 h-7 w-7 flex items-center justify-center border-2 transition z-10',
+            selected
+              ? 'bg-public-flame border-public-flame text-public-bone opacity-100'
+              : 'bg-public-bone/80 border-public-bone text-public-ink opacity-0 group-hover:opacity-100 hover:bg-public-flame hover:border-public-flame hover:text-public-bone',
+          )}
+        >
+          {selected && <Check size={16} strokeWidth={3}/>}
+        </button>
       )}
     </div>
   )
