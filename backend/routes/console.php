@@ -33,19 +33,25 @@ Artisan::command('nwc:send-birthdays', function () {
 // === ÉTAPE 3 — Tâches planifiées Notifications ==============
 // ============================================================
 
+// === DÉSACTIVÉ TEMPORAIREMENT (demande utilisateur, 2026-07-28) ===
+// Emails de rappel des rapports aux gouverneurs mis en pause. Pour
+// réactiver : décommenter les 2 blocs ci-dessous. Les commandes
+// restent disponibles pour test manuel :
+//   php artisan nwc:check-reports   (invoque les 2 jobs)
+// -----------------------------------------------------------------
 // Tous les jours à 8h00 : check des rapports département en retard.
-Schedule::job(new CheckOverdueReportsJob())
-    ->dailyAt('08:00')
-    ->name('nwc:check-overdue-reports')
-    ->onOneServer() // évite la double-exécution si plusieurs workers
-    ->withoutOverlapping();
-
+// Schedule::job(new CheckOverdueReportsJob())
+//     ->dailyAt('08:00')
+//     ->name('nwc:check-overdue-reports')
+//     ->onOneServer()
+//     ->withoutOverlapping();
+//
 // Tous les lundis à 9h00 : check des cellules sans rapport hebdo.
-Schedule::job(new CheckMissingCellReportsJob())
-    ->weeklyOn(1, '09:00') // 1 = lundi
-    ->name('nwc:check-missing-cell-reports')
-    ->onOneServer()
-    ->withoutOverlapping();
+// Schedule::job(new CheckMissingCellReportsJob())
+//     ->weeklyOn(1, '09:00') // 1 = lundi
+//     ->name('nwc:check-missing-cell-reports')
+//     ->onOneServer()
+//     ->withoutOverlapping();
 
 // Tous les vendredis à 17h : digest hebdomadaire pasteur + gouverneurs.
 Schedule::job(new SendWeeklyDepartmentDigestJob())
