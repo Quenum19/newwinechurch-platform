@@ -426,7 +426,7 @@ function Lightbox({ items, index, onClose, onNavigate }) {
               rattachées à un event, ?branded=1 applique le cadre software
               (BalPhotoComposer) à la volée avant renvoi. */}
           <a
-            href={`${import.meta.env.VITE_API_URL || '/api'}/public/media/${item.id}/download${item.file_type === 'image' && item.event ? '?branded=1' : ''}`}
+            href={`${import.meta.env.VITE_API_URL || '/api'}/media/${item.id}/download${item.file_type === 'image' && item.event ? '?branded=1' : ''}`}
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
             aria-label={t('gallery.downloadFile', 'Télécharger')}
