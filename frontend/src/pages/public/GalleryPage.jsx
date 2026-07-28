@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download } from 'lucide-react'
+import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { publicDepartments, publicEvents, publicMedia } from '@/api/public'
@@ -20,6 +20,21 @@ import { useAutoplayVideo, videoMimeFromPath } from '@/hooks/useAutoplayVideo'
 import { cn } from '@/utils/cn'
 
 const PER_PAGE = 24
+
+// Base URL API — utilisée pour construire les liens download/preview côté
+// api.newinechurch.org (cross-origin), pas via l'instance axios.
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
+// Formats disponibles pour download brandé (via endpoint /media/{id}/download?format=…).
+// Ordre = ordre d'affichage dans la lightbox.
+const DOWNLOAD_FORMATS = [
+  { key: 'auto',      label: 'Recommandé',  hint: 'Cadre auto selon orientation' },
+  { key: 'story',     label: 'Story 9:16',  hint: 'Instagram / TikTok story' },
+  { key: 'square',    label: 'Carré 1:1',   hint: 'Instagram feed' },
+  { key: 'landscape', label: 'Paysage 3:2', hint: 'Facebook / partage' },
+  { key: 'tv',        label: 'TV 16:9',     hint: 'Écran / bannière' },
+  { key: 'original',  label: 'Original',    hint: 'Sans cadre software' },
+]
 
 export default function GalleryPage() {
   const { t } = useTranslation()
@@ -193,6 +208,22 @@ export default function GalleryPage() {
             </span>
           )}
         </div>
+
+        {/* Bouton ZIP — toutes les photos de l'event brandées d'un coup.
+            Uniquement si event actif ET au moins 1 média (évite le clic
+            "wtf 0 photos"). Rate-limité côté serveur (throttle:3,1). */}
+        {activeEvent && (meta?.total ?? 0) > 0 && (
+          <div className="mt-6">
+            <a
+              href={`${API_BASE}/events/${activeEvent.slug}/gallery-zip?format=auto`}
+              className="inline-flex items-center gap-2 px-4 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
+              title={t('gallery.zipHint', 'Télécharger toutes les photos avec le cadre événement')}
+            >
+              <Archive size={14}/>
+              {t('gallery.downloadAllZip', 'Télécharger toutes les photos (.zip)')}
+            </a>
+          </div>
+        )}
       </header>
 
       <section className="container-nwc pb-12">
@@ -420,13 +451,12 @@ function Lightbox({ items, index, onClose, onNavigate }) {
           {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
         </span>
         <div className="flex items-center gap-1">
-          {/* Bouton télécharger — passe par l'endpoint backend qui envoie
-              Content-Disposition: attachment (l'attribut HTML `download` est
-              ignoré en cross-origin api.newinechurch.org). Pour les images
-              rattachées à un event, ?branded=1 applique le cadre software
-              (BalPhotoComposer) à la volée avant renvoi. */}
+          {/* Bouton télécharger rapide (format auto). Les autres formats sont
+              disponibles dans le footer. Endpoint backend force le download
+              via Content-Disposition: attachment (l'attribut HTML `download`
+              est ignoré en cross-origin api.newinechurch.org). */}
           <a
-            href={`${import.meta.env.VITE_API_URL || '/api'}/media/${item.id}/download${item.file_type === 'image' && item.event ? '?branded=1' : ''}`}
+            href={`${API_BASE}/media/${item.id}/download?format=auto`}
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
             aria-label={t('gallery.downloadFile', 'Télécharger')}
@@ -482,8 +512,20 @@ function Lightbox({ items, index, onClose, onNavigate }) {
               </p>
             </video>
           ) : (
+            // Preview BRANDÉE si le média est rattaché à un event → l'utilisateur
+            // voit exactement ce qu'il téléchargera. Sinon original.
+            // onError = fallback vers l'original si la génération brandée échoue.
             <img
-              src={item.file_path}
+              src={
+                item.event
+                  ? `${API_BASE}/media/${item.id}/preview?format=auto`
+                  : item.file_path
+              }
+              onError={(e) => {
+                if (e.currentTarget.src !== item.file_path) {
+                  e.currentTarget.src = item.file_path
+                }
+              }}
               alt={item.title || ''}
               className="max-w-full max-h-[70vh] object-contain block rounded shadow-2xl select-none"
             />
@@ -537,6 +579,28 @@ function Lightbox({ items, index, onClose, onNavigate }) {
                 )}
               </div>
             )}
+          </div>
+        )}
+        {/* Multi-format download — visible uniquement pour les images
+            rattachées à un event (les autres n'ont pas de cadre à appliquer). */}
+        {item.file_type === 'image' && item.event && (
+          <div className="mt-4 max-w-3xl mx-auto">
+            <p className="text-center text-[10px] text-public-bone/50 font-mono uppercase tracking-widest mb-2">
+              {t('gallery.otherFormats', 'Télécharger en')}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              {DOWNLOAD_FORMATS.map((f) => (
+                <a
+                  key={f.key}
+                  href={`${API_BASE}/media/${item.id}/download?format=${f.key}`}
+                  onClick={(e) => e.stopPropagation()}
+                  title={f.hint}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-public-bone/25 hover:border-public-flame hover:bg-public-flame hover:text-public-bone text-public-bone/80 font-mono text-[10px] uppercase tracking-widest transition"
+                >
+                  <Download size={11}/> {f.label}
+                </a>
+              ))}
+            </div>
           </div>
         )}
         <p className="mt-3 text-center text-[10px] text-public-bone/40 font-mono uppercase tracking-widest">

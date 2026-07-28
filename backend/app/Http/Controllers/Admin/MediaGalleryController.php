@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\MediaGalleryResource;
 use App\Models\MediaGallery;
 use App\Rules\SafeUploadedFile;
+use App\Services\GalleryDownloadCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -176,7 +177,7 @@ class MediaGalleryController extends Controller
         ], 200);
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, int $id, GalleryDownloadCache $cache): JsonResponse
     {
         abort_unless($request->user()?->can('delete media'), 403);
 
@@ -189,6 +190,8 @@ class MediaGalleryController extends Controller
         if ($media->thumbnail) {
             Storage::disk(config('filesystems.default'))->delete($media->thumbnail);
         }
+        // Invalide le cache des versions brandées de ce média.
+        $cache->forget($media);
 
         $media->delete();
         return response()->json(['message' => 'Média supprimé.']);
@@ -245,6 +248,7 @@ class MediaGalleryController extends Controller
         switch ($action) {
             case 'delete':
                 $disk = Storage::disk(config('filesystems.default'));
+                $cache = app(GalleryDownloadCache::class);
                 foreach ($query->get() as $media) {
                     if ($media->file_path && ! str_starts_with($media->file_path, 'http')) {
                         $disk->delete($media->file_path);
@@ -252,6 +256,7 @@ class MediaGalleryController extends Controller
                     if ($media->thumbnail) {
                         $disk->delete($media->thumbnail);
                     }
+                    $cache->forget($media);
                     $media->delete();
                     $count++;
                 }

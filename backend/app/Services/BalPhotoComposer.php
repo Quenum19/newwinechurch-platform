@@ -8,24 +8,36 @@ use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
 
 /**
- * Compose les photos ambiance du Bal avec cadre "A Dark Night in Elegance".
+ * Compose les photos ambiance d'un event avec cadre software.
  *
- * Chaque format a son PNG overlay pré-généré (Chrome headless depuis le HTML
- * du design) dans backend/resources/frames/ :
- *   - dark-night-tv.png        (1920×1080 — écran live TV, cover full écran)
- *   - dark-night-landscape.png (1350×900  — publications Facebook / partage général)
- *   - dark-night-square.png    (1080×1080 — Instagram feed)
- *   - dark-night-story.png     (1080×1920 — Instagram/TikTok stories)
+ * === Event-aware ===
+ * Le service lit `events.brand_frames` (JSON) si présent :
+ *   { "tv": "frames/foo-tv.png", "story": "...", "landscape": "...", "square": "..." }
+ * Ces chemins sont RELATIFS à `resources/`. Fallback = frames "dark-night-*"
+ * livrées par défaut (le bal 2026, encore utilisé par BalPhoto).
  *
- * Modes de composition :
- *   - COVER : photo remplit toute la surface (TV, landscape, square)
- *   - BLUR_BG : photo entière visible centrée sur fond flouté d'elle-même
- *     (Story — évite la coupe de sujet et donne un rendu style Instagram Reels)
+ * === Formats ===
+ *   tv        : 1920×1080 (cover) — écran live 16:9 + partage général
+ *   landscape : 1350× 900 (cover) — publication Facebook
+ *   square    : 1080×1080 (cover) — Instagram feed
+ *   story     : 1080×1920 (blur-bg) — Story IG/TikTok, photo entière visible
+ *
+ * === Modes ===
+ *   COVER   : photo remplit toute la surface
+ *   BLUR_BG : photo entière contain sur fond flouté d'elle-même
  */
 class BalPhotoComposer
 {
     private const MODE_COVER   = 'cover';
     private const MODE_BLUR_BG = 'blur-bg';
+
+    /** [format => [w, h, defaultFrameFile, mode]] */
+    private const FORMATS = [
+        'tv'        => [1920, 1080, 'dark-night-tv.png',        self::MODE_COVER],
+        'landscape' => [1350,  900, 'dark-night-landscape.png', self::MODE_COVER],
+        'square'    => [1080, 1080, 'dark-night-square.png',    self::MODE_COVER],
+        'story'     => [1080, 1920, 'dark-night-story.png',     self::MODE_BLUR_BG],
+    ];
 
     private ImageManager $manager;
 
@@ -35,50 +47,98 @@ class BalPhotoComposer
         $this->manager = new ImageManager($driver);
     }
 
-    /** Compose TV 1920x1080 (16:9 full écran live). */
+    /** Retourne la liste des formats supportés. */
+    public static function formats(): array
+    {
+        return array_keys(self::FORMATS);
+    }
+
+    /** Compose un format donné (nouvelle API event-aware). */
+    public function composeFormat(string $sourcePath, string $format, ?Event $event = null): ?string
+    {
+        if (! isset(self::FORMATS[$format])) return null;
+        [$w, $h, $defaultFrame, $mode] = self::FORMATS[$format];
+
+        $frameFile = $this->resolveFrameFile($event, $format, $defaultFrame);
+        return $this->compose($sourcePath, $w, $h, $frameFile, $mode);
+    }
+
+    /**
+     * Fingerprint pour la clé de cache disque : dépend du fichier source
+     * (mtime + size) ET du cadre utilisé (mtime). Change → cache invalidé.
+     */
+    public function cacheFingerprint(string $sourcePath, string $format, ?Event $event = null): string
+    {
+        if (! isset(self::FORMATS[$format])) return 'na';
+        [, , $defaultFrame] = self::FORMATS[$format];
+        $frameFile = $this->resolveFrameFile($event, $format, $defaultFrame);
+        $framePath = base_path("resources/{$frameFile}");
+
+        $parts = [
+            $format,
+            (string) @filemtime($sourcePath),
+            (string) @filesize($sourcePath),
+            $frameFile,
+            (string) @filemtime($framePath),
+        ];
+        return substr(sha1(implode('|', $parts)), 0, 12);
+    }
+
+    // === API rétrocompatibles (utilisées par BalPhoto/upload existant) ===
     public function composeTvPublic(string $sourcePath, Event $event): ?string
     {
-        return $this->compose($sourcePath, 1920, 1080, 'dark-night-tv.png', self::MODE_COVER);
+        return $this->composeFormat($sourcePath, 'tv', $event);
     }
-
-    /** Compose paysage 1350x900 (3:2 partage général). */
     public function composeLandscapePublic(string $sourcePath, Event $event): ?string
     {
-        return $this->compose($sourcePath, 1350, 900, 'dark-night-landscape.png', self::MODE_COVER);
+        return $this->composeFormat($sourcePath, 'landscape', $event);
     }
-
-    /** Compose carré 1080x1080 (Instagram feed). */
     public function composeSquarePublic(string $sourcePath, Event $event): ?string
     {
-        return $this->compose($sourcePath, 1080, 1080, 'dark-night-square.png', self::MODE_COVER);
+        return $this->composeFormat($sourcePath, 'square', $event);
     }
-
-    /** Compose story 1080x1920 (9:16 avec fond flouté façon Instagram Reels). */
     public function composeStoryPublic(string $sourcePath, Event $event): ?string
     {
-        return $this->compose($sourcePath, 1080, 1920, 'dark-night-story.png', self::MODE_BLUR_BG);
+        return $this->composeFormat($sourcePath, 'story', $event);
     }
 
-    /** Pipeline commun : construction du canvas selon le mode + insert overlay. */
+    /**
+     * Lit event.brand_frames pour un format, avec fallback vers le frame par défaut.
+     * Les chemins sont RELATIFS à resources/. Le default est "frames/dark-night-*".
+     */
+    private function resolveFrameFile(?Event $event, string $format, string $defaultFile): string
+    {
+        // Défaut historique : frames "dark-night-*" à la racine de resources/frames/
+        $default = "frames/{$defaultFile}";
+
+        if (! $event) return $default;
+        $bf = $event->brand_frames;
+        if (! is_array($bf)) return $default;
+        $custom = $bf[$format] ?? null;
+        if (! is_string($custom) || $custom === '') return $default;
+
+        // Sécurité : jamais de traversée hors resources/
+        $custom = ltrim($custom, '/');
+        if (str_contains($custom, '..')) return $default;
+
+        return $custom;
+    }
+
+    /** Pipeline commun. */
     private function compose(string $sourcePath, int $w, int $h, string $frameFile, string $mode): ?string
     {
         try {
             if ($mode === self::MODE_BLUR_BG) {
-                // Fond = photo agrandie + floutée (style Instagram stories, comme la vidéo)
                 $canvas = $this->manager->decodePath($sourcePath)->cover($w, $h)->blur(35);
-
-                // Photo NETTE contain centrée par-dessus (jamais coupée)
-                $photo = $this->manager->decodePath($sourcePath)->contain($w, $h);
+                $photo  = $this->manager->decodePath($sourcePath)->contain($w, $h);
                 $x = intval(($w - $photo->width()) / 2);
                 $y = intval(($h - $photo->height()) / 2);
                 $canvas->insert($photo, $x, $y);
             } else {
-                // COVER : photo remplit toute la surface
                 $canvas = $this->manager->decodePath($sourcePath)->cover($w, $h);
             }
 
-            // Overlay cadre par-dessus (respecte l'alpha PNG)
-            $framePath = base_path("resources/frames/{$frameFile}");
+            $framePath = base_path("resources/{$frameFile}");
             if (@file_exists($framePath)) {
                 $frame = $this->manager->decodePath($framePath);
                 $canvas->insert($frame, 0, 0);

@@ -6,24 +6,43 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\MediaGalleryResource;
 use App\Models\Department;
 use App\Models\Event;
+use App\Models\MediaDownload;
 use App\Models\MediaGallery;
 use App\Services\BalPhotoComposer;
+use App\Services\GalleryDownloadCache;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Endpoint public — galerie photos/vidéos.
  *
- * Filtres :
- *   ?file_type=image|video
- *   ?department={slug}  → médias rattachés directement au département
- *   ?event={slug}       → médias rattachés à un événement précis
- *   ?dept_events=1 + ?department={slug} → médias des événements du département
+ * === Endpoints ===
+ *   GET /media                              — liste paginée (filtres event/dept/type)
+ *   GET /media/{id}/download?format=X       — download avec cadre event (attachment)
+ *   GET /media/{id}/preview?format=X        — même image mais inline (pour <img src>)
+ *   GET /events/{slug}/gallery-zip?format=X — ZIP de toutes les photos de l'event
+ *
+ * === Formats supportés ===
+ *   auto (default)         — story si portrait, tv si paysage
+ *   tv        1920×1080    — écran 16:9 / partage général
+ *   landscape 1350× 900    — Facebook
+ *   square    1080×1080    — Instagram feed
+ *   story     1080×1920    — Story IG/TikTok (photo entière + fond flouté)
+ *   original               — fichier brut sans cadre
+ *
+ * === Cache disque ===
+ * Les versions brandées sont générées une seule fois puis servies depuis
+ * storage/app/public/gallery-cache/{event}/{id}-{format}-{fp}.jpg — permet
+ * de tenir la charge sur des events populaires.
  */
 class MediaGalleryController extends Controller
 {
+    private const VALID_FORMATS = ['tv', 'landscape', 'square', 'story', 'original', 'auto'];
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $perPage = min((int) $request->query('per_page', 24), 100);
@@ -33,23 +52,16 @@ class MediaGalleryController extends Controller
             ->where('is_published', true);
 
         // Tri : aléatoire si ?random=1, sinon par défaut tri par date desc.
-        //
-        // Bonus : ?prefer_videos=N garantit N vidéos minimum dans la sélection
-        // aléatoire (si des vidéos existent en BD). Le but : donner de
-        // l'animation à la home en mélangeant images + vidéos plutôt que d'avoir
-        // 12 photos d'affilée alors qu'on a des vidéos disponibles.
         if ($request->boolean('random')) {
             $preferVideos = (int) $request->query('prefer_videos', 0);
 
             if ($preferVideos > 0 && $perPage > $preferVideos) {
-                // 1. Pull N vidéos aléatoires parmi celles dispo (peut être < N)
                 $videoIds = (clone $query)
                     ->where('file_type', 'video')
                     ->inRandomOrder()
                     ->limit($preferVideos)
                     ->pluck('id');
 
-                // 2. Complète avec d'autres items aléatoires (toutes catégories)
                 $otherCount = max(0, $perPage - $videoIds->count());
                 $otherIds = $videoIds->isEmpty()
                     ? (clone $query)->inRandomOrder()->limit($otherCount)->pluck('id')
@@ -58,7 +70,6 @@ class MediaGalleryController extends Controller
                 $mergedIds = $videoIds->merge($otherIds)->shuffle();
 
                 if ($mergedIds->isNotEmpty()) {
-                    // Restreint la requête finale à ces IDs avec leur ordre shuffle.
                     $query->whereIn('media_gallery.id', $mergedIds)
                           ->orderByRaw('FIELD(media_gallery.id,'.$mergedIds->implode(',').')');
                 } else {
@@ -75,7 +86,6 @@ class MediaGalleryController extends Controller
             $query->where('file_type', $type);
         }
 
-        // Filtre par événement (slug). Prioritaire car plus spécifique.
         if ($eventSlug = $request->query('event')) {
             $event = Event::where('slug', $eventSlug)->first();
             if ($event) {
@@ -84,11 +94,9 @@ class MediaGalleryController extends Controller
                 $query->where('id', 0);
             }
         }
-        // Filtre par département (slug).
         elseif ($deptSlug = $request->query('department')) {
             $dept = Department::where('slug', $deptSlug)->first();
             if ($dept) {
-                // Mode étendu : inclut les médias des événements liés au département.
                 if ($request->boolean('dept_events')) {
                     $eventIds = $dept->events()->pluck('events.id');
                     $query->where(function ($q) use ($dept, $eventIds) {
@@ -107,19 +115,86 @@ class MediaGalleryController extends Controller
     }
 
     /**
-     * GET /public/media/{id}/download?branded=1
-     *
-     * Sert le fichier avec Content-Disposition: attachment (contourne le pb
-     * cross-origin où l'attribut HTML `download` est ignoré).
-     *
-     * Si ?branded=1 ET le média :
-     *   - est une image
-     *   - est rattaché à un event
-     *   - un frame overlay TV existe pour cet event (resources/frames/*)
-     * alors on applique le composer à la volée (cadre software par-dessus).
-     * Sinon on renvoie le fichier brut.
+     * Preview brandée (inline, pour <img src>) — pas d'attachment.
+     * Cache HTTP 1 an + immutable car le fingerprint change si le source change.
      */
-    public function download(Request $request, int $id, BalPhotoComposer $composer): Response
+    public function preview(Request $request, int $id, GalleryDownloadCache $cache): Response|StreamedResponse
+    {
+        return $this->serve($request, $id, $cache, attachment: false);
+    }
+
+    /**
+     * Download brandé avec Content-Disposition: attachment.
+     * Log dans media_downloads pour analytics légères.
+     */
+    public function download(Request $request, int $id, GalleryDownloadCache $cache): Response|StreamedResponse
+    {
+        $response = $this->serve($request, $id, $cache, attachment: true);
+        // Log après avoir servi pour ne pas ralentir la réponse (best effort).
+        $this->logDownload($request, $id);
+        return $response;
+    }
+
+    /**
+     * ZIP toutes les photos d'un event dans le format demandé.
+     * Rate-limité serré (via routes/api.php — throttle:3,1) car coûteux.
+     */
+    public function downloadZip(Request $request, string $slug, GalleryDownloadCache $cache): StreamedResponse
+    {
+        $event = Event::where('slug', $slug)->firstOrFail();
+        $format = $this->normalizeFormat($request->query('format', 'auto'));
+
+        $medias = MediaGallery::where('event_id', $event->id)
+            ->where('is_published', true)
+            ->where('file_type', 'image')
+            ->orderBy('id')
+            ->get();
+
+        if ($medias->isEmpty()) {
+            abort(404, 'Aucune photo à télécharger.');
+        }
+
+        // Cap dur pour éviter les ZIP monstrueux qui timeout le worker PHP.
+        $medias = $medias->take(300);
+
+        $zipName = "nwc-{$event->slug}-photos.zip";
+
+        return response()->streamDownload(function () use ($medias, $format, $event, $cache) {
+            $tmp = tempnam(sys_get_temp_dir(), 'nwczip');
+            $zip = new \ZipArchive();
+            $zip->open($tmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+            foreach ($medias as $m) {
+                $fmt = $format === 'auto'
+                    ? $cache->pickAutoFormat(Storage::disk('public')->path($m->file_path))
+                    : $format;
+
+                $relPath = $fmt === 'original'
+                    ? $m->file_path
+                    : $cache->ensure($m, $fmt, $event);
+
+                if (! $relPath) continue;
+                $abs = Storage::disk('public')->path($relPath);
+                if (! is_file($abs)) continue;
+
+                $ext = pathinfo($abs, PATHINFO_EXTENSION) ?: 'jpg';
+                $zip->addFile($abs, "nwc-{$event->slug}-{$m->id}-{$fmt}.{$ext}");
+            }
+            $zip->close();
+
+            readfile($tmp);
+            @unlink($tmp);
+        }, $zipName, [
+            'Content-Type'  => 'application/zip',
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
+    // ================================================================
+    // Internals
+    // ================================================================
+
+    private function serve(Request $request, int $id, GalleryDownloadCache $cache, bool $attachment): Response|StreamedResponse
     {
         $media = MediaGallery::where('is_published', true)->findOrFail($id);
 
@@ -129,46 +204,76 @@ class MediaGalleryController extends Controller
         }
 
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg');
-        $isImage = $media->file_type === 'image' || in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
-        $shouldBrand = $request->boolean('branded') && $isImage && $media->event_id;
+        $isImage = $media->file_type === 'image'
+                || in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
 
-        // Nom de fichier élégant
+        $format = $this->normalizeFormat($request->query('format', 'auto'));
+        // ?branded=0 permet de forcer l'original (pour cas particuliers UI).
+        if ($request->query('branded') === '0') $format = 'original';
+
+        $shouldBrand = $isImage && $format !== 'original' && $media->event_id;
+
         $eventSlug = $media->event?->slug ?? 'nwc';
         $suffix = $shouldBrand ? '-brande' : '';
-        $filename = 'nwc-' . $eventSlug . '-' . $media->id . $suffix . '.' . ($shouldBrand ? 'jpg' : $ext);
+        $ext2  = $shouldBrand ? 'jpg' : $ext;
+        $filename = "nwc-{$eventSlug}-{$media->id}{$suffix}.{$ext2}";
 
-        // Cas 1 : brande à la volée
+        // === Cas 1 : version brandée depuis le cache disque ===
         if ($shouldBrand) {
-            $absolute = Storage::disk('public')->path($path);
             $event = Event::find($media->event_id);
-            if ($event) {
-                // Détection orientation : portrait → cadre story (1080x1920 avec
-                // fond flouté, photo entière visible) ; paysage/carré → tv (1920x1080).
-                // Sans ça, une photo portrait subit un cover 16:9 qui coupe visages/pieds.
-                $isPortrait = false;
-                $dim = @getimagesize($absolute);
-                if ($dim && $dim[0] > 0 && $dim[1] > 0) {
-                    $isPortrait = $dim[1] > $dim[0];
-                }
+            $absolute = Storage::disk('public')->path($path);
+            $effectiveFormat = $format === 'auto' ? $cache->pickAutoFormat($absolute) : $format;
 
-                $composed = $isPortrait
-                    ? $composer->composeStoryPublic($absolute, $event)
-                    : $composer->composeTvPublic($absolute, $event);
-
-                if ($composed) {
-                    return response($composed, 200, [
-                        'Content-Type'        => 'image/jpeg',
-                        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                        'Cache-Control'       => 'public, max-age=3600',
-                    ]);
+            $cachedRel = $cache->ensure($media, $effectiveFormat, $event);
+            if ($cachedRel) {
+                $headers = [
+                    'Content-Type'  => 'image/jpeg',
+                    // Immutable car le fingerprint dans le nom change si le
+                    // source change → cache navigateur + CDN 1 an sans risque.
+                    'Cache-Control' => 'public, max-age=31536000, immutable',
+                ];
+                if ($attachment) {
+                    $headers['Content-Disposition'] = 'attachment; filename="' . $filename . '"';
+                } else {
+                    $headers['Content-Disposition'] = 'inline';
                 }
-                // Si composer échoue (frame absent), on tombe sur le brut plutôt qu'une 500.
+                return Storage::disk('public')->response($cachedRel, $filename, $headers);
             }
+            // fallback → original si composer échoue (frame manquant, image corrompue)
         }
 
-        // Cas 2 : fichier brut avec headers attachment
-        return Storage::disk('public')->download($path, $filename, [
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        // === Cas 2 : original ===
+        $headers = [
+            'Cache-Control' => 'public, max-age=86400',
+        ];
+        if ($attachment) {
+            return Storage::disk('public')->download($path, $filename, $headers);
+        }
+        return Storage::disk('public')->response($path, $filename, array_merge($headers, [
+            'Content-Disposition' => 'inline',
+        ]));
+    }
+
+    private function normalizeFormat(?string $format): string
+    {
+        $f = strtolower((string) $format);
+        return in_array($f, self::VALID_FORMATS, true) ? $f : 'auto';
+    }
+
+    private function logDownload(Request $request, int $mediaId): void
+    {
+        try {
+            $media = MediaGallery::find($mediaId);
+            MediaDownload::create([
+                'media_id'   => $mediaId,
+                'event_id'   => $media?->event_id,
+                'format'     => $this->normalizeFormat($request->query('format', 'auto')),
+                'ip_hash'    => $request->ip() ? sha1($request->ip()) : null,
+                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'downloaded_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('MediaDownload log failed', ['err' => $e->getMessage()]);
+        }
     }
 }

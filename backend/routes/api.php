@@ -169,9 +169,15 @@ Route::get('/live/next',              [LiveStreamController::class, 'next']);
 // Galerie publique (photos + vidéos publiées)
 // Rate limit doux pour empêcher le scraping massif de médias.
 Route::middleware('throttle:60,1')->group(function () {
-    Route::get('/media',              [PublicMediaController::class, 'index']);
-    // Download avec option ?branded=1 (applique le cadre event à la volée)
-    Route::get('/media/{id}/download', [PublicMediaController::class, 'download'])->whereNumber('id');
+    Route::get('/media',                       [PublicMediaController::class, 'index']);
+    // Download avec ?format=tv|landscape|square|story|original|auto (défaut: auto)
+    Route::get('/media/{id}/download',         [PublicMediaController::class, 'download'])->whereNumber('id');
+    // Preview inline (pour <img src>) — même image brandée mais Content-Disposition: inline
+    Route::get('/media/{id}/preview',          [PublicMediaController::class, 'preview'])->whereNumber('id');
+});
+// ZIP toutes les photos d'un event — rate limit serré (coûteux : 300 photos × composition).
+Route::middleware('throttle:3,1')->group(function () {
+    Route::get('/events/{slug}/gallery-zip',   [PublicMediaController::class, 'downloadZip']);
 });
 
 // Mur de prière publique

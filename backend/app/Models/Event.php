@@ -37,6 +37,8 @@ class Event extends Model
         'series_id', 'series_sort_order',
         // Mode paiement (Phase 7)
         'payment_mode',
+        // Galerie post-event : chemins PNG overlay par format (tv/landscape/square/story)
+        'brand_frames',
     ];
 
     protected $casts = [
@@ -54,6 +56,7 @@ class Event extends Model
         'tickets_closes_at'     => 'datetime',
         'require_selfie'        => 'boolean',
         'allow_waitlist'        => 'boolean',
+        'brand_frames'          => 'array',
     ];
 
     public function getSlugOptions(): SlugOptions
