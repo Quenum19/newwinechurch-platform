@@ -48,6 +48,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # DEBUG TEMPORAIRE : capture l'IP de sortie du runner GitHub Actions
+      # (nécessaire pour que le support Hostinger vérifie fail2ban/iptables
+      # sur cette IP précise). À retirer une fois le blocage résolu.
+      - name: Runner outbound IP (debug Hostinger fail2ban)
+        run: |
+          echo "===== RUNNER OUTBOUND IP ====="
+          curl -s https://ifconfig.me || curl -s https://api.ipify.org || echo "curl failed"
+          echo ""
+          echo "============================="
+
       # Upload via rsync — plus rapide que scp + gère les diff incrémentaux.
       # --delete SUPPRIME sur le serveur les fichiers absents en local (miroir strict).
       # On EXCLUT tout ce qui doit rester tel quel côté prod :
