@@ -36,7 +36,8 @@ class MediaGalleryController extends Controller
 
         $query = MediaGallery::query()
             ->with([
-                'event:id,title,slug',
+                // brand_frames pour l'admin (utile pour l'UI de gestion des cadres)
+                'event:id,title,slug,brand_frames',
                 'department:id,name,slug',
                 'uploader:id,name,first_name',
             ])

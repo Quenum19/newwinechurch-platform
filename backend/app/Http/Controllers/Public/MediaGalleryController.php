@@ -48,7 +48,9 @@ class MediaGalleryController extends Controller
         $perPage = min((int) $request->query('per_page', 24), 100);
 
         $query = MediaGallery::query()
-            ->with(['event:id,title,slug', 'department:id,name,slug'])
+            // brand_frames indispensable pour que MediaGalleryResource puisse
+            // exposer has_brand_frames au frontend (sans ça, toujours false).
+            ->with(['event:id,title,slug,brand_frames', 'department:id,name,slug'])
             ->where('is_published', true);
 
         // Tri : aléatoire si ?random=1, sinon par défaut tri par date desc.

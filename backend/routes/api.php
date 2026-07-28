@@ -182,49 +182,6 @@ Route::middleware('throttle:3,1')->group(function () {
     Route::get('/media/zip',                 [PublicMediaController::class, 'downloadZipSelection']);
 });
 
-// === DEBUG TEMPORAIRE (à retirer une fois le pb brand_frames résolu) ===
-// Diagnostique pourquoi brand_frames ne persiste pas sur l'event 3.
-// Renvoie : structure table, valeur RAW en DB, cast Eloquent, résultat d'un
-// update d'essai. Rate limit strict pour éviter le scraping.
-Route::middleware('throttle:5,1')->get('/debug/event-brand-frames/{id}', function (int $id) {
-    $desc = \DB::select('DESCRIBE events');
-    $columnExists = collect($desc)->contains(fn ($c) => $c->Field === 'brand_frames');
-    $raw = \DB::table('events')->where('id', $id)->first();
-    $rawBrandFrames = $raw?->brand_frames ?? null;
-
-    $eloquent = \App\Models\Event::find($id);
-    $eloquentBrandFrames = $eloquent?->brand_frames ?? null;
-    $eloquentCast = $eloquent?->getCasts()['brand_frames'] ?? null;
-
-    // Test d'écriture live
-    $writeResult = null;
-    $writeError = null;
-    if ($eloquent) {
-        try {
-            $eloquent->brand_frames = ['tv' => 'frames/dark-night-tv.png'];
-            $writeResult = $eloquent->save();
-            // Re-fetch fresh depuis DB (bypass model instance)
-            $writeResult = [
-                'saved' => $writeResult,
-                'reread_raw' => \DB::table('events')->where('id', $id)->value('brand_frames'),
-            ];
-        } catch (\Throwable $e) {
-            $writeError = $e->getMessage();
-        }
-    }
-
-    return response()->json([
-        'column_exists' => $columnExists,
-        'columns_list'  => collect($desc)->pluck('Field'),
-        'raw_brand_frames' => $rawBrandFrames,
-        'raw_brand_frames_type' => gettype($rawBrandFrames),
-        'eloquent_brand_frames' => $eloquentBrandFrames,
-        'eloquent_cast' => $eloquentCast,
-        'event_fillable_has_brand_frames' => in_array('brand_frames', (new \App\Models\Event)->getFillable()),
-        'write_result' => $writeResult,
-        'write_error'  => $writeError,
-    ], 200, [], JSON_PRETTY_PRINT);
-});
 
 // Mur de prière publique
 Route::get('/prayer-requests',        [PrayerRequestController::class, 'publicWall']);
