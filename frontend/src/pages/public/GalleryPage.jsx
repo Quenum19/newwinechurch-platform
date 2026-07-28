@@ -8,10 +8,10 @@
  *  - Lightbox full-screen avec navigation clavier + swipe touch
  *  - Loading lazy + skeleton placeholders
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive, Check, CheckSquare } from 'lucide-react'
+import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive, Check, CheckSquare, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { publicDepartments, publicEvents, publicMedia } from '@/api/public'
@@ -551,20 +551,11 @@ function Lightbox({ items, index, onClose, onNavigate }) {
           {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
         </span>
         <div className="flex items-center gap-1">
-          {/* Bouton télécharger rapide (format auto). Les autres formats sont
-              disponibles dans le footer. Endpoint backend force le download
-              via Content-Disposition: attachment (l'attribut HTML `download`
-              est ignoré en cross-origin api.newinechurch.org). */}
-          <a
-            href={`${API_BASE}/media/${item.id}/download?format=auto`}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
-            aria-label={t('gallery.downloadFile', 'Télécharger')}
-            title={t('gallery.downloadFile', 'Télécharger')}
-          >
-            <Download size={16}/>
-            <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
-          </a>
+          {/* Menu de téléchargement multi-format — popover ancré au header,
+              visible peu importe la taille d'écran (crucial mobile : la photo
+              story 9:16 pousse le footer hors viewport, on ne verrait pas les
+              options si elles étaient en bas). */}
+          <DownloadMenu item={item}/>
           <button
             onClick={onClose}
             className="p-2 rounded text-public-bone/80 hover:text-public-bone hover:bg-public-bone/10 transition"
@@ -681,32 +672,97 @@ function Lightbox({ items, index, onClose, onNavigate }) {
             )}
           </div>
         )}
-        {/* Multi-format download — visible uniquement pour les images
-            rattachées à un event (les autres n'ont pas de cadre à appliquer). */}
-        {item.file_type === 'image' && item.event && (
-          <div className="mt-4 max-w-3xl mx-auto">
-            <p className="text-center text-[10px] text-public-bone/50 font-mono uppercase tracking-widest mb-2">
-              {t('gallery.otherFormats', 'Télécharger en')}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
-              {DOWNLOAD_FORMATS.map((f) => (
-                <a
-                  key={f.key}
-                  href={`${API_BASE}/media/${item.id}/download?format=${f.key}`}
-                  onClick={(e) => e.stopPropagation()}
-                  title={f.hint}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-public-bone/25 hover:border-public-flame hover:bg-public-flame hover:text-public-bone text-public-bone/80 font-mono text-[10px] uppercase tracking-widest transition"
-                >
-                  <Download size={11}/> {f.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
         <p className="mt-3 text-center text-[10px] text-public-bone/40 font-mono uppercase tracking-widest">
           ← → {t('gallery.navHint', 'pour naviguer')} · ESC {t('common.close', 'fermer')}
         </p>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Popover de téléchargement — bouton "Télécharger ▾" avec menu déroulant.
+ *
+ * Positionné en fixed sous le header pour ne PAS être coupé par un parent
+ * en overflow-hidden (piège classique des dropdowns). Fermeture au clic
+ * extérieur, à Escape, et au clic sur une option (après avoir lancé le
+ * download).
+ *
+ * Sur images non rattachées à un event (donc pas de cadre à appliquer),
+ * seul le bouton "Original" est affiché.
+ */
+function DownloadMenu({ item }) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const btnRef = useRef(null)
+  const menuRef = useRef(null)
+
+  // Formats disponibles selon le contexte. Pas d'event → juste original.
+  const hasBrand = item.file_type === 'image' && !! item.event
+  const formats = hasBrand ? DOWNLOAD_FORMATS : DOWNLOAD_FORMATS.filter((f) => f.key === 'original')
+
+  // Fermeture clic extérieur + Escape.
+  useEffect(() => {
+    if (! open) return
+    const onDoc = (e) => {
+      if (menuRef.current?.contains(e.target)) return
+      if (btnRef.current?.contains(e.target)) return
+      setOpen(false)
+    }
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('touchstart', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('touchstart', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => setOpen((v) => ! v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
+        title={t('gallery.downloadFile', 'Télécharger')}
+      >
+        <Download size={16}/>
+        <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
+        <ChevronDown size={14} className={cn('transition', open && 'rotate-180')}/>
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          role="menu"
+          className="absolute right-0 top-full mt-1 min-w-[220px] max-w-[calc(100vw-1rem)] bg-public-ink border border-public-bone/20 shadow-2xl z-[60] py-1"
+        >
+          {formats.map((f) => (
+            <a
+              key={f.key}
+              href={`${API_BASE}/media/${item.id}/download?format=${f.key}`}
+              onClick={() => setOpen(false)}
+              role="menuitem"
+              className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-public-flame hover:text-public-bone text-public-bone/85 transition"
+            >
+              <span className="flex flex-col text-left">
+                <span className="font-mono text-xs uppercase tracking-widest">
+                  {f.label}
+                </span>
+                <span className="text-[10px] text-public-bone/50 normal-case tracking-normal">
+                  {f.hint}
+                </span>
+              </span>
+              <Download size={14} className="shrink-0"/>
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
