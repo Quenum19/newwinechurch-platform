@@ -287,11 +287,18 @@ class MediaGalleryController extends Controller
 
             $cachedRel = $cache->ensure($media, $effectiveFormat, $event);
             if ($cachedRel) {
+                // Cache HTTP court (1h) car l'URL client ne contient PAS le
+                // fingerprint : si on met immutable/1 an et qu'on change
+                // l'algo composer, les clients continuent à servir l'ancienne
+                // image indéfiniment.
+                $dim = @getimagesize($absolute);
                 $headers = [
-                    'Content-Type'  => 'image/jpeg',
-                    // Immutable car le fingerprint dans le nom change si le
-                    // source change → cache navigateur + CDN 1 an sans risque.
-                    'Cache-Control' => 'public, max-age=31536000, immutable',
+                    'Content-Type'         => 'image/jpeg',
+                    'Cache-Control'        => 'public, max-age=3600',
+                    // Headers debug — visibles dans DevTools Network pour
+                    // diagnostiquer quel format a été choisi et pourquoi.
+                    'X-NWC-Format-Picked'  => $effectiveFormat,
+                    'X-NWC-Source-Ratio'   => $dim ? number_format($dim[0]/max($dim[1],1), 3) : 'na',
                 ];
                 if ($attachment) {
                     $headers['Content-Disposition'] = 'attachment; filename="' . $filename . '"';
