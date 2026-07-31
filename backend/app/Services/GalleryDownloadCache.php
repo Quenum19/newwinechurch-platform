@@ -49,17 +49,26 @@ class GalleryDownloadCache
     }
 
     /**
-     * Détermine le format "auto" selon l'orientation de l'image :
-     *   - portrait  → story (1080×1920 blur-bg, photo entière visible)
-     *   - paysage/carré → tv (1920×1080 cover)
+     * Détermine le format "auto" selon l'orientation ET le ratio de la photo :
+     *   - portrait (h > w)              → story    (1080×1920 blur-bg)
+     *   - carré (ratio ≈ 1)             → square   (1080×1080)
+     *   - paysage large (ratio ≥ 1.7)   → tv       (1920×1080, ~16:9)
+     *   - paysage classique (autre)     → landscape (1350×900, 3:2, moins
+     *                                   de perte sur les photos 4:3 courantes)
+     *
+     * Le composer bascule ensuite en blur-bg si le ratio source vs cible
+     * diffère trop (cf. BalPhotoComposer::composeFormat).
      */
     public function pickAutoFormat(string $absolutePath): string
     {
         $dim = @getimagesize($absolutePath);
-        if ($dim && $dim[0] > 0 && $dim[1] > 0 && $dim[1] > $dim[0]) {
-            return 'story';
-        }
-        return 'tv';
+        if (! $dim || $dim[0] <= 0 || $dim[1] <= 0) return 'tv';
+
+        $ratio = $dim[0] / $dim[1];
+        if ($ratio < 0.95)  return 'story';    // portrait
+        if ($ratio < 1.15)  return 'square';   // ~carré
+        if ($ratio >= 1.70) return 'tv';       // large 16:9
+        return 'landscape';                    // 4:3 / 3:2 / classique
     }
 
     /** Vide tous les fichiers cache d'un média donné (à appeler sur delete). */

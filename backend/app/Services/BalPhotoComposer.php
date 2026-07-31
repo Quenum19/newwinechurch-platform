@@ -53,19 +53,48 @@ class BalPhotoComposer
         return array_keys(self::FORMATS);
     }
 
-    /** Compose un format donné (nouvelle API event-aware). */
+    /**
+     * Compose un format donné (nouvelle API event-aware).
+     *
+     * Mode adaptatif : si le ratio de la source et le ratio du format cible
+     * diffèrent de plus de 12%, on bascule automatiquement en blur-bg (photo
+     * entière visible + fond flouté) au lieu de cover qui couperait le sujet.
+     * Exemple : photo 4:3 (1.33) demandée en TV 16:9 (1.78) → 34% de diff →
+     * bascule blur-bg → têtes et pieds préservés.
+     */
     public function composeFormat(string $sourcePath, string $format, ?Event $event = null): ?string
     {
         if (! isset(self::FORMATS[$format])) return null;
         [$w, $h, $defaultFrame, $mode] = self::FORMATS[$format];
+
+        // Adaptatif uniquement pour les formats COVER (le story est déjà blur-bg).
+        if ($mode === self::MODE_COVER) {
+            $dim = @getimagesize($sourcePath);
+            if ($dim && $dim[0] > 0 && $dim[1] > 0) {
+                $sourceRatio = $dim[0] / $dim[1];
+                $targetRatio = $w / $h;
+                $diff = abs($sourceRatio - $targetRatio) / $targetRatio;
+                if ($diff > 0.12) {
+                    $mode = self::MODE_BLUR_BG;
+                }
+            }
+        }
 
         $frameFile = $this->resolveFrameFile($event, $format, $defaultFrame);
         return $this->compose($sourcePath, $w, $h, $frameFile, $mode);
     }
 
     /**
+     * Version de l'algorithme composer. À bumper à chaque changement de
+     * logique (cover→adaptatif, auto-pick refactor…) — invalide tous les
+     * caches disque existants en un coup.
+     */
+    private const ALGO_VERSION = 'v2-adaptive';
+
+    /**
      * Fingerprint pour la clé de cache disque : dépend du fichier source
-     * (mtime + size) ET du cadre utilisé (mtime). Change → cache invalidé.
+     * (mtime + size), du cadre utilisé (mtime) ET de la version algo.
+     * Change → cache invalidé.
      */
     public function cacheFingerprint(string $sourcePath, string $format, ?Event $event = null): string
     {
@@ -75,6 +104,7 @@ class BalPhotoComposer
         $framePath = base_path("resources/{$frameFile}");
 
         $parts = [
+            self::ALGO_VERSION,
             $format,
             (string) @filemtime($sourcePath),
             (string) @filesize($sourcePath),
