@@ -41,6 +41,9 @@ class MediaGalleryController extends Controller
                 'department:id,name,slug',
                 'uploader:id,name,first_name',
             ])
+            // Compteur téléchargements pour badge admin (index media_id présent
+            // dans media_downloads → count rapide même avec 10k+ downloads).
+            ->withCount('downloads')
             ->latest();
 
         if ($type = $request->query('file_type')) {

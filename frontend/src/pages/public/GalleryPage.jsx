@@ -27,13 +27,16 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 // Formats disponibles pour download brandé (via endpoint /media/{id}/download?format=…).
 // Ordre = ordre d'affichage dans la lightbox.
+// NB : "original" volontairement absent — la galerie publique impose le cadre
+// software (branding cohérent quand les photos circulent sur les réseaux).
+// L'endpoint /download?format=original reste techniquement dispo côté serveur
+// (pour l'admin ou tests) mais n'est pas exposé dans l'UI publique.
 const DOWNLOAD_FORMATS = [
   { key: 'auto',      label: 'Recommandé',  hint: 'Cadre auto selon orientation' },
   { key: 'story',     label: 'Story 9:16',  hint: 'Instagram / TikTok story' },
   { key: 'square',    label: 'Carré 1:1',   hint: 'Instagram feed' },
   { key: 'landscape', label: 'Paysage 3:2', hint: 'Facebook / partage' },
   { key: 'tv',        label: 'TV 16:9',     hint: 'Écran / bannière' },
-  { key: 'original',  label: 'Original',    hint: 'Sans cadre software' },
 ]
 
 export default function GalleryPage() {
@@ -698,12 +701,28 @@ function DownloadMenu({ item }) {
   const btnRef = useRef(null)
   const menuRef = useRef(null)
 
-  // Formats disponibles selon le contexte. Un event doit avoir des cadres
-  // configurés (has_brand_frames) pour qu'on affiche les variantes brandées ;
-  // sinon on ne montre que "Original" (sinon toutes les options renverraient
-  // la même image originale, expérience trompeuse).
+  // Un event doit avoir des cadres configurés (has_brand_frames) pour qu'on
+  // affiche le menu multi-format. Sinon on affiche juste un bouton simple
+  // qui télécharge l'original — pas de popover (une seule option = pas de menu).
   const hasBrand = item.file_type === 'image' && item.event?.has_brand_frames
-  const formats = hasBrand ? DOWNLOAD_FORMATS : DOWNLOAD_FORMATS.filter((f) => f.key === 'original')
+
+  // Bouton simple si pas de brand → download direct de l'original.
+  if (! hasBrand) {
+    return (
+      <a
+        href={`${API_BASE}/media/${item.id}/download?format=original`}
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
+        aria-label={t('gallery.downloadFile', 'Télécharger')}
+        title={t('gallery.downloadFile', 'Télécharger')}
+      >
+        <Download size={16}/>
+        <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
+      </a>
+    )
+  }
+
+  const formats = DOWNLOAD_FORMATS
 
   // Fermeture clic extérieur + Escape.
   useEffect(() => {

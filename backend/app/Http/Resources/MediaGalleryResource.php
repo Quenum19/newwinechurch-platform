@@ -33,6 +33,9 @@ class MediaGalleryResource extends JsonResource
             'is_featured'   => (bool) $this->is_featured,
             'sort_order'    => (int) $this->sort_order,
             'created_at'    => $this->created_at?->toIso8601String(),
+            // Compteur téléchargements — exposé uniquement quand withCount() a
+            // été appelé (admin uniquement pour l'instant). Null côté public.
+            'downloads_count' => $this->whenCounted('downloads'),
 
             'event' => $this->whenLoaded('event', fn () => $this->event ? [
                 'id'    => $this->event->id,

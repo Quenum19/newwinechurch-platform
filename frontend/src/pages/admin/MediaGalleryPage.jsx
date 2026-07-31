@@ -344,6 +344,19 @@ export default function MediaGalleryPage() {
                     Caché
                   </div>
                 )}
+
+                {/* Badge nombre de téléchargements — visible dès qu'au moins
+                    1 download existe. Position bottom-left pour éviter le
+                    conflit avec la checkbox (top-left) et le badge Caché
+                    (top-right). Tooltip = total exact. */}
+                {(m.downloads_count ?? 0) > 0 && (
+                  <div
+                    className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 bg-black/70 rounded text-[10px] text-white/90 font-mono tabular-nums pointer-events-none"
+                    title={`${m.downloads_count} téléchargement${m.downloads_count > 1 ? 's' : ''}`}
+                  >
+                    <Download size={10}/> {m.downloads_count}
+                  </div>
+                )}
                 {m.file_type === 'video' && !m.is_published === false && (
                   <div className="absolute top-2 right-2 p-1 bg-black/60 rounded">
                     <Video size={12} className="text-white"/>

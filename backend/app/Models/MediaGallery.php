@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Modèle MediaGallery — élément (image ou vidéo) de la galerie publique.
@@ -46,6 +47,12 @@ class MediaGallery extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    /** Logs de téléchargement (pour analytics + badge admin). */
+    public function downloads(): HasMany
+    {
+        return $this->hasMany(MediaDownload::class, 'media_id');
     }
 
     public function scopePublished(Builder $q): Builder
