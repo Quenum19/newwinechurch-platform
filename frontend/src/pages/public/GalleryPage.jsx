@@ -508,6 +508,16 @@ function Lightbox({ items, index, onClose, onNavigate }) {
   const { t } = useTranslation()
   const item = items[index]
 
+  // Format sélectionné pour la preview live + le download.
+  // 'auto' au premier affichage ; reset à 'auto' à chaque changement d'item
+  // (sinon on garderait "story" en changeant de photo, expérience surprenante).
+  const [selectedFormat, setSelectedFormat] = useState('auto')
+  useEffect(() => { setSelectedFormat('auto') }, [item?.id])
+
+  // State loading — la première composition d'un format prend 1-3 s côté
+  // serveur (Intervention GD). onLoad/onError le remettent à false.
+  const [imgLoading, setImgLoading] = useState(false)
+
   // Navigation clavier (Esc, ←, →) — proprement attachée.
   useEffect(() => {
     const handler = (e) => {
@@ -554,11 +564,17 @@ function Lightbox({ items, index, onClose, onNavigate }) {
           {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
         </span>
         <div className="flex items-center gap-1">
-          {/* Menu de téléchargement multi-format — popover ancré au header,
-              visible peu importe la taille d'écran (crucial mobile : la photo
-              story 9:16 pousse le footer hors viewport, on ne verrait pas les
-              options si elles étaient en bas). */}
-          <DownloadMenu item={item}/>
+          {/* Sélecteur de format — change la preview affichée SANS déclencher
+              de download. L'utilisateur voit exactement ce qu'il aura avant
+              de confirmer. Popover ancré fixed (visible même sur mobile). */}
+          <FormatSelector
+            item={item}
+            value={selectedFormat}
+            onChange={(f) => { setSelectedFormat(f); setImgLoading(true) }}
+          />
+          {/* Bouton Télécharger séparé — utilise le format actuellement
+              sélectionné dans la preview. Un seul clic = téléchargement. */}
+          <DownloadCurrent item={item} format={selectedFormat}/>
           <button
             onClick={onClose}
             className="p-2 rounded text-public-bone/80 hover:text-public-bone hover:bg-public-bone/10 transition"
@@ -606,24 +622,38 @@ function Lightbox({ items, index, onClose, onNavigate }) {
               </p>
             </video>
           ) : (
-            // Preview BRANDÉE uniquement si l'event a des cadres configurés —
-            // sinon /preview renverrait l'original de toute façon, aucun
-            // intérêt de faire un aller-retour serveur.
-            // onError = fallback vers l'original si la génération brandée échoue.
-            <img
-              src={
-                item.event?.has_brand_frames
-                  ? `${API_BASE}/media/${item.id}/preview?format=auto`
-                  : item.file_path
-              }
-              onError={(e) => {
-                if (e.currentTarget.src !== item.file_path) {
-                  e.currentTarget.src = item.file_path
+            // Preview live selon le format sélectionné. Change en direct quand
+            // l'utilisateur change de format dans le sélecteur. onError =
+            // fallback vers l'original si la génération brandée échoue.
+            <div className="relative flex items-center justify-center">
+              <img
+                key={selectedFormat}
+                src={
+                  item.event?.has_brand_frames
+                    ? `${API_BASE}/media/${item.id}/preview?format=${selectedFormat}`
+                    : item.file_path
                 }
-              }}
-              alt={item.title || ''}
-              className="max-w-full max-h-[70vh] object-contain block rounded shadow-2xl select-none"
-            />
+                onLoadStart={() => setImgLoading(true)}
+                onLoad={() => setImgLoading(false)}
+                onError={(e) => {
+                  setImgLoading(false)
+                  if (e.currentTarget.src !== item.file_path) {
+                    e.currentTarget.src = item.file_path
+                  }
+                }}
+                alt={item.title || ''}
+                className="max-w-full max-h-[70vh] object-contain block rounded shadow-2xl select-none"
+              />
+              {/* Loading discret pendant que le serveur compose un nouveau
+                  format (première fois : 1-3 s ; ensuite : instantané depuis
+                  cache disque). Petit badge en overlay bottom-right. */}
+              {imgLoading && (
+                <div className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 bg-public-ink/80 backdrop-blur text-public-bone/90 font-mono text-[10px] uppercase tracking-widest pointer-events-none">
+                  <div className="h-2 w-2 rounded-full bg-public-flame animate-pulse"/>
+                  {t('gallery.generating', 'Génération…')}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -685,46 +715,28 @@ function Lightbox({ items, index, onClose, onNavigate }) {
 }
 
 /**
- * Popover de téléchargement — bouton "Télécharger ▾" avec menu déroulant.
+ * Sélecteur de format — bouton "Format : Recommandé ▾" avec popover.
  *
- * Positionné en fixed sous le header pour ne PAS être coupé par un parent
- * en overflow-hidden (piège classique des dropdowns). Fermeture au clic
- * extérieur, à Escape, et au clic sur une option (après avoir lancé le
- * download).
+ * Contrairement à l'ancienne UX, cliquer sur une option NE déclenche PAS
+ * le téléchargement — ça change juste `selectedFormat` du parent. La
+ * preview de la lightbox se met alors à jour, l'utilisateur voit ce
+ * qu'il aura, puis clique sur le bouton "Télécharger" séparé quand
+ * satisfait.
  *
- * Sur images non rattachées à un event (donc pas de cadre à appliquer),
- * seul le bouton "Original" est affiché.
+ * Photo sans brand_frames → composant renvoie null (rien à choisir,
+ * la lightbox affichera juste le bouton Télécharger direct).
  */
-function DownloadMenu({ item }) {
+function FormatSelector({ item, value, onChange }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const btnRef = useRef(null)
   const menuRef = useRef(null)
 
-  // Un event doit avoir des cadres configurés (has_brand_frames) pour qu'on
-  // affiche le menu multi-format. Sinon on affiche juste un bouton simple
-  // qui télécharge l'original — pas de popover (une seule option = pas de menu).
   const hasBrand = item.file_type === 'image' && item.event?.has_brand_frames
+  if (! hasBrand) return null
 
-  // Bouton simple si pas de brand → download direct de l'original.
-  if (! hasBrand) {
-    return (
-      <a
-        href={`${API_BASE}/media/${item.id}/download?format=original`}
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
-        aria-label={t('gallery.downloadFile', 'Télécharger')}
-        title={t('gallery.downloadFile', 'Télécharger')}
-      >
-        <Download size={16}/>
-        <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
-      </a>
-    )
-  }
+  const current = DOWNLOAD_FORMATS.find((f) => f.key === value) ?? DOWNLOAD_FORMATS[0]
 
-  const formats = DOWNLOAD_FORMATS
-
-  // Fermeture clic extérieur + Escape.
   useEffect(() => {
     if (! open) return
     const onDoc = (e) => {
@@ -752,10 +764,10 @@ function DownloadMenu({ item }) {
         aria-expanded={open}
         aria-haspopup="menu"
         className="inline-flex items-center gap-2 px-3 py-2 rounded text-public-bone/90 hover:text-public-bone hover:bg-public-bone/10 transition font-mono text-xs uppercase tracking-widest"
-        title={t('gallery.downloadFile', 'Télécharger')}
+        title={t('gallery.chooseFormat', 'Choisir le format')}
       >
-        <Download size={16}/>
-        <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
+        <ImageIcon size={16}/>
+        <span className="hidden sm:inline">{current.label}</span>
         <ChevronDown size={14} className={cn('transition', open && 'rotate-180')}/>
       </button>
 
@@ -765,13 +777,18 @@ function DownloadMenu({ item }) {
           role="menu"
           className="absolute right-0 top-full mt-1 min-w-[220px] max-w-[calc(100vw-1rem)] bg-public-ink border border-public-bone/20 shadow-2xl z-[60] py-1"
         >
-          {formats.map((f) => (
-            <a
+          {DOWNLOAD_FORMATS.map((f) => (
+            <button
               key={f.key}
-              href={`${API_BASE}/media/${item.id}/download?format=${f.key}`}
-              onClick={() => setOpen(false)}
+              type="button"
+              onClick={() => { onChange(f.key); setOpen(false) }}
               role="menuitem"
-              className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-public-flame hover:text-public-bone text-public-bone/85 transition"
+              className={cn(
+                'w-full flex items-center justify-between gap-3 px-4 py-2.5 transition text-left',
+                f.key === value
+                  ? 'bg-public-flame/20 text-public-bone'
+                  : 'hover:bg-public-flame hover:text-public-bone text-public-bone/85',
+              )}
             >
               <span className="flex flex-col text-left">
                 <span className="font-mono text-xs uppercase tracking-widest">
@@ -781,11 +798,34 @@ function DownloadMenu({ item }) {
                   {f.hint}
                 </span>
               </span>
-              <Download size={14} className="shrink-0"/>
-            </a>
+              {f.key === value && <Check size={14} className="shrink-0 text-public-flame"/>}
+            </button>
           ))}
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Bouton Télécharger séparé — utilise le format actuellement sélectionné
+ * dans le sélecteur (ou 'original' pour les photos sans event brandable).
+ * Un seul clic = téléchargement immédiat, pas de menu.
+ */
+function DownloadCurrent({ item, format }) {
+  const { t } = useTranslation()
+  const hasBrand = item.file_type === 'image' && item.event?.has_brand_frames
+  const effectiveFormat = hasBrand ? format : 'original'
+  return (
+    <a
+      href={`${API_BASE}/media/${item.id}/download?format=${effectiveFormat}`}
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex items-center gap-2 px-3 py-2 rounded bg-public-flame text-public-bone hover:bg-public-bone hover:text-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
+      aria-label={t('gallery.downloadFile', 'Télécharger')}
+      title={t('gallery.downloadFile', 'Télécharger')}
+    >
+      <Download size={16}/>
+      <span className="hidden sm:inline">{t('gallery.downloadFile', 'Télécharger')}</span>
+    </a>
   )
 }
