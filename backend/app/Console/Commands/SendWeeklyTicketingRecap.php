@@ -81,6 +81,19 @@ class SendWeeklyTicketingRecap extends Command
             ->values()
             ->toArray();
 
+        // === Skip si aucune activité billetterie ET aucun event à venir ===
+        // Sinon on spam l'équipe avec un récap vide (0 vente, 0 revenu, aucun
+        // event à billet en cours). Le récap n'a de sens que s'il apporte
+        // quelque chose à lire.
+        $hasWeekActivity   = $weekSignups > 0 || $weekRevenue > 0 || ! empty($topEvents) || ! empty($alerts);
+        $hasFutureEvents   = Event::where('ticketing_enabled', true)
+            ->where('starts_at', '>=', now())
+            ->exists();
+        if (! $hasWeekActivity && ! $hasFutureEvents) {
+            $this->info('Aucune activité billetterie cette semaine ni d\'event à venir — récap non envoyé.');
+            return self::SUCCESS;
+        }
+
         $payload = [
             'week_label'      => $weekStart->locale('fr')->isoFormat('D MMM') . ' → ' .
                                  $weekEnd->locale('fr')->isoFormat('D MMM YYYY'),
