@@ -22,7 +22,13 @@ export default function MediaGalleryPage() {
   const [uploadEvent, setUploadEvent] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 60
   const sel = useMultiSelect()
+
+  // Reset à la page 1 dès qu'un filtre change (sinon on peut rester sur
+  // une page N qui n'existe plus pour le nouveau filtre → liste vide).
+  useEffect(() => { setPage(1) }, [filterType, filterDept, filterEvent])
 
   const { data: deptsRaw } = useQuery({
     queryKey: ['admin', 'departments', { per_page: 100 }],
@@ -40,14 +46,18 @@ export default function MediaGalleryPage() {
   const eventsList = eventsRaw?.data ?? []
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'media', { file_type: filterType, department_id: filterDept, event_id: filterEvent }],
+    queryKey: ['admin', 'media', { file_type: filterType, department_id: filterDept, event_id: filterEvent, page }],
     queryFn: () => media.list({
       file_type: filterType || undefined,
       department_id: filterDept || undefined,
       event_id: filterEvent || undefined,
-      per_page: 60,
+      per_page: PER_PAGE,
+      page,
     }),
+    keepPreviousData: true,
   })
+  const meta = data?.meta ?? null
+  const totalPages = meta?.last_page ?? 1
 
   const uploadMutation = useMutation({
     mutationFn: ({ files, departmentId, eventId }) =>
@@ -370,6 +380,31 @@ export default function MediaGalleryPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination — affichée dès qu'il y a plus d'une page. Compteur
+          "X / Y" + N total. Reset auto de la page à 1 quand un filtre change. */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="adm-btn disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          >
+            <ChevronLeft size={14}/> Précédent
+          </button>
+          <span className="font-mono text-xs uppercase tracking-widest text-white/60 tabular-nums">
+            {page} / {totalPages}
+            {meta?.total ? <span className="ml-2 text-white/30">({meta.total} au total)</span> : null}
+          </span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="adm-btn disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          >
+            Suivant <ChevronRight size={14}/>
+          </button>
         </div>
       )}
 
