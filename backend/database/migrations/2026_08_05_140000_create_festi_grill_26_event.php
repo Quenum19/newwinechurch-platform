@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Event;
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Str;
 
@@ -29,7 +30,14 @@ return new class extends Migration {
         $event = Event::withTrashed()->where('slug', $slug)->first();
         $existed = (bool) $event;
 
+        // events.created_by est NOT NULL — on rattache au premier
+        // superadmin / pasteur trouvé (ou fallback id=1).
+        $ownerId = User::role(['superadmin', 'pasteur', 'admin'])->value('id')
+                   ?? User::query()->value('id')
+                   ?? 1;
+
         $payload = [
+            'created_by'   => $ownerId,
             'title'        => "Festi Grill '26",
             'title_en'     => "Festi Grill '26",
             'slug'         => $slug,
