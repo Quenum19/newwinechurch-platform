@@ -193,8 +193,14 @@ class EventTicketsController extends Controller
             'email' => ['required', 'email', 'max:180'],
         ]);
 
-        $short = strtoupper(\Illuminate\Support\Str::random(6));
-        $accessTok = \Illuminate\Support\Str::random(48);
+        // Utilise le générateur de codes centralisé — évite les collisions
+        // sur les contraintes UNIQUE (ticket_number, short_code, access_token).
+        // Version précédente hardcodait ticket_number=1 → 500 au 2ᵉ envoi
+        // (duplicate key error).
+        $codes = app(\App\Services\TicketCodeGenerator::class);
+        $ticketNumber = $codes->newTicketNumber();
+        $short        = $codes->newShortCode();
+        $accessTok    = $codes->newAccessToken();
 
         // Rattache automatiquement le premier ticket_type actif de l'event —
         // permet d'afficher le nom du type et sa couleur d'accent dans le PDF.
@@ -206,7 +212,7 @@ class EventTicketsController extends Controller
             'event_id'       => $event->id,
             'ticket_type_id' => $type?->id,
             'order_code'     => 'TEST-' . strtoupper(\Illuminate\Support\Str::random(6)),
-            'ticket_number'  => 1,
+            'ticket_number'  => $ticketNumber,
             'short_code'     => $short,
             'qr_payload'     => json_encode(['e' => $event->id, 't' => $accessTok, 'v' => 1]),
             'access_token'   => $accessTok,
