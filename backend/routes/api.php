@@ -223,6 +223,11 @@ Route::get ('/public/events/{slug}/registration-config', [\App\Http\Controllers\
 Route::post('/public/events/{slug}/register',            [\App\Http\Controllers\Public\PublicEventRegistrationController::class, 'store'])
      ->middleware('throttle:10,1');
 
+// === Magic-link étape 2 : choix (montagne/table/atelier) + génération ticket auto ===
+Route::get ('/public/registrations/{token}',        [\App\Http\Controllers\Public\PublicRegistrationChoiceController::class, 'show']);
+Route::post('/public/registrations/{token}/choose', [\App\Http\Controllers\Public\PublicRegistrationChoiceController::class, 'choose'])
+     ->middleware('throttle:20,1');
+
 Route::post('/public/enrollment/bal',         [\App\Http\Controllers\Public\PublicBalEnrollmentController::class, 'store'])
     ->middleware('throttle:5,1');
 
@@ -508,6 +513,11 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::post('/event-series/{id}/generate',                    [AdminEventSeriesController::class, 'generateOccurrences'])->whereNumber('id');
     Route::post('/event-series/{id}/add-occurrence',              [AdminEventSeriesController::class, 'addOccurrence'])->whereNumber('id');
     Route::get('/events/{id}/registrations',             [AdminEventsController::class, 'registrations'])->whereNumber('id');
+    // === EventHub — préinscriptions générique (Festi Grill et suivants) ===
+    Route::get('/events/{id}/preregistrations',          [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'index'])->whereNumber('id');
+    Route::get('/events/{id}/preregistrations/stats',    [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'stats'])->whereNumber('id');
+    Route::get('/events/{id}/preregistrations/map',      [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'map'])->whereNumber('id');
+    Route::get('/events/{id}/preregistrations.csv',      [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'exportCsv'])->whereNumber('id');
     Route::post('/events/{id}/registrations/{userId}/attended',
                                                          [AdminEventsController::class, 'markAttended'])
          ->whereNumber('id')->whereNumber('userId');
