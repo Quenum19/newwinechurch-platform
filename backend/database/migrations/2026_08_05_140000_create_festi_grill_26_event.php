@@ -42,7 +42,10 @@ return new class extends Migration {
             'title_en'     => "Festi Grill '26",
             'slug'         => $slug,
             'description'  => "Après le bal, on continue l'aventure. Grillades, musique, ambiance village — venez découvrir les 7 sphères d'influence de New Wine Church dans une ambiance conviviale, avant la rentrée.",
-            'type'         => 'festival',
+            // events.type est un enum strict (culte|priere|evangelisation|concert|
+            // formation|autre) — pas de 'festival'. On prend 'evangelisation'
+            // qui matche l'objectif du Festi Grill (créer du lien + appel au salut).
+            'type'         => 'evangelisation',
             'location'     => 'Maison de la destinée · Anono',
             'starts_at'    => '2026-08-28 17:00:00',
             'ends_at'      => '2026-08-28 22:00:00',
