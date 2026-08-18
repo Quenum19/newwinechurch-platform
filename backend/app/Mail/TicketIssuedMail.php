@@ -44,12 +44,19 @@ class TicketIssuedMail extends Mailable
             ->size(500)->margin(1)->errorCorrection('M')
             ->generate($this->ticket->qr_payload);
 
+        // Charge le ticketType pour récupérer sa color_hex — la couleur du
+        // type de ticket drive le design de tout le mail (header, encart,
+        // bouton). Fallback bordeaux NWC si aucun type rattaché.
+        $this->ticket->loadMissing('ticketType');
+        $accent = $this->ticket->ticketType?->color_hex ?: '#8B1A2F';
+
         return new Content(
             view: 'emails.tickets.issued',
             with: [
                 'ticket'      => $this->ticket,
                 'event'       => $this->ticket->event,
                 'qrSvgInline' => $qrSvg,
+                'accent'      => $accent,
                 'myTicketUrl' => rtrim(config('app.frontend_url', config('app.url')), '/')
                               . '/mon-ticket/' . $this->ticket->access_token,
             ],
