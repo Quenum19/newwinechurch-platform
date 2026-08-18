@@ -23,7 +23,19 @@
     background: {{ $accent }};
     width: 100%;
   }
-  .body-inner { padding: 22px 32px; }
+  /* Hero avec le titre event — centré, serif éditorial, discret. */
+  .event-hero {
+    text-align: center;
+    padding: 22px 32px 6px;
+  }
+  .event-hero-title {
+    font-family: 'DejaVu Serif', 'Times New Roman', serif;
+    font-size: 30px;
+    color: #111;
+    letter-spacing: -0.5px;
+    line-height: 1.05;
+  }
+  .body-inner { padding: 14px 32px 22px; }
   * { box-sizing: border-box; }
   body {
     font-family: 'DejaVu Sans', sans-serif;
@@ -180,6 +192,10 @@
 
 {{-- Fine barre de couleur : signale la variation d'event sans occuper d'espace. --}}
 <div class="accent-bar"></div>
+
+<div class="event-hero">
+  <div class="event-hero-title">{{ $event->title }}</div>
+</div>
 
 <div class="body-inner">
 
