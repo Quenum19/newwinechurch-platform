@@ -63,6 +63,14 @@ class EventResource extends JsonResource
             'tickets_remaining'     => $this->when($this->ticketing_enabled, fn () => $this->tickets_remaining),
             // === Mode paiement (Phase 7) ===
             'payment_mode'          => $this->payment_mode ?? 'declarative',
+            // === EventHub — modules activés + config formulaire d'inscription ===
+            // modules_enabled : quels onglets/actions apparaissent dans le hub admin
+            //   registration, address_capture, choice_workflow, ticketing_after_choice,
+            //   live_screen, media_gallery, cross_check_previous_event_id
+            // registration_form_config : quels champs le formulaire d'inscription
+            // public rend + fenêtre opens_at/closes_at + success_message.
+            'modules_enabled'       => $this->modules_enabled ?? [],
+            'registration_form_config' => $this->registration_form_config ?? [],
         ];
     }
 }

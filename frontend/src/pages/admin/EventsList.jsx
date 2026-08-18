@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   Plus, Users, Trash2, MapPin, ChevronRight, Eye, EyeOff, Star, Edit3, Calendar, Ticket,
-  Check, Square, CheckSquare,
+  Check, Square, CheckSquare, LayoutDashboard,
 } from 'lucide-react'
 import { format, isPast, isFuture, isToday } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -167,6 +167,17 @@ export default function EventsList() {
       cellClassName: 'text-right whitespace-nowrap',
       render: (e) => (
         <div className="flex justify-end gap-1" onClick={(ev) => ev.stopPropagation()}>
+          {/* Hub de l'event — accès aux onglets dynamiques (live, inscriptions,
+              cartographie, galerie, recap…) selon la config modules_enabled. */}
+          <button
+            onClick={() => navigate(`/admin/events/${e.id}/hub`)}
+            className="p-1.5 rounded hover:bg-zinc-100 transition"
+            style={{ color: 'var(--adm-accent)' }}
+            title="Ouvrir le hub de l'événement"
+            aria-label="Ouvrir le hub"
+          >
+            <LayoutDashboard size={14} />
+          </button>
           <button
             onClick={() => togglePublish.mutate(e.id)}
             className="p-1.5 rounded hover:bg-zinc-100 transition"
