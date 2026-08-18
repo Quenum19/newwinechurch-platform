@@ -216,6 +216,13 @@ Route::get('/public/nwc/social-links', [\App\Http\Controllers\Public\NwcSocialLi
 
 // Hub d'enrôlement bal — CTA "Rejoindre la NWC" (page Suis-nous)
 Route::get ('/public/enrollment/departments', [\App\Http\Controllers\Public\PublicBalEnrollmentController::class, 'departments']);
+
+// === Formulaire d'inscription générique par event (Festi Grill '26 et suivants) ===
+// Config lue depuis event.registration_form_config + modules_enabled.
+Route::get ('/public/events/{slug}/registration-config', [\App\Http\Controllers\Public\PublicEventRegistrationController::class, 'config']);
+Route::post('/public/events/{slug}/register',            [\App\Http\Controllers\Public\PublicEventRegistrationController::class, 'store'])
+     ->middleware('throttle:10,1');
+
 Route::post('/public/enrollment/bal',         [\App\Http\Controllers\Public\PublicBalEnrollmentController::class, 'store'])
     ->middleware('throttle:5,1');
 

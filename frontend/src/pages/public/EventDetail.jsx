@@ -140,11 +140,33 @@ export default function EventDetail() {
           </div>
 
           <aside>
-            {/* PRIORITÉ à la BILLETTERIE si activée sur l'event.
-                Sinon fallback sur l'ancien système d'inscription (compte membre). */}
+            {/* PRIORITÉ D'AFFICHAGE :
+                1. isPast → message événement passé
+                2. modules_enabled.registration → formulaire d'inscription générique
+                   (Festi Grill '26 et suivants — pré-inscription simple sans ticket)
+                3. ticketing_enabled → système billetterie complet (Phase 1-7)
+                4. registration_required → ancien système d'inscription (compte membre) */}
             {isPast ? (
               <div className="border-2 border-public-ink/15 p-6 text-center">
                 <p className="font-mono text-xs uppercase tracking-widest text-public-ink/50">{t('events.isPast', 'Cet événement est passé.')}</p>
+              </div>
+            ) : event.modules_enabled?.registration ? (
+              /* === Inscription générique (EventHub) === */
+              <div className="bg-public-coffee text-public-bone p-6 sticky top-24">
+                <p className="tag-mono text-public-flame mb-3">Pré-inscription</p>
+                <h2 className="font-display uppercase text-2xl mb-4">Ta place t'attend</h2>
+                <p className="text-sm text-public-bone/70 mb-5 leading-relaxed">
+                  Réserve ta place en 30 secondes. On te recontacte pour la suite du programme.
+                </p>
+                <Link
+                  to={`/evenements/${event.slug}/inscription`}
+                  className="btn-flame w-full justify-center"
+                >
+                  Je m'inscris
+                </Link>
+                <p className="mt-4 tag-mono text-public-bone/40 text-center">
+                  Confirmation immédiate par email
+                </p>
               </div>
             ) : event.ticketing_enabled ? (
               /* === Système Billetterie (Phase 1-7) === */
