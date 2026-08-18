@@ -171,7 +171,14 @@ function TicketTypeModal({ open, onClose, eventId, type }) {
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? `Modifier "${type?.name}"` : 'Nouveau type de ticket'}>
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+      {/*
+        On utilise un <div> et pas un <form> ici car le Modal est rendu dans
+        le DOM à l'intérieur du <form> de EventForm parent. Deux <form> HTML
+        imbriqués = navigateur les fusionne → submit du bouton "Créer"
+        déclenchait le form PARENT en GET (valeurs visibles dans l'URL,
+        aucun POST). Solution : gérer le submit via onClick sur le bouton.
+      */}
+      <div className="space-y-4">
         <div>
           <label className="block text-xs uppercase tracking-wider font-mono mb-1 text-public-ink/60">Nom *</label>
           <input {...register('name', { required: true })} placeholder="ex: Standard, VIP, Étudiant"
@@ -221,13 +228,16 @@ function TicketTypeModal({ open, onClose, eventId, type }) {
                   className="px-4 py-2 text-xs uppercase tracking-wider font-mono border-2 border-public-ink/15">
             Annuler
           </button>
-          <button type="submit" disabled={save.isPending}
+          {/* type="button" est OBLIGATOIRE : sinon ce bouton déclencherait
+              le submit du form parent EventForm (voir commentaire plus haut). */}
+          <button type="button" disabled={save.isPending}
+                  onClick={handleSubmit(onSubmit, onInvalid)}
                   className="px-4 py-2 text-xs uppercase tracking-wider font-mono bg-public-flame text-white disabled:opacity-50 inline-flex items-center gap-2">
             {save.isPending && <Loader2 size={12} className="animate-spin"/>}
             {isEdit ? 'Enregistrer' : 'Créer'}
           </button>
         </div>
-      </form>
+      </div>
     </Modal>
   )
 }
