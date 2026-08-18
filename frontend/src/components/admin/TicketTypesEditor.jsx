@@ -4,7 +4,7 @@
  * Liste + modal create/edit. Disponible uniquement en édition (event_id requis).
  * Chaque type a : name, description, price_fcfa, capacity, max_per_order, is_active.
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { Plus, Edit2, Trash2, Ticket, Loader2 } from 'lucide-react'
@@ -114,8 +114,13 @@ export default function TicketTypesEditor({ eventId }) {
 function TicketTypeModal({ open, onClose, eventId, type }) {
   const qc = useQueryClient()
   const isEdit = !!type
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
-    values: type ? {
+
+  // IMPORTANT : mémoïser les valeurs — sans ça, RHF reset le form à chaque
+  // render (l'objet `values` change de référence même si son contenu est
+  // identique) → le submit ne part jamais et le user ne peut rien saisir
+  // durablement. Bug qui bloquait la création silencieusement.
+  const formValues = useMemo(() => (
+    type ? {
       name: type.name,
       description: type.description ?? '',
       price_fcfa: type.price_fcfa,
@@ -124,7 +129,11 @@ function TicketTypeModal({ open, onClose, eventId, type }) {
       color_hex: type.color_hex ?? '#C9A961',
       is_active: type.is_active,
       sort_order: type.sort_order,
-    } : { price_fcfa: 0, is_active: true, color_hex: '#C9A961' },
+    } : { name: '', description: '', price_fcfa: 0, capacity: '', max_per_order: '', is_active: true, color_hex: '#C9A961' }
+  ), [type])
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    values: formValues,
   })
 
   const save = useMutation({
@@ -153,9 +162,16 @@ function TicketTypeModal({ open, onClose, eventId, type }) {
     })
   }
 
+  // Callback d'échec validation — remonte les erreurs en console + toast
+  // pour ne plus jamais avoir un submit silencieux (bug diagnostiqué en prod).
+  const onInvalid = (errs) => {
+    const first = Object.values(errs)[0]?.message || Object.keys(errs)[0]
+    if (first) toast.error(`Formulaire invalide : ${first}`)
+  }
+
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? `Modifier "${type?.name}"` : 'Nouveau type de ticket'}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
         <div>
           <label className="block text-xs uppercase tracking-wider font-mono mb-1 text-public-ink/60">Nom *</label>
           <input {...register('name', { required: true })} placeholder="ex: Standard, VIP, Étudiant"
@@ -170,7 +186,14 @@ function TicketTypeModal({ open, onClose, eventId, type }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs uppercase tracking-wider font-mono mb-1 text-public-ink/60">Prix (FCFA) *</label>
-            <input type="number" min="0" {...register('price_fcfa', { required: true })} className="adm-input"/>
+            {/* valueAsNumber pour que 0 soit accepté (sinon RHF le voit comme
+                string vide selon la config, faisant échouer required silencieusement) */}
+            <input type="number" min="0" {...register('price_fcfa', {
+              required: 'Prix requis',
+              valueAsNumber: true,
+              min: { value: 0, message: 'Prix >= 0' },
+            })} className="adm-input"/>
+            {errors.price_fcfa && <p className="text-xs text-red-600 mt-1">{errors.price_fcfa.message}</p>}
             <p className="text-[10px] text-public-ink/50 mt-1">0 = gratuit (cohabite avec types payants)</p>
           </div>
           <div>
