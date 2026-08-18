@@ -24,11 +24,15 @@ class MembershipRequest extends Model
         'source', 'enrollment_type', 'interested_department_id', 'interested_mountain',
         'event_id', 'enrollment_status', 'admin_notes',
         'status', 'processed_by', 'processed_at', 'rejection_reason', 'user_id',
+        // === Formulaire d'inscription générique (Festi Grill '26 et suivants) ===
+        'whatsapp', 'commune', 'quartier',
+        'attended_bal', 'registration_token', 'registration_step',
     ];
 
     protected $casts = [
         'birth_date'   => 'date',
         'processed_at' => 'datetime',
+        'attended_bal' => 'boolean',
     ];
 
     public function processedBy(): BelongsTo

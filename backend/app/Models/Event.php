@@ -39,6 +39,10 @@ class Event extends Model
         'payment_mode',
         // Galerie post-event : chemins PNG overlay par format (tv/landscape/square/story)
         'brand_frames',
+        // === Fondation EventHub — évite d'ajouter un menu par event ===
+        // modules_enabled : quels onglets/modules l'event active
+        // registration_form_config : quels champs du formulaire d'inscription
+        'modules_enabled', 'registration_form_config',
     ];
 
     protected $casts = [
@@ -57,6 +61,8 @@ class Event extends Model
         'require_selfie'        => 'boolean',
         'allow_waitlist'        => 'boolean',
         'brand_frames'          => 'array',
+        'modules_enabled'       => 'array',
+        'registration_form_config' => 'array',
     ];
 
     public function getSlugOptions(): SlugOptions
