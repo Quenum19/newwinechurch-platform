@@ -175,6 +175,57 @@ class EventTicketsController extends Controller
     }
 
     /**
+     * Envoie un ticket TEST à un email donné — création à la volée d'un ticket
+     * gratuit éphémère marqué `TEST-` puis appel du pipeline TicketIssuer
+     * standard (PDF pro + QR + mail). Utile pour prévisualiser le rendu final
+     * (design, wording, PDF attaché) sans passer par le workflow complet.
+     *
+     * Body : { "email": "test@..." }
+     * Le ticket créé reste en DB (payment_status=free, marqueur TEST-* dans
+     * order_code) — l'admin peut le supprimer via la liste billetterie.
+     */
+    public function sendTest(Request $request, int $eventId): JsonResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeManage($request, $event);
+
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:180'],
+        ]);
+
+        $short = strtoupper(\Illuminate\Support\Str::random(6));
+        $accessTok = \Illuminate\Support\Str::random(48);
+
+        $ticket = EventTicket::create([
+            'event_id'       => $event->id,
+            'order_code'     => 'TEST-' . strtoupper(\Illuminate\Support\Str::random(6)),
+            'ticket_number'  => 1,
+            'short_code'     => $short,
+            'qr_payload'     => json_encode(['e' => $event->id, 't' => $accessTok, 'v' => 1]),
+            'access_token'   => $accessTok,
+            'first_name'     => 'Ticket',
+            'last_name'      => 'TEST',
+            'email'          => $data['email'],
+            'phone'          => null,
+            'price_fcfa'     => 0,
+            'status'         => 'confirmed',
+            'payment_status' => 'free',
+            'payment_validated_at' => now(),
+        ]);
+
+        $r = $this->issuer->issueAndSend($ticket);
+
+        return response()->json([
+            'message' => $r['sent']
+                ? "Ticket test envoyé à {$data['email']}."
+                : "Échec envoi : " . ($r['error'] ?? 'erreur inconnue'),
+            'sent'      => $r['sent'],
+            'short_code'=> $short,
+            'ticket_id' => $ticket->id,
+        ]);
+    }
+
+    /**
      * Endpoint SCAN — utilisé par la PWA /scan côté agent sécurité.
      * Body : { code: "<qr_payload_base64>" } OU { code: "NWC-7H4K" } OU { code: "748962213265674" }
      */

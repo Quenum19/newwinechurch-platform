@@ -399,6 +399,10 @@ export const events = {
   ticketTypeUpdate:  async (eventId, id, data) => (await api.put(`/admin/events/${eventId}/ticket-types/${id}`, data)).data,
   ticketTypeDelete:  async (eventId, id) => (await api.delete(`/admin/events/${eventId}/ticket-types/${id}`)).data,
 
+  // === Test d'envoi ticket ===
+  sendTicketTest:    async (eventId, email) =>
+    (await api.post(`/admin/events/${eventId}/tickets/send-test`, { email })).data,
+
   // === Liste d'attente ===
   waitlist:          async (eventId) => (await api.get(`/admin/events/${eventId}/waitlist`)).data,
   waitlistConvert:   async (eventId, id) => (await api.post(`/admin/events/${eventId}/waitlist/${id}/convert`)).data,

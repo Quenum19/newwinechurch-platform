@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { Plus, Edit2, Trash2, Ticket, Loader2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Ticket, Loader2, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { events as eventsApi } from '@/api/admin'
@@ -105,6 +105,55 @@ export default function TicketTypesEditor({ eventId }) {
         eventId={eventId}
         type={editingType}
       />
+
+      {/* Envoi ticket test — prévisualise le rendu (design, PDF, QR) pour
+          un email quelconque sans passer par le workflow d'inscription. */}
+      <TestTicketSender eventId={eventId}/>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────── */
+
+function TestTicketSender({ eventId }) {
+  const [email, setEmail] = useState('')
+  const send = useMutation({
+    mutationFn: () => eventsApi.sendTicketTest(eventId, email),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Ticket test envoyé.')
+      setEmail('')
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || "Échec envoi."),
+  })
+
+  return (
+    <div className="border-t border-public-ink/10 pt-4 mt-4">
+      <p className="text-xs uppercase tracking-wider font-mono text-public-ink/60 mb-2">
+        <Mail size={12} className="inline mr-1"/>
+        Envoi d'un ticket test
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          placeholder="email@exemple.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="adm-input flex-1"
+        />
+        <button
+          type="button"
+          disabled={! email || send.isPending}
+          onClick={() => send.mutate()}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs uppercase tracking-wider font-mono bg-public-ink text-white hover:bg-public-flame transition disabled:opacity-50 whitespace-nowrap"
+        >
+          {send.isPending && <Loader2 size={12} className="animate-spin"/>}
+          Envoyer
+        </button>
+      </div>
+      <p className="text-[10px] text-public-ink/50 mt-1">
+        Crée un ticket éphémère marqué TEST-* (visible dans la liste billetterie) et envoie
+        le PDF + QR par email. Utile pour prévisualiser le design final.
+      </p>
     </div>
   )
 }

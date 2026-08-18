@@ -640,6 +640,10 @@ Route::middleware(['auth:sanctum'])
     Route::get ('/events/{id}/tickets/callcenter-sheet',  [AdminEventTicketsController::class, 'callcenterSheet'])->whereNumber('id');
     Route::post('/events/{id}/tickets/{tid}/resend',     [AdminEventTicketsController::class, 'resend'])
          ->whereNumber('id')->whereNumber('tid');
+    // Test — envoie un ticket éphémère à un email pour prévisualiser le
+    // rendu (design, PDF, QR). Rate-limité pour éviter le spam.
+    Route::post('/events/{id}/tickets/send-test',        [AdminEventTicketsController::class, 'sendTest'])
+         ->whereNumber('id')->middleware('throttle:10,1');
     // Sécurité #H7 audit : rate limit sur scan (anti brute-force short_code)
     Route::post('/tickets/scan',                         [AdminEventTicketsController::class, 'scan'])
          ->middleware('throttle:ticket-scan');
