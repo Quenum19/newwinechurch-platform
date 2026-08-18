@@ -1,14 +1,14 @@
 {{--
-    Ticket PDF — Style Tikerama sobre et fidèle
-    Structure exacte : header text top + grille 2×2 avec bordures pointillées
-    Rendu dompdf : garde DejaVu Sans (support FR + accents)
-
-    Couleur d'accent ($accent) : dérivée de $ticket->ticketType->color_hex si
-    présent, sinon bordeaux NWC par défaut. Permet de différencier
-    visuellement chaque event (Bal bordeaux, Festi Grill orange, etc.).
+    Ticket PDF — Style sobre et éditorial
+    Grille 2×2 avec bordures pointillées à la Tikerama
+    Couleur d'accent ($accent) : dérivée de ticketType->color_hex si présent,
+    sinon bordeaux NWC. Utilisée avec parcimonie : fine barre en tête + tags
+    (pas de bloc massif — le PDF reste noir & blanc dominant, plus premium).
+    Typographie : DejaVu Serif pour le titre event (rendu éditorial),
+    DejaVu Sans pour le reste (lisibilité).
 --}}
 @php
-    $accent = $accentColor ?? '{{ $accent }}';
+    $accent = $accentColor ?? '#8B1A2F';
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -17,26 +17,22 @@
 <title>Ticket {{ $ticket->short_code }} — {{ $event->title }}</title>
 <style>
   @page { margin: 0; }
-  .accent-band {
+  /* Fine barre de couleur en tête — signale la variation d'event sans crier. */
+  .accent-bar {
+    height: 4px;
     background: {{ $accent }};
-    color: #fff;
-    padding: 10px 32px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    width: 100%;
   }
-  .body-inner { padding: 18px 32px; }
+  .body-inner { padding: 22px 32px; }
   * { box-sizing: border-box; }
   body {
     font-family: 'DejaVu Sans', sans-serif;
-    color: #000;
+    color: #111;
     background: #fff;
     margin: 0;
     padding: 0;
     font-size: 11px;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 
   .top-tag {
@@ -76,31 +72,34 @@
     padding: 4px;
   }
 
-  /* Bloc titre + infos event */
+  /* Bloc titre + infos event — serif éditorial pour un rendu premium */
   .event-title {
-    font-size: 22px;
-    font-weight: bold;
-    color: #000;
-    margin: 0 0 16px;
-    line-height: 1.15;
+    font-family: 'DejaVu Serif', 'Times New Roman', serif;
+    font-size: 26px;
+    font-weight: normal;
+    color: #111;
+    margin: 0 0 18px;
+    line-height: 1.1;
+    letter-spacing: -0.3px;
   }
   .info-line {
     margin: 6px 0;
     font-size: 12px;
     color: #000;
   }
+  /* Tags DATE/LIEU/TYPE : plus discrets, pas de fond intense.
+     Fine bordure gauche colorée, texte gris — lisible sans crier. */
   .info-line .icon {
     display: inline-block;
-    width: 22px;
-    height: 12px;
-    background: {{ $accent }};
-    color: #fff;
+    padding: 1px 6px;
+    background: #F5F5F5;
+    color: #6A6A6A;
+    border-left: 3px solid {{ $accent }};
     text-align: center;
     font-size: 9px;
     font-weight: bold;
-    line-height: 12px;
-    margin-right: 6px;
-    letter-spacing: 0;
+    margin-right: 8px;
+    letter-spacing: 0.5px;
   }
   .info-line strong {
     color: #000;
@@ -179,11 +178,8 @@
 </head>
 <body>
 
-{{-- Bandeau d'accent : couleur = celle du type de ticket (color_hex). Rend
-     la différence visuelle entre events immédiate dès l'ouverture du PDF. --}}
-<div class="accent-band">
-  {{ $event->title }}
-</div>
+{{-- Fine barre de couleur : signale la variation d'event sans occuper d'espace. --}}
+<div class="accent-bar"></div>
 
 <div class="body-inner">
 
