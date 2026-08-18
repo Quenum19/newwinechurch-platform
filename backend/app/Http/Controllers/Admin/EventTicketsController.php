@@ -196,8 +196,15 @@ class EventTicketsController extends Controller
         $short = strtoupper(\Illuminate\Support\Str::random(6));
         $accessTok = \Illuminate\Support\Str::random(48);
 
+        // Rattache automatiquement le premier ticket_type actif de l'event —
+        // permet d'afficher le nom du type et sa couleur d'accent dans le PDF.
+        // Fallback null si l'event n'a pas encore de type défini (mode gratuit
+        // unique historique Phase 1).
+        $type = $event->ticketTypes()->where('is_active', true)->orderBy('sort_order')->first();
+
         $ticket = EventTicket::create([
             'event_id'       => $event->id,
+            'ticket_type_id' => $type?->id,
             'order_code'     => 'TEST-' . strtoupper(\Illuminate\Support\Str::random(6)),
             'ticket_number'  => 1,
             'short_code'     => $short,
@@ -207,9 +214,9 @@ class EventTicketsController extends Controller
             'last_name'      => 'TEST',
             'email'          => $data['email'],
             'phone'          => null,
-            'price_fcfa'     => 0,
+            'price_fcfa'     => $type?->price_fcfa ?? 0,
             'status'         => 'confirmed',
-            'payment_status' => 'free',
+            'payment_status' => ($type?->price_fcfa ?? 0) > 0 ? 'paid' : 'free',
             'payment_validated_at' => now(),
         ]);
 

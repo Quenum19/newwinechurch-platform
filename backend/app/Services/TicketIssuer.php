@@ -27,7 +27,7 @@ class TicketIssuer
     public function issueAndSend(EventTicket $ticket): array
     {
         try {
-            $ticket->load('event');
+            $ticket->load('event', 'ticketType');
 
             // Tentative génération PDF — mail envoyé même si PDF échoue.
             $pdfPath = null;
@@ -120,12 +120,19 @@ class TicketIssuer
         // Convertit la cover_image (souvent .webp) en PNG que dompdf sait lire.
         $coverPngPath = $this->resolveCoverPng($ticket, $tmpDir);
 
+        // Couleur d'accent du ticket : priorité au color_hex du type de ticket,
+        // sinon fallback bordeaux NWC (#8B1A2F). Permet de différencier
+        // visuellement le PDF ticket entre events (Bal bordeaux, Festi Grill
+        // orange, etc.) — évite que tous les tickets se ressemblent.
+        $accentColor = $ticket->ticketType?->color_hex ?: '#8B1A2F';
+
         $pdf = Pdf::loadView('pdfs.ticket', [
             'ticket'       => $ticket,
             'event'        => $ticket->event,
             'qrPngPath'    => $qrPngPath,
             'qrSvgPath'    => $qrSvgPath,
             'coverPngPath' => $coverPngPath, // PNG converti prêt à embed
+            'accentColor'  => $accentColor,
         ])->setPaper('A4', 'portrait');
 
         $pdfPath = "$tmpDir/ticket.pdf";

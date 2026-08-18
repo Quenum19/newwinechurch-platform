@@ -2,14 +2,32 @@
     Ticket PDF — Style Tikerama sobre et fidèle
     Structure exacte : header text top + grille 2×2 avec bordures pointillées
     Rendu dompdf : garde DejaVu Sans (support FR + accents)
+
+    Couleur d'accent ($accent) : dérivée de $ticket->ticketType->color_hex si
+    présent, sinon bordeaux NWC par défaut. Permet de différencier
+    visuellement chaque event (Bal bordeaux, Festi Grill orange, etc.).
 --}}
+@php
+    $accent = $accentColor ?? '{{ $accent }}';
+@endphp
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <title>Ticket {{ $ticket->short_code }} — {{ $event->title }}</title>
 <style>
-  @page { margin: 24px 32px; }
+  @page { margin: 0; }
+  .accent-band {
+    background: {{ $accent }};
+    color: #fff;
+    padding: 10px 32px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .body-inner { padding: 18px 32px; }
   * { box-sizing: border-box; }
   body {
     font-family: 'DejaVu Sans', sans-serif;
@@ -27,7 +45,7 @@
     color: #4A4A4A;
     padding: 8px 0 14px;
   }
-  .top-tag .brand { color: #8B1A2F; font-weight: bold; }
+  .top-tag .brand { color: {{ $accent }}; font-weight: bold; }
 
   /* GRID 2x2 : layout à la Tikerama */
   table.ticket-grid {
@@ -75,7 +93,7 @@
     display: inline-block;
     width: 22px;
     height: 12px;
-    background: #8B1A2F;
+    background: {{ $accent }};
     color: #fff;
     text-align: center;
     font-size: 9px;
@@ -134,7 +152,7 @@
     margin: 0 0 14px;
     line-height: 1.45;
   }
-  .assist-text .phone { color: #8B1A2F; }
+  .assist-text .phone { color: {{ $accent }}; }
 
   /* Legal en bas */
   .legal-title {
@@ -156,10 +174,18 @@
     font-size: 9px;
     color: #666;
   }
-  .copyright a { color: #8B1A2F; text-decoration: none; font-weight: bold; }
+  .copyright a { color: {{ $accent }}; text-decoration: none; font-weight: bold; }
 </style>
 </head>
 <body>
+
+{{-- Bandeau d'accent : couleur = celle du type de ticket (color_hex). Rend
+     la différence visuelle entre events immédiate dès l'ouverture du PDF. --}}
+<div class="accent-band">
+  {{ $event->title }}
+</div>
+
+<div class="body-inner">
 
 <div class="top-tag">
   E-ticket officiel <span class="brand">NEW WINE CHURCH</span>, présente ce ticket à l'entrée pour valider ta place.
@@ -202,10 +228,12 @@
 
       <p class="info-line">
         <span class="icon">TYPE</span>
+        @if($ticket->ticketType)<strong>{{ $ticket->ticketType->name }}</strong>@endif
         @if(($ticket->price_fcfa ?? 0) > 0)
-          @if($ticket->ticketType)<strong>{{ $ticket->ticketType->name }},</strong>@endif
+          @if($ticket->ticketType), @endif
           <span class="amount">{{ number_format($ticket->price_fcfa, 0, ',', ' ') }} F CFA</span>
         @else
+          @if($ticket->ticketType) — @endif
           <span class="amount">ENTRÉE GRATUITE</span>
         @endif
       </p>
@@ -276,6 +304,8 @@ Ce ticket est individuel et à usage unique. Il est conservé de façon sécuris
   <a href="{{ rtrim(config('app.frontend_url', config('app.url')), '/') }}">NEW WINE CHURCH</a>,
   tous droits réservés.
 </p>
+
+</div>{{-- .body-inner --}}
 
 </body>
 </html>
