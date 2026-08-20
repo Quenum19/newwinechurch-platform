@@ -106,6 +106,7 @@ const PostsList         = lazy(() => import('./pages/admin/PostsList.jsx'))
 const PostForm          = lazy(() => import('./pages/admin/PostForm.jsx'))
 const MediaGalleryPage  = lazy(() => import('./pages/admin/MediaGalleryPage.jsx'))
 const PrayersList       = lazy(() => import('./pages/admin/PrayersList.jsx'))
+const AdminContactMessagesPage = lazy(() => import('./pages/admin/AdminContactMessagesPage.jsx'))
 const NewsletterPage    = lazy(() => import('./pages/admin/NewsletterPage.jsx'))
 const ActivityLogPage   = lazy(() => import('./pages/admin/ActivityLogPage.jsx'))
 const NotificationsInboxPage = lazy(() => import('./pages/shared/NotificationsInboxPage.jsx'))
@@ -403,6 +404,7 @@ export default function App() {
           <Route path="/admin/blog/:id"                   element={<PostForm />} />
           <Route path="/admin/galerie"                    element={<MediaGalleryPage />} />
           <Route path="/admin/prieres"                    element={<PrayersList />} />
+          <Route path="/admin/contact"                    element={<AdminContactMessagesPage />} />
           <Route path="/admin/newsletter"                 element={<NewsletterPage />} />
           <Route path="/admin/journal"                    element={<ActivityLogPage />} />
           <Route path="/admin/notifications"              element={<NotificationsInboxPage />} />

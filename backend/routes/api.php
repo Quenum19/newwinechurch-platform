@@ -342,6 +342,15 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     // === Activity Log (lecture seule) ===
     Route::get('/activity-log', [AdminActivityLogController::class, 'index']);
 
+    // === Messages de contact (formulaire public /contact) ===
+    Route::get   ('/contact-messages',              [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'index']);
+    Route::get   ('/contact-messages/stats',        [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'stats']);
+    Route::get   ('/contact-messages/{id}',         [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'show'])->whereNumber('id');
+    Route::post  ('/contact-messages/{id}/read',    [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'markRead'])->whereNumber('id');
+    Route::post  ('/contact-messages/{id}/unread',  [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'markUnread'])->whereNumber('id');
+    Route::post  ('/contact-messages/{id}/replied', [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'markReplied'])->whereNumber('id');
+    Route::delete('/contact-messages/{id}',         [\App\Http\Controllers\Admin\AdminContactMessagesController::class, 'destroy'])->whereNumber('id');
+
     // === Membres ===
     Route::get('/members',                  [AdminMembersController::class, 'index']);
     Route::get('/members/export',           [AdminMembersController::class, 'export']);

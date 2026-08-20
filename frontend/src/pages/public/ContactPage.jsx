@@ -83,20 +83,62 @@ export default function ContactPage() {
               <MessageSquare size={22} className="text-public-flame"/> {t('contact.writeMessage', 'Écris ton message')}
             </h2>
 
+            {/* Honeypot anti-bot : champ 'website' invisible pour les humains.
+                Les bots aveugles le remplissent → rejeté silencieusement côté
+                serveur (renvoie 201 factice sans créer de message). */}
+            <input
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              {...register('website')}
+              style={{
+                position: 'absolute',
+                left: '-10000px',
+                width: '1px',
+                height: '1px',
+                opacity: 0,
+                pointerEvents: 'none',
+              }}
+            />
+
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label={t('contact.nameLabel', 'Nom')} required error={errors.name?.message}>
-                <input type="text" {...register('name')} className="input-public-dark"/>
+                <input
+                  type="text"
+                  autoComplete="name"
+                  maxLength={120}
+                  {...register('name')}
+                  onInput={(e) => { e.target.value = e.target.value.replace(/[^\p{L}\s'-]/gu, '').slice(0, 120) }}
+                  className="input-public-dark"
+                />
               </Field>
               <Field label={t('contact.emailLabel', 'Email')} required error={errors.email?.message}>
-                <input type="email" {...register('email')} className="input-public-dark"/>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  maxLength={180}
+                  {...register('email')}
+                  className="input-public-dark"
+                />
               </Field>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label={t('contact.phoneLabel', 'Téléphone')}>
-                <input type="tel" {...register('phone')} className="input-public-dark"/>
+              <Field label={t('contact.phoneLabel', 'Téléphone')} error={errors.phone?.message}>
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  pattern="[+0-9\s().-]*"
+                  maxLength={30}
+                  {...register('phone')}
+                  onInput={(e) => { e.target.value = e.target.value.replace(/[^+0-9\s().-]/g, '').slice(0, 30) }}
+                  className="input-public-dark"
+                />
               </Field>
               <Field label={t('contact.subjectLabel', 'Sujet')}>
-                <input type="text" {...register('subject')} className="input-public-dark"/>
+                <input type="text" maxLength={200} {...register('subject')} className="input-public-dark"/>
               </Field>
             </div>
 

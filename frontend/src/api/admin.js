@@ -565,6 +565,17 @@ export const prayers = {
   togglePublish: async (id) => (await api.post(`/admin/prayers/${id}/toggle-publish`)).data,
 }
 
+// === CONTACT MESSAGES ===
+export const contactMessages = {
+  list:         async (params = {}) => (await api.get('/admin/contact-messages', { params })).data,
+  stats:        async () => (await api.get('/admin/contact-messages/stats')).data,
+  get:          async (id) => (await api.get(`/admin/contact-messages/${id}`)).data,
+  markRead:     async (id) => (await api.post(`/admin/contact-messages/${id}/read`)).data,
+  markUnread:   async (id) => (await api.post(`/admin/contact-messages/${id}/unread`)).data,
+  markReplied:  async (id) => (await api.post(`/admin/contact-messages/${id}/replied`)).data,
+  delete:       async (id) => (await api.delete(`/admin/contact-messages/${id}`)).data,
+}
+
 // === NEWSLETTER ===
 export const newsletter = {
   subscribers: async (params = {}) => (await api.get('/admin/newsletter/subscribers', { params })).data,

@@ -59,6 +59,7 @@ function buildNavItems(t) {
     { to: '/admin/dons',              icon: HandCoins,      label: t('admin.sidebar.donations'),        perm: 'view donations' },
     { to: '/admin/methodes-don',      icon: Smartphone,     label: t('admin.sidebar.donationMethods'),  perm: 'manage donation accounts' },
     { to: '/admin/prieres',           icon: MessageSquare,  label: t('admin.sidebar.prayers'),          perm: 'view prayer requests' },
+    { to: '/admin/contact',           icon: Mail,           label: t('admin.sidebar.contact', 'Messages contact'), perm: 'manage settings' },
     { to: '/admin/newsletter',        icon: Mail,           label: t('admin.sidebar.newsletter'),       perm: 'manage newsletter subscribers' },
 
     { section: t('admin.sidebar.section.system') },
