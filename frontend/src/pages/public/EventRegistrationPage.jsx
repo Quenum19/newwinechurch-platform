@@ -332,6 +332,21 @@ function Field({ field, value, onChange, options, error }) {
     maxLength: 80,
   } : {}
 
+  // Sanitizer par type : filtre la valeur AU FIL DE LA SAISIE pour empêcher
+  // physiquement les caractères non-conformes (le pattern HTML ne valide qu'au
+  // submit). Le user rapportait pouvoir taper des lettres dans phone/whatsapp.
+  const sanitizeValue = (raw) => {
+    if (type === 'tel') {
+      // Autorisé : chiffres, +, espaces, tirets, points, parenthèses/
+      return raw.replace(/[^+0-9\s().-]/g, '').slice(0, 30)
+    }
+    if (['first_name', 'name'].includes(field.key)) {
+      // Autorisé : lettres unicode (accents inclus), espaces, tirets, apostrophes
+      return raw.replace(/[^\p{L}\s'-]/gu, '').slice(0, 80)
+    }
+    return raw
+  }
+
   return (
     <label className="block">
       <span className="block font-mono text-[11px] uppercase tracking-widest text-public-ink/70 mb-1.5">
@@ -341,7 +356,7 @@ function Field({ field, value, onChange, options, error }) {
         type={type}
         required={field.required}
         value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(sanitizeValue(e.target.value))}
         placeholder={placeholder}
         {...telExtra}
         {...emailExtra}
