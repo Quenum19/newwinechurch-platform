@@ -16,19 +16,29 @@
     <meta name="keywords" content="New Wine Church, NWC, église, jeunes, Abidjan, Cocody, Bonoumin, Côte d'Ivoire, Christ, sauvé, évangélisation, Pasteur Georges Amoako-Prempeh" />
     <meta name="author" content="New Wine Church" />
 
-    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
-    <meta property="og:title" content="New Wine Church — Sauvé pour Sauver" />
-    <meta property="og:description" content="Église de jeunes adultes à Abidjan. Rejoins l'armée de Christ." />
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) —
+         SURCHARGE TEMPORAIRE POUR CAMPAGNE FESTI GRILL '26 : les crawlers
+         (WhatsApp, FB, etc.) ne lisent pas le JS, donc les meta tags de la
+         SPA React ne sont jamais vus. On surcharge ici avec l'affiche
+         Festi Grill pour que tous les liens partagés affichent l'event
+         principal du moment. À rétablir sur le logo NWC après la campagne
+         (28 août 2026) ou remplacer par un vrai système de prerendering. -->
+    <meta property="og:title" content="Festi Grill '26 — New Wine Church" />
+    <meta property="og:description" content="Après le bal, on continue l'aventure. Grillades, musique, ambiance village · Samedi 12 septembre 2026, Maison de la destinée, Bonoumin. Réserve ta place — inscription gratuite." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/logos/logo_newwine.png" />
+    <meta property="og:image" content="https://api.newinechurch.org/storage/events/festi-grill-26-cover.jpg" />
+    <meta property="og:image:width" content="1080" />
+    <meta property="og:image:height" content="1080" />
+    <meta property="og:image:alt" content="Festi Grill '26 — Meilleures viandes servies avec alloco & attiéké" />
+    <meta property="og:url" content="https://newinechurch.org/evenements/festi-grill-26/inscription" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:locale:alternate" content="en_US" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="New Wine Church — Sauvé pour Sauver" />
-    <meta name="twitter:description" content="Église de jeunes adultes à Abidjan. Rejoins l'armée de Christ." />
-    <meta name="twitter:image" content="/logos/logo_newwine.png" />
+    <meta name="twitter:title" content="Festi Grill '26 — New Wine Church" />
+    <meta name="twitter:description" content="Grillades, musique, ambiance village · 12 septembre 2026, Bonoumin. Réserve ta place gratuitement." />
+    <meta name="twitter:image" content="https://api.newinechurch.org/storage/events/festi-grill-26-cover.jpg" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.webmanifest" />
