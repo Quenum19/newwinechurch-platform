@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Festi Grill '26 — cadre TV 1920×1080</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; }
+  body {
+    width: 1920px; height: 1080px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    position: relative;
+  }
+  /* Bordure feu — dégradé orange/rouge sur les 4 côtés, transparent au centre */
+  .fire-frame {
+    position: absolute; inset: 0;
+    box-shadow:
+      inset 0  40px  60px -20px rgba(220, 60, 15, 0.85),
+      inset 0 -40px  60px -20px rgba(220, 60, 15, 0.85),
+      inset  40px 0  60px -20px rgba(220, 60, 15, 0.85),
+      inset -40px 0  60px -20px rgba(220, 60, 15, 0.85);
+    pointer-events: none;
+  }
+  /* Feuilles persil coins */
+  .leaf { position: absolute; font-size: 90px; opacity: 0.85; }
+  .leaf.tl { top: 8px; left: 12px; transform: rotate(-30deg); }
+  .leaf.tr { top: 8px; right: 12px; transform: rotate(30deg) scaleX(-1); }
+  .leaf.bl { bottom: 8px; left: 12px; transform: rotate(-150deg); }
+  .leaf.br { bottom: 8px; right: 12px; transform: rotate(150deg) scaleX(-1); }
+  /* Bandeau haut : logo + FESTI GRILL */
+  .top {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 24px 120px 20px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0));
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 10;
+  }
+  .brand {
+    color: #E4B93A;
+    font-family: 'Caveat', cursive;
+    font-size: 28px;
+    letter-spacing: 1px;
+  }
+  .brand small { color: #fff; font-size: 12px; opacity: 0.8; letter-spacing: 2px; }
+  .title-wrap { text-align: center; flex: 1; }
+  .title-festi {
+    font-family: 'Caveat', cursive;
+    font-size: 40px;
+    color: #fff;
+    line-height: 0.9;
+    margin-bottom: -6px;
+  }
+  .title-grill {
+    font-family: 'Anton', 'Bebas Neue', sans-serif;
+    font-size: 76px;
+    color: #E4B93A;
+    letter-spacing: 4px;
+    line-height: 1;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+  }
+  .info-badge {
+    color: #E4B93A;
+    text-align: right;
+    font-family: 'Anton', sans-serif;
+    line-height: 1.05;
+  }
+  .info-badge .num { font-size: 44px; color: #fff; }
+  .info-badge .label { font-size: 14px; letter-spacing: 3px; opacity: 0.9; }
+  /* Bandeau bas : date + lieu */
+  .bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 18px 120px 22px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.9), rgba(0,0,0,0));
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Inter', sans-serif;
+    z-index: 10;
+  }
+  .bottom .meta {
+    color: #fff; font-size: 15px; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .bottom .meta strong { color: #E4B93A; }
+  .bottom .location {
+    color: #fff; font-size: 14px; letter-spacing: 2px; opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+  <div class="fire-frame"></div>
+  <div class="leaf tl">🌿</div>
+  <div class="leaf tr">🌿</div>
+  <div class="leaf bl">🌿</div>
+  <div class="leaf br">🌿</div>
+
+  <div class="top">
+    <div class="brand">New Wine<br><small>CHURCH</small></div>
+    <div class="title-wrap">
+      <div class="title-festi">Festi</div>
+      <div class="title-grill">GRILL '26</div>
+    </div>
+    <div class="info-badge">
+      <div class="num">12</div>
+      <div class="label">SEPT · 15H</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="meta">🔥 Grillades · Musique · <strong>7 Sphères d'Influence</strong></div>
+    <div class="location">📍 Maison de la destinée · Bonoumin</div>
+  </div>
+</body>
+</html>

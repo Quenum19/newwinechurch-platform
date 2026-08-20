@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Festi Grill '26 — cadre square 1080×1080</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; }
+  body {
+    width: 1080px; height: 1080px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    position: relative;
+  }
+  .fire-frame {
+    position: absolute; inset: 0;
+    box-shadow:
+      inset 0  28px 45px -15px rgba(220, 60, 15, 0.85),
+      inset 0 -28px 45px -15px rgba(220, 60, 15, 0.85),
+      inset  28px 0 45px -15px rgba(220, 60, 15, 0.85),
+      inset -28px 0 45px -15px rgba(220, 60, 15, 0.85);
+    pointer-events: none;
+  }
+  .leaf { position: absolute; font-size: 64px; opacity: 0.85; }
+  .leaf.tl { top: 5px; left: 8px; transform: rotate(-30deg); }
+  .leaf.tr { top: 5px; right: 8px; transform: rotate(30deg) scaleX(-1); }
+  .leaf.bl { bottom: 5px; left: 8px; transform: rotate(-150deg); }
+  .leaf.br { bottom: 5px; right: 8px; transform: rotate(150deg) scaleX(-1); }
+  .top {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 26px 60px 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0));
+    text-align: center;
+    z-index: 10;
+  }
+  .brand { color: #E4B93A; font-family: 'Caveat', cursive; font-size: 24px; letter-spacing: 1px; margin-bottom: 6px; }
+  .title-festi { font-family: 'Caveat', cursive; font-size: 32px; color: #fff; line-height: 0.9; margin-bottom: -4px; }
+  .title-grill { font-family: 'Anton', sans-serif; font-size: 66px; color: #E4B93A; letter-spacing: 4px; line-height: 1; text-shadow: 2px 2px 0 rgba(0,0,0,0.6); }
+  .bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 20px 60px 24px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.9), rgba(0,0,0,0));
+    text-align: center;
+    z-index: 10;
+  }
+  .bottom .date {
+    font-family: 'Anton', sans-serif; font-size: 32px; color: #E4B93A;
+    letter-spacing: 3px; margin-bottom: 4px;
+  }
+  .bottom .meta { color: #fff; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .bottom .location { color: #fff; font-size: 12px; letter-spacing: 2px; opacity: 0.85; }
+</style>
+</head>
+<body>
+  <div class="fire-frame"></div>
+  <div class="leaf tl">🌿</div>
+  <div class="leaf tr">🌿</div>
+  <div class="leaf bl">🌿</div>
+  <div class="leaf br">🌿</div>
+
+  <div class="top">
+    <div class="brand">New Wine · CHURCH</div>
+    <div class="title-festi">Festi</div>
+    <div class="title-grill">GRILL '26</div>
+  </div>
+
+  <div class="bottom">
+    <div class="date">12 SEPT · 15H</div>
+    <div class="meta">🔥 Grillades · 7 Sphères d'Influence</div>
+    <div class="location">📍 Maison de la destinée · Bonoumin</div>
+  </div>
+</body>
+</html>
