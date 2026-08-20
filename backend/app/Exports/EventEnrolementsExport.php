@@ -4,13 +4,11 @@ namespace App\Exports;
 
 use App\Models\Event;
 use App\Models\MembershipRequest;
-use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -19,24 +17,18 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 /**
  * Export Excel des enrôlements d'un événement — DESIGN PRO NWC 2026.
  *
- * Colonnes essentielles pour l'équipe accueil qui appelle :
- * # | Prénom | Nom | Téléphone | WhatsApp | Lieu | Souhait | Département | Statut | Notes
- *
- * Même styling que AttendanceExport (header ivoire + titre bordeaux + zébrures
- * + freeze pane) — parfaite cohérence visuelle avec les autres exports du projet.
+ * NOTE : cet export n'implémente PAS FromArray/WithHeadings/WithStartRow —
+ * la combinaison des trois casse en Maatwebsite 3.1.x (headings et data
+ * silencieusement non écrites). On écrit TOUT manuellement dans AfterSheet
+ * via setCellValue → 100 % fiable, aucun risque de régression sur upgrade.
  */
-class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, WithEvents, WithTitle, WithColumnWidths
+class EventEnrolementsExport implements WithEvents, WithTitle, WithColumnWidths
 {
     public function __construct(protected Event $event) {}
 
     public function title(): string
     {
         return 'Enrôlements';
-    }
-
-    public function startRow(): int
-    {
-        return 7;
     }
 
     public function columnWidths(): array
@@ -56,24 +48,21 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
         ];
     }
 
-    /** Cache des rows calculées — utilisées à la fois par array() et par
-        AfterSheet pour connaître le count réel sans dépendre de getHighestRow(). */
-    private ?array $cachedRows = null;
+    private array $headings = [
+        '#', 'Date', 'Prénom', 'Nom', 'Téléphone', 'WhatsApp',
+        "Lieu d'habitation", 'Département', 'Montagne', 'Statut', 'Notes',
+    ];
 
     /**
      * Récupère toutes les préinscriptions/enrollments de l'event.
      *
-     * MembershipRequest est utilisé pour DEUX flux différents qui vivent dans
-     * la même table :
+     * MembershipRequest sert 2 flux qui vivent dans la même table :
      *   - source = 'enrollment'         (QR bal "Suis-nous" → BalEnrollment)
-     *   - source = 'event-registration' (nouveau formulaire Festi Grill /register)
-     * Les deux ont enrollment_type non-null → capturés par le scope enrollments().
-     * L'export sort donc les 2 origines (le user peut filtrer dans Excel).
+     *   - source = 'event-registration' (formulaire Festi Grill /register)
+     * Les 2 ont enrollment_type non-null → capturés par le scope enrollments().
      */
     private function loadRows(): array
     {
-        if ($this->cachedRows !== null) return $this->cachedRows;
-
         $items = MembershipRequest::query()
             ->forEvent($this->event->id)
             ->enrollments()
@@ -86,8 +75,8 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
         foreach ($items as $req) {
             $rowNum++;
 
-            // Whatsapp : colonne dédiée si présente (nouveau flux),
-            // sinon fallback historique "WhatsApp: … " embarqué dans motivation.
+            // Whatsapp : colonne dédiée si présente (nouveau flux), sinon
+            // fallback historique "WhatsApp: …" embarqué dans motivation.
             $whatsapp = $req->whatsapp;
             if (! $whatsapp && $req->motivation && preg_match('/WhatsApp\s*:\s*([^·]+)/i', $req->motivation, $m)) {
                 $whatsapp = trim($m[1]);
@@ -122,21 +111,7 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                 $req->admin_notes ?? '',
             ];
         }
-
-        return $this->cachedRows = $rows;
-    }
-
-    public function array(): array
-    {
-        return $this->loadRows();
-    }
-
-    public function headings(): array
-    {
-        return [
-            '#', 'Date', 'Prénom', 'Nom', 'Téléphone', 'WhatsApp',
-            "Lieu d'habitation", 'Département', 'Montagne', 'Statut', 'Notes',
-        ];
+        return $rows;
     }
 
     public function registerEvents(): array
@@ -144,10 +119,34 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $lastCol = 'K';
-                $lastRow = $sheet->getHighestRow();
+                $rows = $this->loadRows();
+                $total = count($rows);
 
-                // Header ivoire + logo/titre
+                $lastCol = 'K';
+                $headingRow = 6;
+                $dataStart  = 7;
+                $lastRow    = $dataStart + max(0, $total - 1); // = 6 si vide
+
+                // ============= ÉCRITURE MANUELLE : HEADINGS ligne 6 =============
+                foreach ($this->headings as $i => $h) {
+                    $col = Coordinate::stringFromColumnIndex($i + 1); // A, B, C…
+                    $sheet->setCellValue("{$col}{$headingRow}", $h);
+                }
+
+                // ============= ÉCRITURE MANUELLE : DATA à partir ligne 7 =========
+                foreach ($rows as $rIdx => $row) {
+                    $rowNum = $dataStart + $rIdx;
+                    foreach ($row as $cIdx => $val) {
+                        $col = Coordinate::stringFromColumnIndex($cIdx + 1);
+                        $sheet->setCellValueExplicit(
+                            "{$col}{$rowNum}",
+                            (string) ($val ?? ''),
+                            \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING,
+                        );
+                    }
+                }
+
+                // ============= HEADER IVOIRE + LOGO + TITRE ======================
                 $sheet->getStyle("A1:{$lastCol}3")->applyFromArray([
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FAF6EE']],
                 ]);
@@ -188,10 +187,8 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8B1A2F']],
                 ]);
 
-                // Sous-titre méta — compte depuis les rows chargées (fiable même
-                // si l'écriture Maatwebsite n'a pas mis à jour getHighestRow).
+                // Sous-titre méta
                 $sheet->mergeCells("A5:{$lastCol}5");
-                $total = count($this->loadRows());
                 $sheet->setCellValue('A5', sprintf(
                     'Généré le %s   ·   %d enrôlement(s)',
                     now()->locale('fr')->isoFormat('LL [à] HH:mm'),
@@ -212,8 +209,8 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                 $sheet->getRowDimension(4)->setRowHeight(30);
                 $sheet->getRowDimension(5)->setRowHeight(24);
 
-                // En-têtes colonnes
-                $sheet->getStyle("A6:{$lastCol}6")->applyFromArray([
+                // ============= STYLE EN-TÊTES COLONNES ligne 6 ===================
+                $sheet->getStyle("A{$headingRow}:{$lastCol}{$headingRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '6B1422']],
                     'alignment' => [
@@ -224,11 +221,11 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '4A0E1A']],
                     ],
                 ]);
-                $sheet->getRowDimension(6)->setRowHeight(28);
+                $sheet->getRowDimension($headingRow)->setRowHeight(28);
 
-                // Corps
-                if ($lastRow >= 7) {
-                    for ($row = 7; $row <= $lastRow; $row++) {
+                // ============= CORPS ============================================
+                if ($total > 0) {
+                    for ($row = $dataStart; $row <= $lastRow; $row++) {
                         $bg = ($row % 2 === 0) ? 'FFFFFF' : 'FAF6EE';
                         $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
                             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bg]],
@@ -243,17 +240,17 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                         ]);
                     }
 
-                    // # (A), Date (B), Souhait (H), Statut (J) centrés
+                    // Colonnes centrées : # (A), Date (B), Département (H), Statut (J)
                     foreach (['A', 'B', 'H', 'J'] as $col) {
-                        $sheet->getStyle("{$col}7:{$col}{$lastRow}")
+                        $sheet->getStyle("{$col}{$dataStart}:{$col}{$lastRow}")
                             ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     }
 
                     // Nom (D) en gras
-                    $sheet->getStyle("D7:D{$lastRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("D{$dataStart}:D{$lastRow}")->getFont()->setBold(true);
 
                     // Coloration du statut (colonne J)
-                    for ($row = 7; $row <= $lastRow; $row++) {
+                    for ($row = $dataStart; $row <= $lastRow; $row++) {
                         $st = $sheet->getCell("J{$row}")->getValue();
                         $color = match ($st) {
                             'Contacté' => '2563EB',
@@ -267,10 +264,11 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                     }
                 }
 
-                $sheet->freezePane('C7');
+                // Freeze : les colonnes A et B (# + Date) + toutes les lignes header
+                $sheet->freezePane('C' . $dataStart);
 
-                // Footer
-                $footerRow = max($lastRow, 6) + 2;
+                // ============= FOOTER ============================================
+                $footerRow = max($lastRow, $headingRow) + 2;
                 $sheet->mergeCells("A{$footerRow}:{$lastCol}{$footerRow}");
                 $sheet->setCellValue("A{$footerRow}",
                     '© New Wine Church  ·  Document confidentiel  ·  Liste enrôlements événement'
