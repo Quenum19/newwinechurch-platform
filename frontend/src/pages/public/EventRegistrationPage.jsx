@@ -65,6 +65,11 @@ export default function EventRegistrationPage() {
   const { slug } = useParams()
   const [values, setValues] = useState({})
   const [submitted, setSubmitted] = useState(null) // { message, duplicate }
+  // Honeypot anti-bot : champ invisible pour les humains. Les bots aveugles
+  // le remplissent → rejeté silencieusement côté serveur (200 factice).
+  // IMPORTANT : DOIT être déclaré en tête (avec les autres useState) pour
+  // respecter les rules of hooks React — sinon violation qui crash la page.
+  const [honeypot, setHoneypot] = useState('')
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['public', 'event-registration-config', slug],
@@ -139,11 +144,6 @@ export default function EventRegistrationPage() {
   }
 
   const setField = (key, val) => setValues((v) => ({ ...v, [key]: val }))
-  // Honeypot anti-bot : champ "website" invisible pour les humains.
-  // Les bots aveugles remplissent tous les champs → si rempli = bot → rejeté
-  // silencieusement côté serveur (200 OK factice). Le user légitime ne voit
-  // jamais ce champ (position:absolute + opacity:0 + tabindex=-1).
-  const [honeypot, setHoneypot] = useState('')
 
   const onSubmit = (e) => {
     e.preventDefault()

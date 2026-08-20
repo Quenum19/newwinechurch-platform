@@ -1,6 +1,6 @@
 /** Détail event + formulaire d'inscription billetterie (1 page). */
-import { useState, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Calendar, MapPin, Clock, Users, Ticket, AlertTriangle,
@@ -29,6 +29,16 @@ export default function TicketEventPage() {
 
   if (isLoading) {
     return <div className="min-h-screen bg-public-bone flex items-center justify-center"><Spinner size={32}/></div>
+  }
+
+  // Aiguillage : si l'event a le module registration générique activé
+  // (workflow préinscription → magic-link → ticket), on redirige vers
+  // /evenements/{slug}/inscription pour éviter le doublon UX de deux
+  // formulaires distincts (ex: Festi Grill). L'ancien flow billetterie
+  // reste utilisé pour les events sans ce module (billetterie classique
+  // Phase 1-7 : achat direct → ticket).
+  if (event && event.modules_enabled?.registration === true) {
+    return <Navigate to={`/evenements/${event.slug}/inscription`} replace/>
   }
 
   if (!event) {
