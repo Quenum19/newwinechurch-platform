@@ -83,13 +83,15 @@ export default function EventRegistrationPage() {
     onError:   () => {/* affiché via submit.error */},
   })
 
-  // Assure une valeur par défaut pour chaque field côté state (évite les
-  // "controlled input turning into uncontrolled" en cas de switch checkbox).
+  // Assure une valeur par défaut pour chaque field côté state.
+  // attended_bal coché par défaut : la campagne cible principalement
+  // les participants du Bal DNE — plus rapide de décocher si non-participant
+  // que de cocher pour la majorité.
   useEffect(() => {
     if (! data?.form?.fields) return
     const init = {}
     for (const f of data.form.fields) {
-      init[f.key] = f.key === 'attended_bal' ? false : ''
+      init[f.key] = f.key === 'attended_bal' ? true : ''
     }
     setValues(init)
   }, [data])
