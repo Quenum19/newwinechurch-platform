@@ -80,7 +80,7 @@ class TransportController extends Controller
             ->orderBy('created_at')
             ->get(['id', 'first_name', 'name', 'email', 'phone', 'whatsapp',
                     'commune', 'quartier', 'interested_mountain',
-                    'attended_bal', 'registration_step']);
+                    'attended_bal', 'registration_step', 'created_at']);
 
         $centroids = AdminEventRegistrationsController::COMMUNE_CENTROIDS;
 
@@ -112,6 +112,7 @@ class TransportController extends Controller
                 'mountain'   => $r->interested_mountain,
                 'attended_bal' => (bool) $r->attended_bal,
                 'step'       => $r->registration_step,
+                'created_at' => $r->created_at?->toIso8601String(),
             ];
         })->filter()->values();
 

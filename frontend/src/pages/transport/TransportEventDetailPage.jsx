@@ -20,13 +20,19 @@ import { fr } from 'date-fns/locale'
 import {
   ArrowLeft, MapPin, Users, Calendar, Phone, MessageCircle,
   Loader2, Truck, Filter, FileText, Church, Search, ChevronDown, ChevronRight, X,
+  Map as MapIcon, Box, Clock,
 } from 'lucide-react'
 import api from '@/api/axios'
 import { cn } from '@/utils/cn'
+import TransportMap3D from './TransportMap3D'
+import TransportTimelapse from './TransportTimelapse'
 
 export default function TransportEventDetailPage() {
   const { slug } = useParams()
   const [selectedCommune, setSelectedCommune] = useState('')
+  const [viewMode, setViewMode] = useState('2d') // '2d' | '3d'
+  const [timelapseOn, setTimelapseOn] = useState(false)
+  const [activeIds, setActiveIds] = useState(null) // Set|null — filtre timelapse
 
   const { data, isLoading } = useQuery({
     queryKey: ['transport', 'event-detail', slug],
@@ -42,6 +48,12 @@ export default function TransportEventDetailPage() {
     () => selectedCommune ? markers.filter((m) => m.commune === selectedCommune) : markers,
     [markers, selectedCommune],
   )
+
+  // Markers effectivement affichés sur la carte : filtre commune + filtre timelapse
+  const visibleMarkers = useMemo(() => {
+    if (! activeIds) return filteredMarkers
+    return filteredMarkers.filter((m) => activeIds.has(m.id))
+  }, [filteredMarkers, activeIds])
 
   return (
     <div className="space-y-4 max-w-6xl">
@@ -91,7 +103,7 @@ export default function TransportEventDetailPage() {
         </div>
       ) : (
         <>
-          {/* Barre filtre + export */}
+          {/* Barre filtres + toggles */}
           <div className="adm-card p-3 flex flex-wrap items-center gap-2">
             <Filter size={14} className="text-zinc-400 ml-1"/>
             <select
@@ -104,6 +116,51 @@ export default function TransportEventDetailPage() {
                 <option key={c} value={c}>{c} ({count})</option>
               ))}
             </select>
+
+            {/* Toggle 2D / 3D */}
+            <div className="flex items-center bg-zinc-100 rounded p-0.5 ml-1">
+              <button
+                onClick={() => setViewMode('2d')}
+                className={cn(
+                  'inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-mono uppercase tracking-widest rounded transition',
+                  viewMode === '2d'
+                    ? 'bg-white shadow text-[color:var(--adm-accent)] font-bold'
+                    : 'text-zinc-500 hover:text-zinc-800',
+                )}
+              >
+                <MapIcon size={12}/> 2D
+              </button>
+              <button
+                onClick={() => setViewMode('3d')}
+                className={cn(
+                  'inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-mono uppercase tracking-widest rounded transition',
+                  viewMode === '3d'
+                    ? 'bg-white shadow text-[color:var(--adm-accent)] font-bold'
+                    : 'text-zinc-500 hover:text-zinc-800',
+                )}
+              >
+                <Box size={12}/> 3D
+              </button>
+            </div>
+
+            {/* Toggle timelapse — dispo sur 2D et 3D */}
+            <button
+              onClick={() => {
+                setTimelapseOn((v) => {
+                  if (v) setActiveIds(null) // reset visibilité au off
+                  return ! v
+                })
+              }}
+              className={cn(
+                'inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-mono uppercase tracking-widest rounded transition border',
+                timelapseOn
+                  ? 'bg-[color:var(--adm-accent)] text-white border-[color:var(--adm-accent)]'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:border-[color:var(--adm-accent)]',
+              )}
+            >
+              <Clock size={12}/> Timelapse
+            </button>
+
             <a
               href={`${import.meta.env.VITE_API_URL || '/api'}/transport/events/${slug}/list.csv`}
               className="ml-auto adm-btn inline-flex items-center gap-1 text-xs"
@@ -112,15 +169,31 @@ export default function TransportEventDetailPage() {
             </a>
           </div>
 
+          {/* Timelapse 4D — apparaît uniquement si activé */}
+          {timelapseOn && (
+            <TransportTimelapse
+              markers={filteredMarkers}
+              onChange={setActiveIds}
+            />
+          )}
+
           {/* Grid : carte à gauche, liste à droite */}
           <div className="grid lg:grid-cols-[1fr_380px] gap-4">
-            <TransportMap
-              church={church}
-              markers={filteredMarkers}
-            />
+            {viewMode === '3d' ? (
+              <TransportMap3D
+                church={church}
+                markers={filteredMarkers}
+                activeIds={timelapseOn ? activeIds : null}
+              />
+            ) : (
+              <TransportMap
+                church={church}
+                markers={visibleMarkers}
+              />
+            )}
             <TransportList
               church={church}
-              markers={filteredMarkers}
+              markers={visibleMarkers}
               byCommune={byCommune}
             />
           </div>
