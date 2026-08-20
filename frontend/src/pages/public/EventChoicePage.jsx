@@ -12,7 +12,7 @@
 import { useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Check, AlertCircle, ArrowLeft, Loader2, Ticket } from 'lucide-react'
+import { Check, AlertCircle, ArrowLeft, Loader2, Ticket, Mail } from 'lucide-react'
 import api from '@/api/axios'
 import Spinner from '@/components/ui/Spinner.jsx'
 
@@ -49,11 +49,12 @@ export default function EventChoicePage() {
   // Déjà ticketé : afficher la confirmation avec short_code
   if (registration.step === 'ticketed' && ! done) {
     return (
-      <StatusScreen
+      <TicketConfirmationScreen
         event={event}
-        icon={<Ticket size={40} className="text-public-flame"/>}
-        title="Ta place est confirmée"
-        message={`Tu es déjà inscrit à ${event.title}. Ton ticket t'a été envoyé par email.`}
+        firstName={registration.first_name}
+        email={registration.email}
+        shortCode={null}
+        alreadyDone
       />
     )
   }
@@ -61,11 +62,11 @@ export default function EventChoicePage() {
   // Succès après validation
   if (done) {
     return (
-      <StatusScreen
+      <TicketConfirmationScreen
         event={event}
-        icon={<Check size={40} className="text-public-flame"/>}
-        title="Merci ! On se voit sur place"
-        message={done.message + (done.short_code ? ` (code ${done.short_code})` : '')}
+        firstName={registration.first_name}
+        email={registration.email}
+        shortCode={done.short_code}
       />
     )
   }
@@ -227,6 +228,72 @@ function StatusScreen({ event, title, message, icon }) {
         <Link to={`/evenements/${event?.slug ?? ''}`} className="mt-8 inline-flex items-center gap-1 text-xs font-mono uppercase tracking-widest text-public-flame hover:underline">
           <ArrowLeft size={12}/> Voir l'événement
         </Link>
+      </div>
+    </article>
+  )
+}
+
+/**
+ * Écran de confirmation post-choix montagne — design premium avec hero
+ * de l'affiche + message pro sur l'envoi email.
+ * Utilisé pour les 2 cas : "déjà ticketé" (arrivée après-coup) ET "succès
+ * après validation" (juste après le POST /choose).
+ */
+function TicketConfirmationScreen({ event, firstName, email, shortCode, alreadyDone }) {
+  return (
+    <article className="bg-public-bone min-h-screen">
+      {/* Hero affiche event — même bandeau que /inscription et /choix */}
+      {event?.cover_image && (
+        <div className="relative w-full overflow-hidden" style={{ height: 'clamp(200px, 32vw, 380px)' }}>
+          <img src={event.cover_image} alt="" className="w-full h-full object-cover"/>
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-public-bone to-transparent"/>
+        </div>
+      )}
+
+      <div className="container-nwc max-w-2xl -mt-16 relative pb-16">
+        {/* Card centrale premium avec l'icône check + le message */}
+        <div className="bg-white border-2 border-public-flame p-8 sm:p-12 text-center shadow-xl">
+          <div className="mx-auto mb-5 h-16 w-16 rounded-full bg-public-flame flex items-center justify-center">
+            <Check size={36} className="text-public-bone" strokeWidth={3}/>
+          </div>
+
+          <p className="tag-mono text-public-flame mb-3">{event?.title}</p>
+          <h1 className="heading-anton text-3xl sm:text-4xl text-public-ink mb-4 leading-tight">
+            {alreadyDone
+              ? <>Ta place est déjà confirmée{firstName ? `, ${firstName}` : ''}</>
+              : <>C'est confirmé{firstName ? `, ${firstName}` : ''} — on se voit sur place</>
+            }
+          </h1>
+          <p className="text-lg text-public-ink/70 leading-relaxed mb-8">
+            Merci d'avoir choisi ta sphère d'influence.
+            {shortCode && <> Ton code de secours : <strong className="text-public-ink font-mono">{shortCode}</strong>.</>}
+          </p>
+
+          {/* Bloc email — le CTA principal après validation */}
+          <div className="bg-public-bone border-l-4 border-public-flame p-5 text-left">
+            <div className="flex items-start gap-3">
+              <Mail size={20} className="text-public-flame shrink-0 mt-0.5"/>
+              <div className="text-sm text-public-ink/80 leading-relaxed">
+                <p className="font-semibold text-public-ink mb-1">
+                  Ton ticket avec QR code arrive par email
+                </p>
+                <p>
+                  Vérifie ta boîte mail{email && <> à <strong className="text-public-ink">{email}</strong></>}
+                  {' '}dans les prochaines minutes. Pense à jeter un œil au dossier
+                  <strong className="text-public-ink"> spams / promotions</strong> s'il n'apparaît pas.
+                  Présente le QR à l'entrée le jour J.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Link
+            to={`/evenements/${event?.slug ?? ''}`}
+            className="mt-8 inline-flex items-center gap-1 text-xs font-mono uppercase tracking-widest text-public-flame hover:underline"
+          >
+            <ArrowLeft size={12}/> Retour à l'événement
+          </Link>
+        </div>
       </div>
     </article>
   )

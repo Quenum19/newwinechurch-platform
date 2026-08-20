@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\MembershipRequest;
+use App\Services\TicketIssuer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -165,14 +166,24 @@ class PublicRegistrationChoiceController extends Controller
         $reg->registration_step = 'ticketed';
         $reg->save();
 
-        // TODO : dispatch un mail avec QR (voir SendTicketByEmail). Pour l'instant
-        // on log et l'admin peut renvoyer manuellement depuis /admin/billetterie.
-        Log::info('Ticket généré via magic-link', [
-            'event_id'  => $event->id,
-            'reg_id'    => $reg->id,
-            'ticket_id' => $ticket->id,
-            'short'     => $shortCode,
-        ]);
+        // Envoi du ticket par email — pipeline standard (PDF DomPDF + QR
+        // inline + mail Mailable). Sans ça, le ticket était créé en DB
+        // mais le user ne recevait jamais rien.
+        try {
+            $result = app(TicketIssuer::class)->issueAndSend($ticket);
+            Log::info('Ticket généré via magic-link', [
+                'event_id'  => $event->id,
+                'reg_id'    => $reg->id,
+                'ticket_id' => $ticket->id,
+                'short'     => $shortCode,
+                'email_sent'=> $result['sent'] ?? false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Ticket créé mais envoi email échoué', [
+                'ticket_id' => $ticket->id,
+                'error'     => $e->getMessage(),
+            ]);
+        }
 
         return $ticket;
     }
