@@ -43,6 +43,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'cell-leader' => \App\Http\Middleware\CellLeaderMiddleware::class,
             // Force changement du mot de passe initial (workflow admission).
             'force-pwd-change' => \App\Http\Middleware\EnforcePasswordChange::class,
+            // Anti-bot honeypot pour les formulaires publics
+            'honeypot' => \App\Http\Middleware\Honeypot::class,
         ]);
 
         // Applique force-pwd-change à TOUTES les routes API auth:sanctum.

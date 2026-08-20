@@ -34,17 +34,31 @@
 - CSRF validation Laravel activée
 - Bcrypt pour les hashes password
 
-### Nouveau (ce commit)
-- **Honeypot anti-bot** sur formulaire d'inscription public
-  (champ `website` invisible ; rejet silencieux si rempli)
-- **Regex téléphone/whatsapp stricte** : `/^\+?[0-9\s().-]{8,30}$/`
-  → refuse les injections style `phone=<script>` ou du texte libre
-- **Regex first_name/name** : `/^[\p{L}\s'-]+$/u` (unicode letters + espaces
-  + tirets + apostrophes) → refuse chiffres et caractères spéciaux
-- **email:rfc,dns** (au lieu de `email:rfc` seul) → vérifie que le domaine
-  a un enregistrement MX (rejette les emails fake type `abc@abc.abc`)
-- **birth_date** : bornes `after:1900-01-01`, `before:today` (rejette
-  les dates fantaisistes)
+### Nouveau (2 commits août 2026)
+
+**Middleware Honeypot global** (`App\Http\Middleware\Honeypot`) :
+- Alias `honeypot` enregistré dans bootstrap/app.php
+- Appliqué à 8 endpoints publics : `/contact`, `/prayer-requests`,
+  `/newsletter/subscribe`, `/donations`, `/membership-requests`,
+  `/public/events/{slug}/register`, `/public/registrations/{token}/choose`,
+  `/public/enrollment/bal`
+- Court-circuit précoce : bot détecté → 201 factice + log, aucun controller
+  invoqué, aucune donnée en DB. Log ip hashée + user-agent + route.
+
+**Frontend champs honeypot invisibles** sur les 2 formulaires les plus
+attaquables : `/rejoindre` (adhésion) + `/contact` (contact). Les autres
+formulaires sont couverts par le middleware backend + rate limit strict.
+
+**Regex validation** appliquée sur :
+- Téléphone/whatsapp : `/^\+?[0-9\s().-]{8,30}$/` (refuse texte libre)
+- first_name/name : `/^[\p{L}\s'-]+$/u` (unicode letters + espaces + tirets)
+- Email : `email:rfc,dns` (vérifie MX record — rejette abc@abc.abc)
+- birth_date : bornes 1900-today
+- Sanitize live côté client (onInput) sur name/phone → bloque frappe
+
+**Dédoublonnage soft** sur `/contact` : même email + même message dans
+les 5 dernières minutes = renvoie 200 sans doubler (protège contre
+double-clic user + réplication spam).
 
 ### Frontend
 - Inputs `type="tel"` + `inputMode="tel"` + `pattern` sur phone/whatsapp

@@ -221,25 +221,25 @@ Route::get ('/public/enrollment/departments', [\App\Http\Controllers\Public\Publ
 // Config lue depuis event.registration_form_config + modules_enabled.
 Route::get ('/public/events/{slug}/registration-config', [\App\Http\Controllers\Public\PublicEventRegistrationController::class, 'config']);
 Route::post('/public/events/{slug}/register',            [\App\Http\Controllers\Public\PublicEventRegistrationController::class, 'store'])
-     ->middleware('throttle:10,1');
+     ->middleware(['throttle:10,1', 'honeypot']);
 
 // === Magic-link étape 2 : choix (montagne/table/atelier) + génération ticket auto ===
 Route::get ('/public/registrations/{token}',        [\App\Http\Controllers\Public\PublicRegistrationChoiceController::class, 'show']);
 Route::post('/public/registrations/{token}/choose', [\App\Http\Controllers\Public\PublicRegistrationChoiceController::class, 'choose'])
-     ->middleware('throttle:20,1');
+     ->middleware(['throttle:20,1', 'honeypot']);
 
 Route::post('/public/enrollment/bal',         [\App\Http\Controllers\Public\PublicBalEnrollmentController::class, 'store'])
-    ->middleware('throttle:5,1');
+    ->middleware(['throttle:5,1', 'honeypot']);
 
-// === DONS PUBLIQUES (membres connectés ou anonymes) ===
-Route::middleware('throttle:10,1')->group(function () {
+// === FORMULAIRES PUBLICS (protection uniforme : rate-limit + honeypot) ===
+// Note : le honeypot vérifie un champ 'website' invisible côté frontend —
+// si un bot le remplit, la requête est court-circuitée avec un 201 factice.
+Route::middleware(['throttle:10,1', 'honeypot'])->group(function () {
     Route::post('/prayer-requests',        [PrayerRequestController::class, 'store']);
     Route::post('/contact',                [ContactController::class, 'store']);
     Route::post('/newsletter/subscribe',   [NewsletterController::class, 'subscribe']);
     Route::post('/donations',              [MemberDonationController::class, 'store']);
-    // Demande d'adhésion publique (workflow d'admission). Rate-limit strict
-    // pour éviter le spam (5/h/IP via throttle:register existant ne s'applique
-    // qu'à /auth/register ; ici on garde 10/min/IP via le groupe parent).
+    // Demande d'adhésion publique — workflow d'admission /rejoindre.
     Route::post('/membership-requests',    [MembershipRequestController::class, 'store']);
 });
 

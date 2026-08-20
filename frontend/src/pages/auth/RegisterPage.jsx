@@ -89,6 +89,17 @@ export default function RegisterPage() {
         className="mt-7 space-y-5"
         noValidate
       >
+        {/* Honeypot anti-bot : champ invisible pour les humains. Rejeté
+            côté serveur via middleware 'honeypot' si rempli par un bot. */}
+        <input
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          {...register('website')}
+          style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
+        />
+
         <div className="grid grid-cols-2 gap-3">
           <AuthInput
             label={t('auth.register.firstName')} required leftIcon={User}
