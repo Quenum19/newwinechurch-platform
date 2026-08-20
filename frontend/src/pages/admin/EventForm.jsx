@@ -364,6 +364,7 @@ export default function EventForm() {
                   label="Image de couverture"
                   currentUrl={event?.cover_image || null}
                   onChange={field.onChange}
+                  helper="Idéal : 1920×1080 px (paysage 16:9), max 500 Ko. Formats JPG, PNG, WebP acceptés (max 30 Mo, optimisée automatiquement)."
                 />
               )}
             />
