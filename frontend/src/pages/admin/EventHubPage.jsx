@@ -23,8 +23,10 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ArrowLeft, Calendar, Info, Monitor, Users, Camera, FileText,
   Ticket, ClipboardList, ImageIcon, MapPin, Award, Settings,
-  ExternalLink, Loader2,
+  ExternalLink, Loader2, Mail, Send,
 } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import api from '@/api/axios'
@@ -365,7 +367,7 @@ function RegistrationsPane({ event }) {
   const [filters, setFilters] = useState({ mountain: '', commune: '', step: '', search: '' })
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'event-preregs', event.id, filters, page],
     queryFn: () => api.get(`/admin/events/${event.id}/preregistrations`, {
       params: { ...filters, page, per_page: 30 },
@@ -377,6 +379,26 @@ function RegistrationsPane({ event }) {
   const meta = data?.meta ?? null
 
   const setFilter = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })) }
+
+  // Envoi en masse du magic-link "choix de la montagne" à tous les préinscrits
+  // step=pre. Confirmation avant envoi. Le count est estimé depuis meta.total
+  // (filtré step=pre côté serveur si tu as le filtre actif, sinon compte global).
+  const sendLinks = useMutation({
+    mutationFn: () => api.post(`/admin/events/${event.id}/preregistrations/send-choice-links`).then((r) => r.data),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Envoi lancé.')
+      refetch()
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || "Échec envoi."),
+  })
+
+  const handleSendLinks = () => {
+    const ok = window.confirm(
+      "Envoyer le lien 'choix de la montagne' par email à TOUS les préinscrits (step=pré) ?\n\n" +
+      "Chaque personne recevra un lien personnel unique qui déclenchera la génération de son ticket après son choix."
+    )
+    if (ok) sendLinks.mutate()
+  }
 
   return (
     <div className="space-y-4">
@@ -414,12 +436,28 @@ function RegistrationsPane({ event }) {
           <option value="chose">A choisi</option>
           <option value="ticketed">Ticket émis</option>
         </select>
-        <a
-          href={`${import.meta.env.VITE_API_URL || '/api'}/admin/events/${event.id}/preregistrations.csv`}
-          className="adm-btn inline-flex items-center gap-1 text-xs ml-auto"
-        >
-          <FileText size={12}/> Export CSV
-        </a>
+        <div className="ml-auto flex items-center gap-2">
+          {/* Envoi masse magic-link montagne — pour la campagne de la
+              semaine avant l'event. Passe tous les step=pre → email envoyé. */}
+          <button
+            type="button"
+            onClick={handleSendLinks}
+            disabled={sendLinks.isPending}
+            className="adm-btn inline-flex items-center gap-1 text-xs bg-[color:var(--adm-accent)] text-white hover:opacity-90 disabled:opacity-50"
+            title="Envoi email à tous les préinscrits — lien perso pour choisir leur montagne"
+          >
+            {sendLinks.isPending
+              ? <><Loader2 size={12} className="animate-spin"/> Envoi…</>
+              : <><Send size={12}/> Envoyer lien montagne</>
+            }
+          </button>
+          <a
+            href={`${import.meta.env.VITE_API_URL || '/api'}/admin/events/${event.id}/preregistrations.csv`}
+            className="adm-btn inline-flex items-center gap-1 text-xs"
+          >
+            <FileText size={12}/> Export CSV
+          </a>
+        </div>
       </div>
 
       {/* Tableau */}

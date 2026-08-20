@@ -518,6 +518,10 @@ Route::middleware(['auth:sanctum', 'permission:access admin panel'])
     Route::get('/events/{id}/preregistrations/stats',    [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'stats'])->whereNumber('id');
     Route::get('/events/{id}/preregistrations/map',      [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'map'])->whereNumber('id');
     Route::get('/events/{id}/preregistrations.csv',      [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'exportCsv'])->whereNumber('id');
+    // Envoi en masse du magic-link "choix de la montagne" par email
+    Route::post('/events/{id}/preregistrations/send-choice-links',
+                                                          [\App\Http\Controllers\Admin\AdminEventRegistrationsController::class, 'sendChoiceLinks'])
+         ->whereNumber('id')->middleware('throttle:5,1');
     Route::post('/events/{id}/registrations/{userId}/attended',
                                                          [AdminEventsController::class, 'markAttended'])
          ->whereNumber('id')->whereNumber('userId');

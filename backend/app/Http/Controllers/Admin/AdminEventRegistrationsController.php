@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EventChoiceLinkMail;
 use App\Models\Event;
 use App\Models\MembershipRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -156,6 +159,71 @@ class AdminEventRegistrationsController extends Controller
             'markers'   => $markers,
             'communes'  => array_map(fn ($c) => ['name' => $c[0], 'lat' => $c[1][0], 'lng' => $c[1][1]],
                              array_map(null, array_keys(self::COMMUNE_CENTROIDS), array_values(self::COMMUNE_CENTROIDS))),
+        ]);
+    }
+
+    /**
+     * POST /admin/events/{id}/preregistrations/send-choice-links
+     *
+     * Envoie par email à chaque préinscrit (step=pre) son magic-link personnel
+     * vers /evenements/{slug}/choix?token=xxx. Une fois le choix fait, le ticket
+     * se génère automatiquement.
+     *
+     * Body optionnel :
+     *   { "ids": [1,5,12] }  → envoie uniquement à ces préinscriptions
+     *   (sinon envoie à TOUS les step=pre avec email présent)
+     *
+     * Retourne un résumé : {sent, skipped, errors, total_targeted}
+     */
+    public function sendChoiceLinks(Request $request, int $id): JsonResponse
+    {
+        $event = Event::findOrFail($id);
+
+        $data = $request->validate([
+            'ids'   => ['nullable', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $q = MembershipRequest::where('event_id', $event->id)
+            ->where('source', 'event-registration')
+            ->where('registration_step', 'pre') // uniquement ceux qui n'ont pas encore choisi
+            ->whereNotNull('email')
+            ->whereNotNull('registration_token');
+
+        if (! empty($data['ids'])) {
+            $q->whereIn('id', $data['ids']);
+        }
+
+        $rows = $q->get();
+        $totalTargeted = $rows->count();
+
+        $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
+        $sent = 0; $skipped = 0; $errors = [];
+
+        foreach ($rows as $reg) {
+            try {
+                $choiceUrl = "{$frontendUrl}/evenements/{$event->slug}/choix?token={$reg->registration_token}";
+                Mail::to($reg->email)->send(new EventChoiceLinkMail($event, $reg, $choiceUrl));
+                $sent++;
+            } catch (\Throwable $e) {
+                $errors[] = "{$reg->email} : " . $e->getMessage();
+                Log::warning('Choice link mail failed', [
+                    'event_id' => $event->id,
+                    'reg_id'   => $reg->id,
+                    'email'    => $reg->email,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $skipped = 0; // à ce stade, on filtre en amont — pas de skip silencieux
+
+        return response()->json([
+            'message'         => "Envoi terminé : {$sent} email(s) envoyé(s), " . count($errors) . " échec(s).",
+            'sent'            => $sent,
+            'errors_count'    => count($errors),
+            'errors'          => array_slice($errors, 0, 20), // cap pour éviter body énorme
+            'total_targeted'  => $totalTargeted,
         ]);
     }
 
