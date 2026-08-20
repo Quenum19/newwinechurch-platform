@@ -8,8 +8,9 @@
 <meta charset="utf-8">
 <title>E-ticket — Festi Grill '26</title>
 <style>
-  @page { size: A4 portrait; margin: 26px 28px; }
-  body { margin: 0; font-family: DejaVu Sans, Helvetica, sans-serif; font-size: 12px; color: #f6ece3; background: #ffffff; }
+  /* Marges page = 0 : le ticket occupe toute la page A4, aucun blanc autour. */
+  @page { size: A4 portrait; margin: 0; }
+  body { margin: 0; padding: 0; font-family: DejaVu Sans, Helvetica, sans-serif; font-size: 12px; color: #f6ece3; background: #120d0b; }
   table { border-collapse: collapse; width: 100%; }
   td { vertical-align: top; }
   .mono { font-family: DejaVu Sans Mono, monospace; }
@@ -18,11 +19,35 @@
   .v { font-size: 13px; font-weight: bold; color: #ffffff; padding-top: 4px; line-height: 1.25; }
   .s { font-size: 10px; color: #b6a79b; padding-top: 3px; line-height: 1.35; }
   .li { font-size: 11px; color: #f6ece3; padding-top: 4px; }
+  .mountain-badge {
+    display: inline-block;
+    background: #f0a71b;
+    color: #120d0b;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    padding: 5px 11px;
+    margin-top: 6px;
+  }
 </style>
 </head>
 <body>
 
-<table style="width:660px;margin:0 auto;background:#120d0b;border:2px solid #120d0b">
+@php
+    // Mapping enum → libellé humain pour l'affichage
+    $mountainLabels = [
+        'religion'          => 'Religion',
+        'media'             => 'Média',
+        'gouvernement'      => 'Gouvernement',
+        'economie'          => 'Économie',
+        'education'         => 'Éducation',
+        'famille'           => 'Famille',
+        'art_musique_sport' => 'Art · Musique · Sport',
+    ];
+    $mountainLabel = ($mountain ?? null) ? ($mountainLabels[$mountain] ?? $mountain) : null;
+@endphp
+
+<table style="width:100%;margin:0;background:#120d0b;border:0">
 
   {{-- BANDEAU --}}
   <tr>
@@ -44,7 +69,7 @@
   <tr>
     <td style="padding:0">
       @if($heroPath ?? null)
-        <img src="{{ $heroPath }}" alt="Festi Grill'26" style="width:656px;display:block">
+        <img src="{{ $heroPath }}" alt="Festi Grill'26" style="width:100%;display:block">
       @endif
     </td>
   </tr>
@@ -142,18 +167,44 @@
           <td style="padding-left:20px">
             <div class="k-d">AU NOM DE</div>
             <div style="font-size:26px;font-weight:bold;color:#ffffff;line-height:1.15;padding-top:3px">{{ $ticket->full_name ?? ($ticket->first_name.' '.$ticket->last_name) }}</div>
+
+            @if($mountainLabel)
+              <div style="padding-top:8px">
+                <span class="k-d">SPH&Egrave;RE D'INFLUENCE :</span>
+                <span class="mountain-badge">{{ strtoupper($mountainLabel) }}</span>
+              </div>
+            @endif
+
             <table style="margin-top:13px">
               <tr>
-                <td style="width:50%;background:#120d0b;border:1px solid #2a2019;padding:8px 11px">
+                <td style="width:33%;background:#120d0b;border:1px solid #2a2019;padding:8px 11px">
                   <div class="k-d">N&deg; TICKET</div>
-                  <div class="mono" style="font-size:12px;color:#f0a71b;padding-top:3px">{{ $ticket->ticket_number }}</div>
+                  <div class="mono" style="font-size:11px;color:#f0a71b;padding-top:3px">{{ $ticket->ticket_number }}</div>
                 </td>
-                <td style="background:#120d0b;border:1px solid #2a2019;padding:8px 11px">
+                <td style="width:33%;background:#120d0b;border:1px solid #2a2019;padding:8px 11px;border-left:0">
                   <div class="k-d">COMMANDE</div>
-                  <div class="mono" style="font-size:12px;color:#f0a71b;padding-top:3px">{{ $ticket->order_code }}</div>
+                  <div class="mono" style="font-size:11px;color:#f0a71b;padding-top:3px">{{ $ticket->order_code }}</div>
+                </td>
+                <td style="background:#120d0b;border:1px solid #2a2019;padding:8px 11px;border-left:0">
+                  <div class="k-d">CODE COURT</div>
+                  <div class="mono" style="font-size:11px;color:#f0a71b;padding-top:3px">{{ strtoupper($ticket->short_code ?? '—') }}</div>
                 </td>
               </tr>
             </table>
+
+            @if($ticket->email)
+              <div class="s" style="padding-top:8px">
+                <span class="k-d">E-MAIL :</span>
+                <span style="color:#f6ece3">{{ $ticket->email }}</span>
+              </div>
+            @endif
+            @if($ticket->phone)
+              <div class="s" style="padding-top:3px">
+                <span class="k-d">T&Eacute;L&Eacute;PHONE :</span>
+                <span style="color:#f6ece3">{{ $ticket->phone }}</span>
+              </div>
+            @endif
+
             <div class="s" style="padding-top:11px">Ticket individuel &agrave; usage unique. Le QR code n'est scann&eacute; qu'une seule fois &mdash; garde-le pour toi.</div>
           </td>
         </tr>
@@ -174,7 +225,7 @@
   </tr>
 </table>
 
-<div style="width:660px;margin:9px auto 0;font-size:8px;line-height:1.5;color:#9a8b7e;text-align:center">
+<div style="padding:9px 20px;background:#0a0705;font-size:8px;line-height:1.5;color:#9a8b7e;text-align:center">
   Un lien personnel vous a &eacute;t&eacute; envoy&eacute; par e-mail pour revoir, t&eacute;l&eacute;charger ou annuler la r&eacute;servation.
   Toute falsification, revente ou transfert de ce ticket est interdit. &copy; {{ date('Y') }} NEW WINE CHURCH.
 </div>

@@ -144,6 +144,18 @@ class TicketIssuer
             }
         }
 
+        // Lookup montagne choisie (workflow générique) — si le ticket a été
+        // généré via /choix?token=X, l'interested_mountain est stocké sur
+        // membership_requests. On match par email + event_id.
+        $mountain = null;
+        if ($ticket->email && $ticket->event_id) {
+            $membership = \App\Models\MembershipRequest::where('event_id', $ticket->event_id)
+                ->where('email', $ticket->email)
+                ->whereNotNull('interested_mountain')
+                ->first();
+            $mountain = $membership?->interested_mountain;
+        }
+
         $pdf = Pdf::loadView($view, [
             'ticket'       => $ticket,
             'event'        => $ticket->event,
@@ -152,6 +164,7 @@ class TicketIssuer
             'coverPngPath' => $coverPngPath, // PNG converti prêt à embed
             'accentColor'  => $accentColor,
             'heroPath'     => $heroPath,
+            'mountain'     => $mountain, // slug enum, à mapper en label dans le template
         ])->setPaper('A4', 'portrait');
 
         $pdfPath = "$tmpDir/ticket.pdf";
