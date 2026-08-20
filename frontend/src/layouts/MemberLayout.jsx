@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard, User as UserIcon, Lock, HandCoins, Calendar, Home as HomeIcon,
   LogOut, Menu, Building2, Users, FileText, BarChart3, ClipboardList, UserCheck,
-  ArrowRightLeft, ChevronLeft, ChevronRight, ExternalLink,
+  ArrowRightLeft, ChevronLeft, ChevronRight, ExternalLink, Truck,
 } from 'lucide-react'
 
 import { useAuthStore } from '@/store/authStore'
@@ -40,8 +40,8 @@ function buildMemberNav(t) {
   ]
 }
 
-function buildGovernorNav(t) {
-  return [
+function buildGovernorNav(t, deptSlug = null) {
+  const nav = [
     { to: '/gouverneur',             icon: LayoutDashboard, label: t('gov.nav.dashboard'), end: true },
     { section: t('gov.nav.section.department') },
     { to: '/gouverneur/departement', icon: Building2,       label: t('gov.nav.myDepartment') },
@@ -51,6 +51,13 @@ function buildGovernorNav(t) {
     { to: '/gouverneur/rapports',    icon: FileText,        label: t('gov.nav.reports') },
     { to: '/gouverneur/analytics',   icon: BarChart3,       label: t('gov.nav.analytics') },
   ]
+  // Module Transport — visible UNIQUEMENT pour le gouverneur/membres
+  // du département Transport (cf middleware transport-access côté API).
+  if (deptSlug === 'transport') {
+    nav.push({ section: t('gov.nav.section.transport', 'Transport') })
+    nav.push({ to: '/gouverneur/transport', icon: Truck, label: t('gov.nav.transport', 'Cartographie inscrits') })
+  }
+  return nav
 }
 
 function buildLeaderNav(t) {
@@ -103,8 +110,12 @@ export default function MemberLayout() {
   const hasBilletDash = can?.('view billetterie dashboard') ?? false
   const hasAdminPanel = can?.('access admin panel') ?? false
 
+  // Slug du département principal — utilisé pour afficher des modules
+  // spécifiques dans la sidebar (ex : Transport uniquement pour dept Transport).
+  const deptSlug = user?.department?.slug ?? user?.primary_department?.slug ?? null
+
   const rawNav =
-    area === 'governor' ? buildGovernorNav(t) :
+    area === 'governor' ? buildGovernorNav(t, deptSlug) :
     area === 'leader'   ? buildLeaderNav(t) :
     buildMemberNav(t)
 

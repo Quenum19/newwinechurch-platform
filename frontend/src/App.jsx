@@ -64,6 +64,8 @@ const GovCellDetail = lazy(() => import('./pages/governor/GovCellDetail.jsx'))
 const GovReports    = lazy(() => import('./pages/governor/GovReports.jsx'))
 const GovReportForm = lazy(() => import('./pages/governor/GovReportForm.jsx'))
 const GovAnalytics  = lazy(() => import('./pages/governor/GovAnalytics.jsx'))
+const TransportEventsPage = lazy(() => import('./pages/transport/TransportEventsPage.jsx'))
+const TransportEventDetailPage = lazy(() => import('./pages/transport/TransportEventDetailPage.jsx'))
 
 // === Espace leader — LAZY ===
 const LeaderDashboard  = lazy(() => import('./pages/leader/LeaderDashboard.jsx'))
@@ -309,6 +311,9 @@ export default function App() {
           <Route path="/gouverneur/rapports/nouveau"      element={<GovReportForm />} />
           <Route path="/gouverneur/rapports/:id"          element={<GovReportForm />} />
           <Route path="/gouverneur/analytics"             element={<GovAnalytics />} />
+          {/* Transport — cartographie inscrits event (dept Transport uniquement) */}
+          <Route path="/gouverneur/transport"             element={<TransportEventsPage />} />
+          <Route path="/gouverneur/transport/:slug"       element={<TransportEventDetailPage />} />
         </Route>
 
         {/* === ESPACE LEADER === */}

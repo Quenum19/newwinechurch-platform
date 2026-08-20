@@ -45,6 +45,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'force-pwd-change' => \App\Http\Middleware\EnforcePasswordChange::class,
             // Anti-bot honeypot pour les formulaires publics
             'honeypot' => \App\Http\Middleware\Honeypot::class,
+            // Accès dept Transport (gouverneur + membres + admin bypass)
+            'transport-access' => \App\Http\Middleware\TransportAccess::class,
         ]);
 
         // Applique force-pwd-change à TOUTES les routes API auth:sanctum.

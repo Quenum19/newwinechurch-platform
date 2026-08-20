@@ -748,6 +748,20 @@ Route::prefix('governor')
     ->group(__DIR__.'/governor.php');
 
 // ============================================================
+// === ESPACE TRANSPORT (/api/transport/*) ====================
+// Cartographie des inscrits event pour organiser les navettes.
+// Accès : gouverneur Transport + membres du dept Transport +
+// bypass admin/pasteur (via middleware transport-access).
+// ============================================================
+Route::prefix('transport')
+    ->middleware(['auth:sanctum', 'transport-access'])
+    ->group(function () {
+        Route::get('/events',                    [\App\Http\Controllers\Transport\TransportController::class, 'events']);
+        Route::get('/events/{slug}',             [\App\Http\Controllers\Transport\TransportController::class, 'eventDetail']);
+        Route::get('/events/{slug}/list.csv',    [\App\Http\Controllers\Transport\TransportController::class, 'exportCsv']);
+    });
+
+// ============================================================
 // === ÉTAPE 2 : ESPACE LEADER DE CELLULE (/api/leader/*) =====
 // ============================================================
 Route::prefix('leader')
