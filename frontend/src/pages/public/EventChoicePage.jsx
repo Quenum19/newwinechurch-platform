@@ -36,11 +36,12 @@ export default function EventChoicePage() {
     onSuccess: (res) => setDone(res),
   })
 
-  if (! token) return <ErrorScreen message="Lien invalide — token manquant."/>
+  if (! token) return <NotRegisteredScreen slug={slug}/>
   if (isLoading) return <Loader/>
   if (error) {
-    const msg = error?.response?.data?.message
-    return <ErrorScreen message={msg || "Lien invalide ou expiré."}/>
+    // Token invalide/expiré = probablement pas encore préinscrit → oriente
+    // vers la page d'inscription plutôt que d'afficher un simple "erreur".
+    return <NotRegisteredScreen slug={slug}/>
   }
 
   const { registration, event, workflow, options } = data
@@ -162,6 +163,42 @@ function ErrorScreen({ message }) {
         <Link to="/evenements" className="mt-6 inline-flex items-center gap-1 text-xs font-mono uppercase tracking-widest text-public-flame hover:underline">
           <ArrowLeft size={12}/> Voir les événements
         </Link>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Écran affiché quand l'utilisateur arrive sur /choix sans token OU avec un
+ * token invalide (probablement pas encore préinscrit). Le lien magic-link
+ * n'est envoyé qu'aux préinscrits — sans préinscription, aucun choix
+ * possible. On oriente vers /inscription avec un message explicite.
+ */
+function NotRegisteredScreen({ slug }) {
+  return (
+    <div className="bg-public-bone min-h-screen flex items-center justify-center">
+      <div className="max-w-md text-center p-8">
+        <AlertCircle size={40} className="mx-auto text-public-flame mb-4"/>
+        <p className="font-display uppercase text-2xl text-public-ink mb-2">
+          Tu dois d'abord te pré-inscrire
+        </p>
+        <p className="text-public-ink/70 leading-relaxed">
+          Le choix de la montagne est réservé aux personnes déjà pré-inscrites.
+          Commence par la pré-inscription en 30 secondes, puis reviens sur ton
+          lien personnel (envoyé par email/WhatsApp) pour choisir ta sphère
+          et recevoir ton ticket.
+        </p>
+        <Link
+          to={`/evenements/${slug}/inscription`}
+          className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
+        >
+          Je me pré-inscris
+        </Link>
+        <div className="mt-4">
+          <Link to={`/evenements/${slug}`} className="inline-flex items-center gap-1 text-xs font-mono uppercase tracking-widest text-public-ink/60 hover:text-public-flame">
+            <ArrowLeft size={12}/> Voir l'événement
+          </Link>
+        </div>
       </div>
     </div>
   )

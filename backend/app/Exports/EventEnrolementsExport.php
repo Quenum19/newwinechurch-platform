@@ -56,29 +56,43 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
         ];
     }
 
+    /** Cache des rows calculées — utilisées à la fois par array() et par
+        AfterSheet pour connaître le count réel sans dépendre de getHighestRow(). */
+    private ?array $cachedRows = null;
+
     /**
-     * Retourne toutes les lignes de data (sans les headings — WithHeadings les écrit à startRow-1).
-     * On construit un array PHP direct au lieu d'utiliser FromCollection+WithMapping qui
-     * s'avérait ne pas écrire les data dans certains cas (Maatwebsite v3).
+     * Récupère toutes les préinscriptions/enrollments de l'event.
+     *
+     * MembershipRequest est utilisé pour DEUX flux différents qui vivent dans
+     * la même table :
+     *   - source = 'enrollment'         (QR bal "Suis-nous" → BalEnrollment)
+     *   - source = 'event-registration' (nouveau formulaire Festi Grill /register)
+     * Les deux ont enrollment_type non-null → capturés par le scope enrollments().
+     * L'export sort donc les 2 origines (le user peut filtrer dans Excel).
      */
-    public function array(): array
+    private function loadRows(): array
     {
+        if ($this->cachedRows !== null) return $this->cachedRows;
+
         $items = MembershipRequest::query()
             ->forEvent($this->event->id)
             ->enrollments()
+            ->with('interestedDepartment:id,name')
             ->orderByDesc('created_at')
             ->get();
-        $items->load('interestedDepartment:id,name');
 
         $rows = [];
         $rowNum = 0;
         foreach ($items as $req) {
             $rowNum++;
 
-            $whatsapp = null;
-            if ($req->motivation && preg_match('/WhatsApp\s*:\s*([^·]+)/i', $req->motivation, $m)) {
+            // Whatsapp : colonne dédiée si présente (nouveau flux),
+            // sinon fallback historique "WhatsApp: … " embarqué dans motivation.
+            $whatsapp = $req->whatsapp;
+            if (! $whatsapp && $req->motivation && preg_match('/WhatsApp\s*:\s*([^·]+)/i', $req->motivation, $m)) {
                 $whatsapp = trim($m[1]);
             }
+
             $statut = match ($req->enrollment_status) {
                 'nouveau'  => 'Nouveau',
                 'contacte' => 'Contacté',
@@ -88,6 +102,12 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
             };
             $mountain = \App\Http\Controllers\Admin\EventEnrolementsController::mountainLabel($req->interested_mountain);
 
+            // Lieu : concat commune/quartier si dispo (nouveau flux), sinon city legacy
+            $lieu = $req->city ?? '—';
+            if ($req->commune || $req->quartier) {
+                $lieu = trim(($req->commune ?? '') . ' · ' . ($req->quartier ?? ''), " ·");
+            }
+
             $rows[] = [
                 $rowNum,
                 $req->created_at?->format('d/m'),
@@ -95,14 +115,20 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                 $req->name ?? '—',
                 $req->phone ?? '—',
                 $whatsapp ?? '—',
-                $req->city ?? '—',
+                $lieu ?: '—',
                 $req->interestedDepartment?->name ?? '—',
                 $mountain ?? '—',
                 $statut,
                 $req->admin_notes ?? '',
             ];
         }
-        return $rows;
+
+        return $this->cachedRows = $rows;
+    }
+
+    public function array(): array
+    {
+        return $this->loadRows();
     }
 
     public function headings(): array
@@ -162,9 +188,10 @@ class EventEnrolementsExport implements FromArray, WithHeadings, WithStartRow, W
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8B1A2F']],
                 ]);
 
-                // Sous-titre méta
+                // Sous-titre méta — compte depuis les rows chargées (fiable même
+                // si l'écriture Maatwebsite n'a pas mis à jour getHighestRow).
                 $sheet->mergeCells("A5:{$lastCol}5");
-                $total = max(0, $lastRow - 6);
+                $total = count($this->loadRows());
                 $sheet->setCellValue('A5', sprintf(
                     'Généré le %s   ·   %d enrôlement(s)',
                     now()->locale('fr')->isoFormat('LL [à] HH:mm'),
