@@ -155,8 +155,10 @@ class PublicEventRegistrationController extends Controller
             ], 422);
         }
 
-        // Dédoublonnage soft : si un email/tel est déjà inscrit pour CET event,
-        // on renvoie un OK "déjà inscrit" plutôt qu'un doublon en DB.
+        // Dédoublonnage : si un email/tel est déjà inscrit pour CET event, on
+        // renvoie une erreur 422 avec un message sur le CHAMP concerné.
+        // → l'utilisateur reste sur le formulaire et peut corriger (changer
+        //   d'email/tel) au lieu de voir un écran plein "déjà inscrit".
         $existing = MembershipRequest::where('event_id', $event->id)
             ->where(function ($q) use ($data) {
                 if (! empty($data['email'])) $q->orWhere('email', $data['email']);
@@ -164,12 +166,21 @@ class PublicEventRegistrationController extends Controller
             })
             ->first();
         if ($existing) {
+            $errors = [];
+            if (! empty($data['email']) && strcasecmp($existing->email ?? '', $data['email']) === 0) {
+                $errors['email'] = ['Cet email est déjà utilisé pour une pré-inscription. Utilise un autre email.'];
+            }
+            if (! empty($data['phone']) && ($existing->phone ?? '') === $data['phone']) {
+                $errors['phone'] = ['Ce numéro est déjà utilisé pour une pré-inscription. Utilise un autre numéro.'];
+            }
+            // Fallback si le match n'a matché par aucun des 2 champs exactement.
+            if (empty($errors)) {
+                $errors['email'] = ['Une pré-inscription existe déjà avec ces coordonnées.'];
+            }
             return response()->json([
-                'message'  => "Tu es déjà pré-inscrit pour cet événement. On te recontacte pour la suite.",
-                'id'       => $existing->id,
-                'token'    => $existing->registration_token,
-                'duplicate'=> true,
-            ], 200);
+                'message' => 'Cet email ou ce numéro est déjà utilisé pour une pré-inscription.',
+                'errors'  => $errors,
+            ], 422);
         }
 
         // Cross-check auto "était au bal" via email/téléphone matching sur un
