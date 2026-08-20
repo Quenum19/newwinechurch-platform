@@ -139,9 +139,15 @@ export default function EventRegistrationPage() {
   }
 
   const setField = (key, val) => setValues((v) => ({ ...v, [key]: val }))
+  // Honeypot anti-bot : champ "website" invisible pour les humains.
+  // Les bots aveugles remplissent tous les champs → si rempli = bot → rejeté
+  // silencieusement côté serveur (200 OK factice). Le user légitime ne voit
+  // jamais ce champ (position:absolute + opacity:0 + tabindex=-1).
+  const [honeypot, setHoneypot] = useState('')
+
   const onSubmit = (e) => {
     e.preventDefault()
-    submit.mutate(values)
+    submit.mutate({ ...values, website: honeypot })
   }
 
   const backendError = submit.error?.response?.data?.message
@@ -186,6 +192,25 @@ export default function EventRegistrationPage() {
 
         {/* Formulaire dynamique */}
         <form onSubmit={onSubmit} className="space-y-5 bg-white border-2 border-public-ink/10 p-6 md:p-8">
+          {/* Honeypot invisible — remplit ce champ = bot détecté côté serveur.
+              tabIndex=-1 + aria-hidden pour être ignoré par lecteurs d'écran. */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            style={{
+              position: 'absolute',
+              left: '-10000px',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
+          />
           {form.fields.map((f) => (
             <Field
               key={f.key}
@@ -287,6 +312,26 @@ function Field({ field, value, onChange, options, error }) {
     )
   }
 
+  // Attributs supplémentaires pour les champs téléphone : n'accepte que
+  // chiffres + espaces + / et symbole + / tirets / points / parenthèses.
+  // inputMode="tel" ouvre le clavier numérique sur mobile.
+  // autocomplete standardisé pour permettre au navigateur de proposer.
+  const telExtra = (type === 'tel') ? {
+    inputMode: 'tel',
+    pattern: '[+0-9\\s().-]*',
+    autoComplete: field.key === 'whatsapp' ? 'tel-national' : 'tel',
+    maxLength: 30,
+  } : {}
+  const emailExtra = (type === 'email') ? {
+    autoComplete: 'email',
+    inputMode: 'email',
+    maxLength: 180,
+  } : {}
+  const nameExtra = (['first_name', 'name'].includes(field.key)) ? {
+    autoComplete: field.key === 'first_name' ? 'given-name' : 'family-name',
+    maxLength: 80,
+  } : {}
+
   return (
     <label className="block">
       <span className="block font-mono text-[11px] uppercase tracking-widest text-public-ink/70 mb-1.5">
@@ -298,6 +343,9 @@ function Field({ field, value, onChange, options, error }) {
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        {...telExtra}
+        {...emailExtra}
+        {...nameExtra}
         className="w-full px-3 py-2.5 border-2 border-public-ink/20 focus:border-public-flame outline-none bg-white text-public-ink"
       />
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

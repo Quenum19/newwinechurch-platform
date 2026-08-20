@@ -99,6 +99,25 @@ class PublicEventRegistrationController extends Controller
         $modules = $event->modules_enabled ?? [];
         $config  = $event->registration_form_config ?? [];
 
+        // === Anti-bot honeypot ===
+        // Le formulaire client ajoute un champ "website" invisible pour les
+        // humains. Si un bot le remplit → on renvoie un 200 factice (le bot
+        // pense avoir réussi) sans créer d'enregistrement. Silencieux volontaire
+        // (renvoyer 4xx apprendrait au bot à contourner).
+        if (! empty($request->input('website'))) {
+            Log::info('Registration honeypot triggered', [
+                'ip'       => sha1($request->ip() ?? ''),
+                'event_id' => $event->id,
+                'ua'       => substr((string) $request->userAgent(), 0, 200),
+            ]);
+            return response()->json([
+                'message'  => "Merci ! Ta pré-inscription a été enregistrée.",
+                'id'       => 0,
+                'token'    => 'bot-ignored',
+                'duplicate'=> false,
+            ], 201);
+        }
+
         if (! ($modules['registration'] ?? false)) {
             return response()->json(['message' => "Les inscriptions sont fermées."], 422);
         }
@@ -232,16 +251,20 @@ class PublicEventRegistrationController extends Controller
     private function rulesForField(string $key, bool $required): array
     {
         $base = $required ? ['required'] : ['nullable'];
+        // Regex téléphone : + optionnel + chiffres/espaces/tirets/points/parenthèses
+        // Autorise du "+225 07 00 00 00 00" ou "07-00-00-00-00" ou "(225) 0700000000"
+        // 8 chiffres minimum utile (chiffres réels ignore les séparateurs).
+        $phonePattern = ['regex:/^\+?[0-9\s().-]{8,30}$/'];
         return match ($key) {
-            'first_name'   => array_merge($base, ['string', 'max:80']),
-            'name'         => array_merge($base, ['string', 'max:80']),
-            'email'        => array_merge($base, ['email:rfc', 'max:180']),
-            'phone'        => array_merge($base, ['string', 'max:30']),
-            'whatsapp'     => array_merge($base, ['string', 'max:30']),
+            'first_name'   => array_merge($base, ['string', 'max:80', 'regex:/^[\p{L}\s\'-]+$/u']),
+            'name'         => array_merge($base, ['string', 'max:80', 'regex:/^[\p{L}\s\'-]+$/u']),
+            'email'        => array_merge($base, ['email:rfc,dns', 'max:180']),
+            'phone'        => array_merge($base, ['string', 'max:30'], $phonePattern),
+            'whatsapp'     => array_merge($base, ['string', 'max:30'], $phonePattern),
             'commune'      => array_merge($base, ['string', 'max:80']),
             'quartier'     => array_merge($base, ['string', 'max:120']),
             'attended_bal' => ['nullable', 'boolean'],
-            'birth_date'   => array_merge($base, ['date']),
+            'birth_date'   => array_merge($base, ['date', 'before:today', 'after:1900-01-01']),
             'gender'       => array_merge($base, ['in:M,F,other']),
             default        => [],
         };
