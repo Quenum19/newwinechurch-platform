@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E-ticket — Festi Grill'26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #080605; }
+  a { color: #f9b22a; text-decoration: none; }
+  a:hover { color: #f2591f; }
+  /* Impression / export PDF : le ticket tient sur une page */
+  @page { size: A4 portrait; margin: 0; }
+  @media print { body { background: #fff; } }
+</style>
+</head>
+<body>
+<div style="min-height:100%;background:radial-gradient(120% 60% at 50% 0%, #3a1206 0%, #140906 55%, #080605 100%);display:flex;flex-direction:column;align-items:center;gap:28px;padding:48px 24px 64px;font-family:Archivo, system-ui, sans-serif">
+
+  <div style="width:860px;position:relative;background:#16100c;border-radius:28px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.75), 0 0 0 1px rgba(249,178,42,.22)">
+
+    <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg, rgba(255,255,255,.022) 0 2px, transparent 2px 7px);pointer-events:none"></div>
+
+    <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 34px;background:linear-gradient(90deg,#f2591f,#f9b22a);color:#1a0d05">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:34px;height:34px;border-radius:50%;background:#2a0a1d;display:flex;align-items:center;justify-content:center;font-family:'Permanent Marker',cursive;font-size:17px;color:#f9b22a">N</div>
+        <div style="display:flex;flex-direction:column;line-height:1.05">
+          <span style="font-weight:800;font-size:15px;letter-spacing:.14em">NEW WINE CHURCH</span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:.22em;opacity:.72">E-TICKET OFFICIEL</span>
+        </div>
+      </div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;background:#1a0d05;color:#f9b22a;padding:7px 14px;border-radius:999px">ADMIT ONE</span>
+    </div>
+
+    <div style="position:relative;padding:34px 34px 26px;text-align:center">
+      <div style="position:absolute;left:0;right:0;top:-10px;height:180px;background:radial-gradient(60% 100% at 50% 0%, rgba(242,89,31,.35), transparent 70%);pointer-events:none"></div>
+      <div style="position:relative;font-family:'Permanent Marker',cursive;font-size:46px;color:#fff;transform:rotate(-3deg);line-height:1">Festi</div>
+      <div style="position:relative;font-family:Anton, sans-serif;font-size:132px;line-height:.82;color:#f9b22a;letter-spacing:-.02em;margin-top:2px;text-shadow:0 6px 0 rgba(0,0,0,.35)">GRILL'26</div>
+      <div style="position:relative;margin-top:16px;display:inline-block;font-weight:700;font-size:15px;letter-spacing:.1em;color:#efe3d8;background:rgba(255,255,255,.06);border:1px solid rgba(249,178,42,.3);padding:9px 18px;border-radius:999px">MEILLEURES VIANDES · ALLOCO &amp; ATTIÉKÉ</div>
+    </div>
+
+    <div style="position:relative;height:230px;margin:0 34px;border-radius:18px;overflow:hidden">
+      <img src="{{HERO_IMAGE_URL}}" alt="Grillades Festi Grill 26" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(22,16,12,.55) 0%, transparent 40%, rgba(22,16,12,.85) 100%);pointer-events:none"></div>
+      <div style="position:absolute;left:18px;bottom:16px;display:flex;gap:10px;pointer-events:none">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.14em;color:#1a0d05;background:#f9b22a;padding:6px 12px;border-radius:6px">SAM. 12 SEPT. 2026</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.14em;color:#f9b22a;background:rgba(26,13,5,.85);border:1px solid rgba(249,178,42,.4);padding:6px 12px;border-radius:6px">15H00</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:26px 34px 6px">
+      <div style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px 18px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#f2591f;margin-bottom:8px">AU MENU</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <span style="font-size:13px;font-weight:700;color:#f6ece3;background:rgba(249,178,42,.12);padding:6px 11px;border-radius:8px">Porc braisé</span>
+          <span style="font-size:13px;font-weight:700;color:#f6ece3;background:rgba(249,178,42,.12);padding:6px 11px;border-radius:8px">Porc sauté</span>
+          <span style="font-size:13px;font-weight:700;color:#f6ece3;background:rgba(249,178,42,.12);padding:6px 11px;border-radius:8px">Poulet braisé</span>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px 18px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#f2591f;margin-bottom:8px">ACCOMPAGNEMENT</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <span style="font-size:13px;font-weight:700;color:#f6ece3;background:rgba(249,178,42,.12);padding:6px 11px;border-radius:8px">Alloco</span>
+          <span style="font-size:13px;font-weight:700;color:#f6ece3;background:rgba(249,178,42,.12);padding:6px 11px;border-radius:8px">Attiéké</span>
+          <span style="font-size:13px;font-weight:700;color:#f6ece3;background:rgba(249,178,42,.12);padding:6px 11px;border-radius:8px">Frites</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 34px 30px">
+      <div style="padding:16px 18px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#8d7f74;margin-bottom:6px">LIEU</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;line-height:1.25">Maison de la Destinée · Bonoumin</div>
+        <div style="font-size:13px;color:#b6a79b;margin-top:4px">Riviera Bonoumin, Rue 65, Abidjan</div>
+      </div>
+      <div style="padding:16px 18px;border-radius:16px;background:linear-gradient(135deg, rgba(242,89,31,.22), rgba(249,178,42,.12));border:1px solid rgba(249,178,42,.35);display:flex;flex-direction:column;justify-content:center">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#f9b22a;margin-bottom:6px">TYPE DE PLACE</div>
+        <div style="font-family:Anton,sans-serif;font-size:30px;color:#fff;line-height:1">ENTRÉE GRATUITE</div>
+        <div style="font-size:12px;color:#e4cdb8;margin-top:4px;font-weight:600">Place Festi Grill — 1 personne</div>
+      </div>
+    </div>
+
+    <div style="position:relative;height:2px;margin:0 0 0 0;background:repeating-linear-gradient(90deg, rgba(249,178,42,.45) 0 12px, transparent 12px 24px)">
+      <div style="position:absolute;left:-19px;top:-18px;width:38px;height:38px;border-radius:50%;background:#080605"></div>
+      <div style="position:absolute;right:-19px;top:-18px;width:38px;height:38px;border-radius:50%;background:#080605"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;padding:30px 34px 26px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+        <div style="padding:10px;background:#fff;border-radius:14px">
+          <img src="{{QR_IMAGE_URL}}" alt="QR code du ticket" style="width:150px;height:150px;display:block;image-rendering:pixelated">
+        </div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#f9b22a">SCAN À L'ENTRÉE</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#8d7f74">AU NOM DE</div>
+          <div style="font-family:Anton,sans-serif;font-size:34px;color:#fff;line-height:1.05;margin-top:4px">{{HOLDER_NAME}}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:rgba(255,255,255,.045);border-radius:12px;padding:11px 13px">
+            <div style="font-size:10px;font-weight:800;letter-spacing:.18em;color:#8d7f74">N° TICKET</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#f6ece3;margin-top:3px">{{TICKET_NUMBER}}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.045);border-radius:12px;padding:11px 13px">
+            <div style="font-size:10px;font-weight:800;letter-spacing:.18em;color:#8d7f74">COMMANDE</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#f6ece3;margin-top:3px">{{ORDER_REF}}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#b6a79b">Ticket individuel, à usage unique. Non cessible.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 34px 20px;border-top:1px solid rgba(255,255,255,.07)">
+      <div style="font-size:12px;color:#b6a79b">Assistance organisateur · <strong style="color:#f6ece3">+225 07 57 07 67 74</strong></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:#f9b22a">WWW.NEWWINECHURCH.ORG</div>
+    </div>
+  </div>
+
+  <div style="width:860px;display:flex;gap:14px;align-items:stretch">
+    <div style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:18px 20px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#f2591f;margin-bottom:6px">COMMENT ÇA MARCHE</div>
+      <div style="font-size:13px;color:#c9bbb0;line-height:1.5">Présente ce ticket (écran ou papier) à l'entrée. Le QR code est scanné une seule fois — protège-le.</div>
+    </div>
+    <div style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:18px 20px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:#f2591f;margin-bottom:6px">TON TICKET EN LIGNE</div>
+      <div style="font-size:13px;color:#c9bbb0;line-height:1.5">Un lien personnel t'a été envoyé par e-mail pour revoir, télécharger ou annuler ta réservation.</div>
+    </div>
+  </div>
+
+  <div style="width:860px;font-size:10px;line-height:1.6;color:#6f635a;text-align:center">Toute falsification, revente ou transfert de ce ticket est formellement interdit. L'utilisation de ce ticket vaut acceptation des conditions générales. © 2026 NEW WINE CHURCH, tous droits réservés.</div>
+</div>
+</body>
+</html>

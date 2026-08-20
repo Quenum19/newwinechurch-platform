@@ -91,6 +91,7 @@ class TicketIssuer
             'dompdf.chroot'     => [
                 storage_path(),
                 base_path('resources'),
+                base_path('resources/tickets'),
                 '/home/u781799599/domains/newinechurch.org/public_html',
             ],
         ]);
@@ -126,13 +127,31 @@ class TicketIssuer
         // orange, etc.) — évite que tous les tickets se ressemblent.
         $accentColor = $ticket->ticketType?->color_hex ?: '#8B1A2F';
 
-        $pdf = Pdf::loadView('pdfs.ticket', [
+        // === Aiguillage template PDF selon l'event ===
+        // Chaque event peut avoir son propre design PDF ticket. Convention :
+        // resources/views/pdfs/ticket-{slug}.blade.php si présent, sinon
+        // fallback sur ticket.blade.php générique.
+        $slug = $ticket->event?->slug;
+        $customView = $slug ? "pdfs.ticket-{$slug}" : null;
+        $view = ($customView && view()->exists($customView)) ? $customView : 'pdfs.ticket';
+
+        // Hero image : cherche dans resources/tickets/{slug}/hero.{jpg,png,webp}
+        $heroPath = null;
+        if ($slug) {
+            foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+                $candidate = base_path("resources/tickets/{$slug}/hero.{$ext}");
+                if (@file_exists($candidate)) { $heroPath = $candidate; break; }
+            }
+        }
+
+        $pdf = Pdf::loadView($view, [
             'ticket'       => $ticket,
             'event'        => $ticket->event,
             'qrPngPath'    => $qrPngPath,
             'qrSvgPath'    => $qrSvgPath,
             'coverPngPath' => $coverPngPath, // PNG converti prêt à embed
             'accentColor'  => $accentColor,
+            'heroPath'     => $heroPath,
         ])->setPaper('A4', 'portrait');
 
         $pdfPath = "$tmpDir/ticket.pdf";
