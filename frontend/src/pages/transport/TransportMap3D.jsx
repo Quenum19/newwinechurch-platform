@@ -12,7 +12,8 @@
  *  - Support timelapse : si `activeIds` fourni, ne montre que ces IDs (fade-out reste)
  */
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, RotateCw, Maximize2 } from 'lucide-react'
+import { Loader2, RotateCw, Maximize2, Minimize2, Home } from 'lucide-react'
+import { useFullscreen } from './useFullscreen'
 
 const MAPLIBRE_CSS = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'
 const MAPLIBRE_JS  = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'
@@ -20,12 +21,20 @@ const STYLE_URL    = 'https://tiles.openfreemap.org/styles/positron'
 
 export default function TransportMap3D({ church, markers, activeIds = null }) {
   const containerRef = useRef(null)
+  const cardRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef(new Map()) // id → maplibre marker
   const churchMarkerRef = useRef(null)
   const [ready, setReady] = useState(false)
   const [rotating, setRotating] = useState(false)
   const rotateAnimRef = useRef(null)
+
+  // Fullscreen : au resize container, MapLibre a besoin de map.resize()
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(cardRef, {
+    onChange: () => {
+      requestAnimationFrame(() => mapRef.current?.resize())
+    },
+  })
 
   // 1) Load MapLibre CSS + JS via CDN (une fois)
   useEffect(() => {
@@ -64,7 +73,6 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
     })
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
-    map.addControl(new maplibregl.FullscreenControl(), 'top-right')
 
     map.on('load', () => {
       // Buildings 3D via fill-extrusion sur le layer 'building' du style positron
@@ -237,7 +245,13 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
   }
 
   return (
-    <div className="adm-card p-3 relative">
+    <div
+      ref={cardRef}
+      className={
+        'adm-card p-3 relative flex flex-col ' +
+        (isFullscreen ? 'fixed inset-0 z-50 rounded-none bg-white' : '')
+      }
+    >
       <div className="mb-2 text-xs text-zinc-500 flex items-center gap-3 flex-wrap">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded-full inline-block" style={{ background: '#8B1A2F' }}/>
@@ -251,13 +265,26 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
           <span className="h-2.5 w-2.5 rounded-full inline-block" style={{ background: '#eab308' }}/>
           Nouveau
         </span>
-        <span className="ml-auto text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+        <span className="ml-auto text-[10px] font-mono uppercase tracking-widest text-zinc-400 hidden sm:inline">
           Vue 3D · MapLibre + OpenFreeMap
         </span>
+        <button
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Quitter le plein écran (Esc)' : 'Plein écran'}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-[color:var(--adm-accent)] hover:bg-zinc-100 transition"
+        >
+          {isFullscreen
+            ? (<><Minimize2 size={12}/> Réduire</>)
+            : (<><Maximize2 size={12}/> Plein écran</>)}
+        </button>
       </div>
 
-      <div className="relative">
-        <div ref={containerRef} style={{ height: '600px', width: '100%' }} className="rounded border-2 border-zinc-200 overflow-hidden"/>
+      <div className={'relative ' + (isFullscreen ? 'flex-1' : '')}>
+        <div
+          ref={containerRef}
+          style={{ height: isFullscreen ? '100%' : '600px', width: '100%' }}
+          className="rounded border-2 border-zinc-200 overflow-hidden"
+        />
 
         {! ready && (
           <div className="absolute inset-0 flex items-center justify-center bg-zinc-50/80 rounded">
@@ -266,6 +293,18 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
               <p className="text-xs text-zinc-500">Chargement du moteur 3D…</p>
             </div>
           </div>
+        )}
+
+        {/* Gros bouton Réduire flottant — pouce-friendly mobile (48×48) */}
+        {isFullscreen && (
+          <button
+            onClick={toggleFullscreen}
+            title="Quitter le plein écran"
+            aria-label="Quitter le plein écran"
+            className="absolute top-3 right-3 z-[1000] h-12 w-12 flex items-center justify-center rounded-full bg-white/95 backdrop-blur shadow-xl text-zinc-700 hover:text-[color:var(--adm-accent)] active:scale-95 transition"
+          >
+            <Minimize2 size={20}/>
+          </button>
         )}
 
         {/* Contrôles custom : rotation cinématique + reset vue */}
@@ -288,7 +327,7 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
               title="Recentrer sur l'église"
               className="h-9 w-9 flex items-center justify-center rounded-full shadow-md bg-white text-zinc-600 hover:text-[color:var(--adm-accent)] transition"
             >
-              <Maximize2 size={15}/>
+              <Home size={15}/>
             </button>
           </div>
         )}

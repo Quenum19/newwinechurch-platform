@@ -20,12 +20,13 @@ import { fr } from 'date-fns/locale'
 import {
   ArrowLeft, MapPin, Users, Calendar, Phone, MessageCircle,
   Loader2, Truck, Filter, FileText, Church, Search, ChevronDown, ChevronRight, X,
-  Map as MapIcon, Box, Clock,
+  Map as MapIcon, Box, Clock, Maximize2, Minimize2,
 } from 'lucide-react'
 import api from '@/api/axios'
 import { cn } from '@/utils/cn'
 import TransportMap3D from './TransportMap3D'
 import TransportTimelapse from './TransportTimelapse'
+import { useFullscreen } from './useFullscreen'
 
 export default function TransportEventDetailPage() {
   const { slug } = useParams()
@@ -210,7 +211,16 @@ export default function TransportEventDetailPage() {
 function TransportMap({ church, markers }) {
   const mapRef = useRef(null)
   const mapInstance = useRef(null)
+  const cardRef = useRef(null)
   const [leafletReady, setLeafletReady] = useState(false)
+
+  // Plein écran : au resize container, Leaflet doit invalider sa taille sinon
+  // les tiles restent figées sur les anciennes dimensions.
+  const { isFullscreen, toggle } = useFullscreen(cardRef, {
+    onChange: () => {
+      requestAnimationFrame(() => mapInstance.current?.invalidateSize())
+    },
+  })
 
   useEffect(() => {
     if (window.L) { setLeafletReady(true); return }
@@ -285,7 +295,13 @@ function TransportMap({ church, markers }) {
   }, [leafletReady, church, markers])
 
   return (
-    <div className="adm-card p-3">
+    <div
+      ref={cardRef}
+      className={cn(
+        'adm-card p-3 flex flex-col',
+        isFullscreen && 'fixed inset-0 z-50 rounded-none bg-white',
+      )}
+    >
       <div className="mb-2 text-xs text-zinc-500 flex items-center gap-4 flex-wrap">
         <span className="inline-flex items-center gap-1.5">
           <Church size={12} className="text-[#8B1A2F]"/>
@@ -299,8 +315,34 @@ function TransportMap({ church, markers }) {
           <span className="h-2.5 w-2.5 rounded-full inline-block" style={{ background: '#eab308' }}/>
           Nouveau
         </span>
+        <button
+          onClick={toggle}
+          title={isFullscreen ? 'Quitter le plein écran (Esc)' : 'Plein écran'}
+          className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-[color:var(--adm-accent)] hover:bg-zinc-100 transition"
+        >
+          {isFullscreen
+            ? (<><Minimize2 size={12}/> Réduire</>)
+            : (<><Maximize2 size={12}/> Plein écran</>)}
+        </button>
       </div>
-      <div ref={mapRef} style={{ height: '600px', width: '100%' }} className="rounded border-2 border-zinc-200"/>
+      <div className={'relative ' + (isFullscreen ? 'flex-1' : '')}>
+        <div
+          ref={mapRef}
+          style={{ height: isFullscreen ? '100%' : '600px', width: '100%' }}
+          className="rounded border-2 border-zinc-200"
+        />
+        {/* Gros bouton Réduire flottant — pouce-friendly mobile (48×48) */}
+        {isFullscreen && (
+          <button
+            onClick={toggle}
+            title="Quitter le plein écran"
+            aria-label="Quitter le plein écran"
+            className="absolute top-3 right-3 z-[1000] h-12 w-12 flex items-center justify-center rounded-full bg-white/95 backdrop-blur shadow-xl text-zinc-700 hover:text-[color:var(--adm-accent)] active:scale-95 transition"
+          >
+            <Minimize2 size={20}/>
+          </button>
+        )}
+      </div>
     </div>
   )
 }
