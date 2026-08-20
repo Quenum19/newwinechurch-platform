@@ -62,6 +62,11 @@ class PublicRegistrationChoiceController extends Controller
                 'title'     => $event->title,
                 'starts_at' => $event->starts_at?->toIso8601String(),
                 'location'  => $event->location,
+                // Cover image absolue pour le hero de la page publique
+                // /choix (même bandeau que /inscription).
+                'cover_image' => $event->cover_image
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($event->cover_image)
+                    : null,
             ] : null,
             'workflow' => $workflow,
             'options'  => $workflow === 'mountain' ? self::MOUNTAINS : [],

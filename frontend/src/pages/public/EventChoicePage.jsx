@@ -72,6 +72,18 @@ export default function EventChoicePage() {
 
   return (
     <article className="bg-public-bone min-h-screen">
+      {/* Hero image event — même bandeau que /inscription pour cohérence
+          visuelle. Fallback silencieux si cover_image absente. */}
+      {event.cover_image && (
+        <div className="relative w-full overflow-hidden" style={{ height: 'clamp(200px, 32vw, 380px)' }}>
+          <img
+            src={event.cover_image}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-public-bone to-transparent"/>
+        </div>
+      )}
       <div className="container-nwc py-12 max-w-2xl">
         <Link
           to={`/evenements/${slug}`}

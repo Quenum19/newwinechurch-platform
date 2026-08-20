@@ -366,6 +366,8 @@ function PlaceholderPane({ title, note }) {
 function RegistrationsPane({ event }) {
   const [filters, setFilters] = useState({ mountain: '', commune: '', step: '', search: '' })
   const [page, setPage] = useState(1)
+  // Sélection multi pour envoi ciblé du magic-link. Set d'IDs.
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'event-preregs', event.id, filters, page],
@@ -380,24 +382,48 @@ function RegistrationsPane({ event }) {
 
   const setFilter = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })) }
 
-  // Envoi en masse du magic-link "choix de la montagne" à tous les préinscrits
-  // step=pre. Confirmation avant envoi. Le count est estimé depuis meta.total
-  // (filtré step=pre côté serveur si tu as le filtre actif, sinon compte global).
+  // Sélection helpers — les cases ne concernent QUE les step=pre car ce sont
+  // les seuls destinataires possibles du magic-link. Les autres sont désactivés.
+  const selectableRows = rows.filter((r) => r.registration_step === 'pre')
+  const allVisibleSelected = selectableRows.length > 0
+    && selectableRows.every((r) => selectedIds.has(r.id))
+
+  const toggleOne = (id) => setSelectedIds((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+  const toggleAllVisible = () => setSelectedIds((prev) => {
+    const next = new Set(prev)
+    if (allVisibleSelected) selectableRows.forEach((r) => next.delete(r.id))
+    else selectableRows.forEach((r) => next.add(r.id))
+    return next
+  })
+  const clearSelection = () => setSelectedIds(new Set())
+
+  // Envoi ciblé (sélection non-vide) OU global (aucune sélection = tous les
+  // step=pre). Le backend accepte {ids: [...]} optionnel — sans ids envoie à
+  // tous. Confirmation adaptée au mode.
   const sendLinks = useMutation({
-    mutationFn: () => api.post(`/admin/events/${event.id}/preregistrations/send-choice-links`).then((r) => r.data),
+    mutationFn: (ids) => api.post(
+      `/admin/events/${event.id}/preregistrations/send-choice-links`,
+      ids ? { ids } : {},
+    ).then((r) => r.data),
     onSuccess: (res) => {
       toast.success(res?.message || 'Envoi lancé.')
+      clearSelection()
       refetch()
     },
     onError: (err) => toast.error(err?.response?.data?.message || "Échec envoi."),
   })
 
   const handleSendLinks = () => {
-    const ok = window.confirm(
-      "Envoyer le lien 'choix de la montagne' par email à TOUS les préinscrits (step=pré) ?\n\n" +
-      "Chaque personne recevra un lien personnel unique qui déclenchera la génération de son ticket après son choix."
-    )
-    if (ok) sendLinks.mutate()
+    const count = selectedIds.size
+    const msg = count > 0
+      ? `Envoyer le lien "choix de la montagne" par email à ${count} personne(s) sélectionnée(s) ?`
+      : "Aucune sélection — envoyer à TOUS les préinscrits (step=pré) ?\n\nPour cibler certaines personnes, coche-les dans la liste."
+    if (! window.confirm(msg)) return
+    sendLinks.mutate(count > 0 ? Array.from(selectedIds) : null)
   }
 
   return (
@@ -444,11 +470,14 @@ function RegistrationsPane({ event }) {
             onClick={handleSendLinks}
             disabled={sendLinks.isPending}
             className="adm-btn inline-flex items-center gap-1 text-xs bg-[color:var(--adm-accent)] text-white hover:opacity-90 disabled:opacity-50"
-            title="Envoi email à tous les préinscrits — lien perso pour choisir leur montagne"
+            title={selectedIds.size > 0
+              ? `Envoi aux ${selectedIds.size} personnes sélectionnées`
+              : "Envoi à TOUS les préinscrits (aucune sélection)"
+            }
           >
             {sendLinks.isPending
               ? <><Loader2 size={12} className="animate-spin"/> Envoi…</>
-              : <><Send size={12}/> Envoyer lien montagne</>
+              : <><Send size={12}/> {selectedIds.size > 0 ? `Envoyer (${selectedIds.size})` : 'Envoyer lien montagne'}</>
             }
           </button>
           <a
@@ -470,6 +499,17 @@ function RegistrationsPane({ event }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-[11px] font-mono uppercase tracking-widest text-zinc-500">
+                <th className="py-2 px-2 w-8">
+                  {/* Case master : coche/décoche tous les step=pre visibles */}
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleAllVisible}
+                    disabled={selectableRows.length === 0}
+                    className="cursor-pointer"
+                    title="Tout sélectionner (step=pré visibles)"
+                  />
+                </th>
                 <th className="py-2 px-2">Nom</th>
                 <th className="py-2 px-2">Contact</th>
                 <th className="py-2 px-2">Commune</th>
@@ -479,30 +519,65 @@ function RegistrationsPane({ event }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-zinc-100 hover:bg-zinc-50">
-                  <td className="py-2 px-2">{r.first_name} {r.name}</td>
-                  <td className="py-2 px-2 text-xs">
-                    {r.email && <div>{r.email}</div>}
-                    {r.phone && <div className="text-zinc-500">{r.phone}</div>}
-                  </td>
-                  <td className="py-2 px-2 text-xs">
-                    {r.commune}{r.quartier && <span className="text-zinc-500"> · {r.quartier}</span>}
-                  </td>
-                  <td className="py-2 px-2 text-xs">{r.interested_mountain || <span className="text-zinc-400">—</span>}</td>
-                  <td className="py-2 px-2 text-center">{r.attended_bal ? '✓' : '·'}</td>
-                  <td className="py-2 px-2">
-                    <span className={cn(
-                      'inline-flex px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest',
-                      r.registration_step === 'ticketed' ? 'bg-green-100 text-green-700' :
-                      r.registration_step === 'chose'   ? 'bg-blue-100 text-blue-700' :
-                                                          'bg-zinc-100 text-zinc-600',
-                    )}>{r.registration_step}</span>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((r) => {
+                const canSelect = r.registration_step === 'pre'
+                const isChecked = selectedIds.has(r.id)
+                return (
+                  <tr
+                    key={r.id}
+                    className={cn(
+                      'border-b border-zinc-100 hover:bg-zinc-50',
+                      isChecked && 'bg-[color:var(--adm-accent)]/5',
+                    )}
+                  >
+                    <td className="py-2 px-2">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => canSelect && toggleOne(r.id)}
+                        disabled={! canSelect}
+                        className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-30"
+                        title={canSelect ? 'Sélectionner pour envoi' : "Non éligible (déjà avancé dans le workflow)"}
+                      />
+                    </td>
+                    <td className="py-2 px-2">{r.first_name} {r.name}</td>
+                    <td className="py-2 px-2 text-xs">
+                      {r.email && <div>{r.email}</div>}
+                      {r.phone && <div className="text-zinc-500">{r.phone}</div>}
+                    </td>
+                    <td className="py-2 px-2 text-xs">
+                      {r.commune}{r.quartier && <span className="text-zinc-500"> · {r.quartier}</span>}
+                    </td>
+                    <td className="py-2 px-2 text-xs">{r.interested_mountain || <span className="text-zinc-400">—</span>}</td>
+                    <td className="py-2 px-2 text-center">{r.attended_bal ? '✓' : '·'}</td>
+                    <td className="py-2 px-2">
+                      <span className={cn(
+                        'inline-flex px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest',
+                        r.registration_step === 'ticketed' ? 'bg-green-100 text-green-700' :
+                        r.registration_step === 'chose'   ? 'bg-blue-100 text-blue-700' :
+                                                            'bg-zinc-100 text-zinc-600',
+                      )}>{r.registration_step}</span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
+          {/* Info sélection */}
+          {selectedIds.size > 0 && (
+            <div className="mt-2 flex items-center justify-between px-2 py-1.5 bg-[color:var(--adm-accent)]/10 rounded text-xs">
+              <span className="text-[color:var(--adm-accent)] font-mono">
+                {selectedIds.size} personne{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
+              </span>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="text-zinc-500 hover:text-zinc-800 underline"
+              >
+                Vider la sélection
+              </button>
+            </div>
+          )}
         </div>
       )}
 
