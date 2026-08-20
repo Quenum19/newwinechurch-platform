@@ -19,7 +19,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import {
   ArrowLeft, MapPin, Users, Calendar, Phone, MessageCircle,
-  Loader2, Truck, Filter, FileText, Church,
+  Loader2, Truck, Filter, FileText, Church, Search, ChevronDown, ChevronRight, X,
 } from 'lucide-react'
 import api from '@/api/axios'
 import { cn } from '@/utils/cn'
@@ -237,76 +237,190 @@ function TransportMap({ church, markers }) {
 // ============================================================================
 
 function TransportList({ church, markers, byCommune }) {
-  // Regroupe par commune pour lisibilité
+  const [query, setQuery] = useState('')
+  const [collapsed, setCollapsed] = useState(() => new Set())
+
+  const normalized = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+  // Regroupe par commune + filtre par recherche (nom / quartier / téléphone)
   const groups = useMemo(() => {
+    const q = normalized(query.trim())
     const g = {}
     markers.forEach((m) => {
+      if (q) {
+        const hay = normalized(`${m.full_name} ${m.quartier || ''} ${m.phone || ''} ${m.email || ''} ${m.mountain || ''}`)
+        if (! hay.includes(q)) return
+      }
       g[m.commune] = g[m.commune] ?? []
       g[m.commune].push(m)
     })
-    // Tri commune par nombre décroissant
     return Object.entries(g).sort((a, b) => b[1].length - a[1].length)
-  }, [markers])
+  }, [markers, query])
+
+  const totalFiltered = groups.reduce((n, [, list]) => n + list.length, 0)
+
+  const toggleCommune = (commune) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      next.has(commune) ? next.delete(commune) : next.add(commune)
+      return next
+    })
+  }
+
+  const collapseAll = () => setCollapsed(new Set(groups.map(([c]) => c)))
+  const expandAll   = () => setCollapsed(new Set())
 
   return (
     <div className="adm-card overflow-hidden max-h-[640px] flex flex-col">
-      <div className="px-4 py-3 border-b border-zinc-200 bg-zinc-50">
-        <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">
-          Liste inscrits · {markers.length}
-        </p>
+      {/* Header épuré : compteur + actions */}
+      <div className="px-4 py-3 border-b border-zinc-200/60 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Inscrits</p>
+          <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--adm-text)' }}>
+            {totalFiltered}
+            {query && totalFiltered !== markers.length && (
+              <span className="text-xs text-zinc-400 font-normal ml-1.5">/ {markers.length}</span>
+            )}
+          </p>
+        </div>
+        {groups.length > 1 && (
+          <div className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest">
+            <button
+              onClick={collapsed.size === groups.length ? expandAll : collapseAll}
+              className="px-2 py-1 text-zinc-500 hover:text-[color:var(--adm-accent)] transition"
+            >
+              {collapsed.size === groups.length ? 'Tout ouvrir' : 'Tout replier'}
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto divide-y divide-zinc-100">
-        {groups.map(([commune, list]) => (
-          <div key={commune}>
-            <div className="px-4 py-2 bg-zinc-100 sticky top-0 z-10 border-b border-zinc-200">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-700">
-                {commune} · {list.length}
-              </p>
-            </div>
-            {list.map((m) => (
-              <div key={m.id} className="px-4 py-3 hover:bg-zinc-50">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--adm-text)' }}>
-                      {m.full_name}
-                    </p>
-                    {m.quartier && <p className="text-xs text-zinc-500">{m.quartier}</p>}
-                    {m.mountain && <p className="text-[10px] text-[color:var(--adm-accent)] font-mono uppercase mt-0.5">{m.mountain}</p>}
-                  </div>
-                  {m.attended_bal && (
-                    <span className="shrink-0 text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 font-mono uppercase tracking-widest rounded">
-                      Bal
-                    </span>
-                  )}
-                </div>
-                {(m.phone || m.whatsapp) && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {m.phone && (
-                      <a
-                        href={`tel:${m.phone.replace(/\s/g, '')}`}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-[11px] hover:bg-green-700 transition"
-                      >
-                        <Phone size={10}/> {m.phone}
-                      </a>
-                    )}
-                    {m.whatsapp && (
-                      <a
-                        href={`https://wa.me/${m.whatsapp.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-[#25D366] text-white rounded text-[11px] hover:opacity-80 transition"
-                      >
-                        <MessageCircle size={10}/> WhatsApp
-                      </a>
-                    )}
-                  </div>
+      {/* Recherche */}
+      <div className="px-4 py-2 border-b border-zinc-200/60 relative">
+        <Search size={13} className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-400"/>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher nom, quartier, téléphone…"
+          className="w-full pl-7 pr-8 py-1.5 text-sm bg-zinc-50 border border-zinc-200 rounded focus:outline-none focus:border-[color:var(--adm-accent)] focus:bg-white transition"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            className="absolute right-6 top-1/2 -translate-y-1/2 p-0.5 text-zinc-400 hover:text-zinc-700"
+          >
+            <X size={14}/>
+          </button>
+        )}
+      </div>
+
+      {/* Corps liste */}
+      <div className="flex-1 overflow-y-auto">
+        {groups.length === 0 ? (
+          <div className="p-8 text-center text-xs text-zinc-400">
+            Aucun résultat pour « {query} »
+          </div>
+        ) : (
+          groups.map(([commune, list]) => {
+            const isCollapsed = collapsed.has(commune)
+            return (
+              <div key={commune} className="border-b border-zinc-100 last:border-b-0">
+                {/* Header commune (cliquable, sticky) */}
+                <button
+                  onClick={() => toggleCommune(commune)}
+                  className="w-full px-4 py-2.5 bg-zinc-50/80 backdrop-blur sticky top-0 z-10 border-b border-zinc-100 flex items-center gap-2 hover:bg-zinc-100 transition text-left"
+                >
+                  {isCollapsed
+                    ? <ChevronRight size={13} className="text-zinc-400"/>
+                    : <ChevronDown  size={13} className="text-zinc-400"/>}
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-700 flex-1">
+                    {commune}
+                  </span>
+                  <span className="text-[10px] font-mono tabular-nums text-zinc-500 bg-white px-1.5 py-0.5 rounded border border-zinc-200">
+                    {list.length}
+                  </span>
+                </button>
+                {! isCollapsed && (
+                  <ul className="divide-y divide-zinc-100">
+                    {list.map((m, idx) => (
+                      <PersonRow key={m.id} m={m} index={idx + 1}/>
+                    ))}
+                  </ul>
                 )}
               </div>
-            ))}
-          </div>
-        ))}
+            )
+          })
+        )}
       </div>
     </div>
+  )
+}
+
+// Ligne inscrit — sobre, boutons icônes discrets
+function PersonRow({ m, index }) {
+  const initials = (m.full_name || '?')
+    .split(/\s+/).filter(Boolean).slice(0, 2)
+    .map((s) => s[0]?.toUpperCase()).join('')
+
+  return (
+    <li className="px-4 py-2.5 hover:bg-zinc-50/60 transition group">
+      <div className="flex items-center gap-3">
+        {/* Numéro d'ordre + avatar initials */}
+        <div className="shrink-0 w-8 text-center">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-zinc-100 to-zinc-200 flex items-center justify-center text-[10px] font-bold text-zinc-600">
+            {initials || '?'}
+          </div>
+          <span className="text-[9px] font-mono text-zinc-400 tabular-nums">{index}</span>
+        </div>
+
+        {/* Identité + méta */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--adm-text)' }}>
+              {m.full_name}
+            </p>
+            {m.attended_bal && (
+              <span className="text-[9px] px-1.5 py-px bg-[color:var(--adm-accent)]/10 text-[color:var(--adm-accent)] font-bold uppercase tracking-wider rounded">
+                Bal
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-0.5">
+            {m.quartier && <span className="truncate">{m.quartier}</span>}
+            {m.mountain && (
+              <>
+                {m.quartier && <span className="text-zinc-300">·</span>}
+                <span className="text-[10px] font-mono uppercase text-zinc-400 truncate">{m.mountain}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Actions : boutons icônes sobres */}
+        <div className="shrink-0 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+          {m.phone && (
+            <a
+              href={`tel:${m.phone.replace(/\s/g, '')}`}
+              title={`Appeler ${m.phone}`}
+              className="h-8 w-8 flex items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-[color:var(--adm-accent)] transition"
+            >
+              <Phone size={14}/>
+            </a>
+          )}
+          {m.whatsapp && (
+            <a
+              href={`https://wa.me/${m.whatsapp.replace(/[^0-9]/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`WhatsApp ${m.whatsapp}`}
+              className="h-8 w-8 flex items-center justify-center rounded-full text-zinc-500 hover:bg-[#25D366]/10 hover:text-[#128C7E] transition"
+            >
+              <MessageCircle size={14}/>
+            </a>
+          )}
+        </div>
+      </div>
+    </li>
   )
 }

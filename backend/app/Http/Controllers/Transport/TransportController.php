@@ -149,10 +149,14 @@ class TransportController extends Controller
 
         return response()->streamDownload(function () use ($event) {
             $out = fopen('php://output', 'w');
+            // BOM UTF-8 : indispensable pour qu'Excel Windows n'affiche pas
+            // "PrÃ©nom" au lieu de "Prénom" (par défaut il lit en cp1252/ANSI).
+            fwrite($out, "\xEF\xBB\xBF");
+            // Séparateur ";" : Excel FR l'ouvre en colonnes sans dialogue import.
             fputcsv($out, [
                 'Prénom', 'Nom', 'Téléphone', 'WhatsApp', 'Email',
                 'Commune', 'Quartier', 'Montagne', 'Bal-goer', 'Étape',
-            ]);
+            ], ';');
             MembershipRequest::where('event_id', $event->id)
                 ->where('source', 'event-registration')
                 ->whereNotNull('commune')
@@ -165,7 +169,7 @@ class TransportController extends Controller
                             $r->commune, $r->quartier, $r->interested_mountain,
                             $r->attended_bal ? 'oui' : 'non',
                             $r->registration_step,
-                        ]);
+                        ], ';');
                     }
                 });
             fclose($out);

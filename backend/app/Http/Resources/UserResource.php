@@ -69,6 +69,14 @@ class UserResource extends JsonResource
             // Rôles + permissions Spatie (utiles pour l'UI conditionnelle côté front).
             'roles'       => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
             'permissions' => $this->when($showPerms, fn () => $this->getAllPermissions()->pluck('name')),
+
+            // Département principal — utilisé par la sidebar pour afficher les
+            // modules scopés (Transport, etc.). Ne coûte rien si non chargé.
+            'department'  => $this->whenLoaded('department', fn () => $this->department ? [
+                'id'   => $this->department->id,
+                'slug' => $this->department->slug,
+                'name' => $this->department->name,
+            ] : null),
         ];
     }
 }

@@ -61,7 +61,7 @@ class RegisterController extends Controller
 
         return response()->json([
             'message' => 'Inscription réussie. Vérifiez votre email pour activer votre compte.',
-            'user'    => (new UserResource($user->load('roles')))->expose(),
+            'user'    => (new UserResource($user->load(['roles', 'department'])))->expose(),
         ], 201);
     }
 }

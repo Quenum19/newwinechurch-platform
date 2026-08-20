@@ -28,7 +28,7 @@ class MeController extends Controller
     public function show(Request $request): UserResource
     {
         return new UserResource(
-            $request->user()->load(['roles', 'permissions'])
+            $request->user()->load(['roles', 'permissions', 'department'])
         );
     }
 

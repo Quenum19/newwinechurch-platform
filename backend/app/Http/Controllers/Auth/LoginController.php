@@ -72,7 +72,7 @@ class LoginController extends Controller
 
             return response()->json([
                 'token' => $token,
-                'user'  => (new UserResource($user->load('roles')))->expose(),
+                'user'  => (new UserResource($user->load(['roles', 'department'])))->expose(),
             ]);
         }
 
@@ -84,7 +84,7 @@ class LoginController extends Controller
 
         return response()->json([
             'message' => 'Connecté.',
-            'user'    => (new UserResource($user->load('roles')))->expose(),
+            'user'    => (new UserResource($user->load(['roles', 'department'])))->expose(),
         ]);
     }
 
