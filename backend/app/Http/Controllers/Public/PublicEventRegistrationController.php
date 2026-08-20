@@ -61,8 +61,18 @@ class PublicEventRegistrationController extends Controller
             ], 404);
         }
 
-        $opensAt  = isset($config['opens_at'])  ? Carbon::parse($config['opens_at'])  : null;
-        $closesAt = isset($config['closes_at']) ? Carbon::parse($config['closes_at']) : null;
+        // Dates : PRIORITÉ aux colonnes standards éditables via /admin/evenements/{id}
+        // (tickets_closes_at si billetterie, sinon registration_deadline) — le
+        // JSON registration_form_config.closes_at n'est qu'un fallback pour
+        // les events qui n'ont pas de billetterie ni d'inscription classique.
+        // Sans ça, la date affichée reste figée sur la valeur JSON de la
+        // migration data — non synchronisée avec les modifs admin.
+        $opensAt  = isset($config['opens_at']) ? Carbon::parse($config['opens_at']) : null;
+
+        $closesAt = $event->tickets_closes_at
+                 ?? $event->registration_deadline
+                 ?? (isset($config['closes_at']) ? Carbon::parse($config['closes_at']) : null);
+
         $now = now();
         $isOpen = (! $opensAt || $now->gte($opensAt)) && (! $closesAt || $now->lte($closesAt));
 
@@ -83,7 +93,8 @@ class PublicEventRegistrationController extends Controller
                 'success_message' => $config['success_message']
                     ?? "Merci ! Ta pré-inscription est bien enregistrée. On te recontacte pour la suite.",
                 'opens_at'        => $opensAt?->toIso8601String(),
-                'closes_at'       => $closesAt?->toIso8601String(),
+                // On renvoie l'objet Carbon (ou instance datetime) — cast en ISO
+                'closes_at'       => $closesAt ? Carbon::parse($closesAt)->toIso8601String() : null,
                 'is_open'         => $isOpen,
             ],
             'options' => [
@@ -122,14 +133,18 @@ class PublicEventRegistrationController extends Controller
             return response()->json(['message' => "Les inscriptions sont fermées."], 422);
         }
 
-        // Fenêtre temporelle
+        // Fenêtre temporelle — même logique de priorité que ::config()
+        // (colonnes editables admin > JSON legacy).
         $now = now();
         if (! empty($config['opens_at']) && $now->lt(Carbon::parse($config['opens_at']))) {
             return response()->json([
                 'message' => "Les inscriptions ne sont pas encore ouvertes.",
             ], 422);
         }
-        if (! empty($config['closes_at']) && $now->gt(Carbon::parse($config['closes_at']))) {
+        $closesAt = $event->tickets_closes_at
+                 ?? $event->registration_deadline
+                 ?? (! empty($config['closes_at']) ? Carbon::parse($config['closes_at']) : null);
+        if ($closesAt && $now->gt($closesAt)) {
             return response()->json(['message' => "Les inscriptions sont fermées."], 422);
         }
 
