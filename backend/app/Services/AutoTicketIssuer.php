@@ -6,8 +6,8 @@ use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\EventTicketType;
 use App\Models\MembershipRequest;
+use App\Services\TicketCodeGenerator;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * AutoTicketIssuer — service d'émission automatique d'un ticket pour un
@@ -29,7 +29,10 @@ use Illuminate\Support\Str;
  */
 class AutoTicketIssuer
 {
-    public function __construct(private TicketIssuer $issuer) {}
+    public function __construct(
+        private TicketIssuer $issuer,
+        private TicketCodeGenerator $codes,
+    ) {}
 
     /**
      * Émet un ticket pour la préinscription passée, marque `registration_step=ticketed`
@@ -78,22 +81,21 @@ class AutoTicketIssuer
             return ['ticket' => null, 'sent' => false, 'reason' => 'no_ticket_type'];
         }
 
-        // Prefix order code = 2 lettres du titre (ex. FG pour Festi Grill)
-        $prefix = strtoupper(
-            preg_replace('/[^A-Z]/i', '', substr($event->title, 0, 6))
-        );
-        $prefix = substr($prefix ?: 'NW', 0, 2);
-        $orderCode = $prefix . strtoupper(Str::random(8));
-
-        $shortCode = strtoupper(Str::random(6));
-        $accessTok = Str::random(48);
-        $qrPayload = json_encode(['e' => $event->id, 't' => $accessTok, 'v' => 1]);
+        // Codes uniques : passer par TicketCodeGenerator (retry en boucle
+        // jusqu'à trouver un ticket_number/short_code libre) — hardcoder "1"
+        // violait la contrainte unique event_tickets_ticket_number_unique
+        // dès le second envoi.
+        $orderCode    = $this->codes->newOrderCode();
+        $ticketNumber = $this->codes->newTicketNumber();
+        $shortCode    = $this->codes->newShortCode();
+        $accessTok    = $this->codes->newAccessToken();
+        $qrPayload    = json_encode(['e' => $event->id, 't' => $accessTok, 'v' => 1]);
 
         $ticket = EventTicket::create([
             'event_id'             => $event->id,
             'ticket_type_id'       => $ticketType->id,
             'order_code'           => $orderCode,
-            'ticket_number'        => 1,
+            'ticket_number'        => $ticketNumber,
             'short_code'           => $shortCode,
             'qr_payload'           => $qrPayload,
             'access_token'         => $accessTok,
