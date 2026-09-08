@@ -55,6 +55,13 @@ class StoreEventRequest extends FormRequest
             'support_phone'         => ['nullable', 'string', 'max:30'],
             // Phase 7 — Mode paiement
             'payment_mode'          => ['nullable', 'in:declarative,cinetpay'],
+
+            // === Modules d'event (JSON blob libre + clés reconnues) ===
+            'modules_enabled'                          => ['nullable', 'array'],
+            'modules_enabled.auto_issue_ticket'        => ['nullable', 'boolean'],
+            'modules_enabled.default_ticket_type_id'   => ['nullable', 'integer'],
+            'modules_enabled.address_capture'          => ['nullable', 'boolean'],
+            'modules_enabled.cross_check_previous_event_id' => ['nullable', 'integer'],
         ];
     }
 }

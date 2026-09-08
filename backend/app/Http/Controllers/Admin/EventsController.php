@@ -90,7 +90,18 @@ class EventsController extends Controller
     public function update(UpdateEventRequest $request, int $id): JsonResponse
     {
         $event = Event::findOrFail($id);
-        $event->fill($request->safe()->except(['cover_image']))->save();
+        $data  = $request->safe()->except(['cover_image']);
+
+        // modules_enabled est un JSON blob multi-clés (address_capture,
+        // cross_check_previous_event_id, auto_issue_ticket, default_ticket_type_id…).
+        // L'admin peut n'envoyer qu'une partie des clés → on merge avec l'existant
+        // pour ne pas écraser les autres modules déjà activés.
+        if (array_key_exists('modules_enabled', $data)) {
+            $current = $event->modules_enabled ?? [];
+            $data['modules_enabled'] = array_merge($current, $data['modules_enabled'] ?? []);
+        }
+
+        $event->fill($data)->save();
 
         if ($request->hasFile('cover_image')) {
             $this->dispatchImageProcessing(

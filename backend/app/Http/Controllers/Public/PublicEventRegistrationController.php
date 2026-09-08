@@ -238,11 +238,6 @@ class PublicEventRegistrationController extends Controller
             'registration_step'   => 'pre',
         ]);
 
-        // TODO Bloc D : envoi email de confirmation avec lien magic-link vers
-        // /evenements/{slug}/choix-montagne?token=... quand cette étape sera prête.
-        // Pour l'instant : silent, l'admin recontacte manuellement OU le batch
-        // WhatsApp fait le follow-up.
-
         Log::info('Event registration', [
             'event_id'     => $event->id,
             'membership_id'=> $req->id,
@@ -250,12 +245,34 @@ class PublicEventRegistrationController extends Controller
             'attended_final'=> $attendedFinal,
         ]);
 
+        // Mode "inscription mono-étape" : émission immédiate du ticket + envoi
+        // du PDF par mail. Aucun choix intermédiaire. Activé par event via
+        // modules_enabled.auto_issue_ticket = true.
+        $autoIssue = (bool) ($modules['auto_issue_ticket'] ?? false);
+        $ticketSent = false;
+        $ticketReason = null;
+
+        if ($autoIssue && $req->email) {
+            $result = app(\App\Services\AutoTicketIssuer::class)->issue($event, $req);
+            $ticketSent = $result['sent'];
+            $ticketReason = $result['reason'];
+        }
+
+        $successMsg = $config['success_message'] ?? null;
+        if (! $successMsg) {
+            $successMsg = $autoIssue
+                ? "🎉 Ton ticket a été envoyé par mail à {$req->email}. Vérifie ta boîte (spam / promotions)."
+                : "Merci ! Ta pré-inscription est bien enregistrée. On te recontacte pour la suite.";
+        }
+
         return response()->json([
-            'message'  => $config['success_message']
-                ?? "Merci ! Ta pré-inscription est bien enregistrée. On te recontacte pour la suite.",
-            'id'       => $req->id,
-            'token'    => $token,
-            'duplicate'=> false,
+            'message'      => $successMsg,
+            'id'           => $req->id,
+            'token'        => $token,
+            'duplicate'    => false,
+            'auto_issue'   => $autoIssue,
+            'ticket_sent'  => $ticketSent,
+            'ticket_reason'=> $ticketReason,
         ], 201);
     }
 

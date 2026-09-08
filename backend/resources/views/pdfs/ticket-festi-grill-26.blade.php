@@ -19,33 +19,11 @@
   .v { font-size: 13px; font-weight: bold; color: #ffffff; padding-top: 4px; line-height: 1.25; }
   .s { font-size: 10px; color: #b6a79b; padding-top: 3px; line-height: 1.35; }
   .li { font-size: 11px; color: #f6ece3; padding-top: 4px; }
-  .mountain-badge {
-    display: inline-block;
-    background: #f0a71b;
-    color: #120d0b;
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    padding: 5px 11px;
-    margin-top: 6px;
-  }
 </style>
 </head>
 <body>
 
-@php
-    // Mapping enum → libellé humain pour l'affichage
-    $mountainLabels = [
-        'religion'          => 'Religion',
-        'media'             => 'Média',
-        'gouvernement'      => 'Gouvernement',
-        'economie'          => 'Économie',
-        'education'         => 'Éducation',
-        'famille'           => 'Famille',
-        'art_musique_sport' => 'Art · Musique · Sport',
-    ];
-    $mountainLabel = ($mountain ?? null) ? ($mountainLabels[$mountain] ?? $mountain) : null;
-@endphp
+{{-- Note : le badge sphère d'influence a été retiré (workflow simplifié). --}}
 
 <table style="width:100%;margin:0;background:#120d0b;border:0">
 
@@ -152,28 +130,21 @@
     <td style="padding:18px 20px;background:#1b1310">
       <table>
         <tr>
-          <td style="width:158px">
-            <table style="width:146px;background:#ffffff">
-              <tr><td style="padding:8px">
+          <td style="width:210px">
+            <table style="width:198px;background:#ffffff">
+              <tr><td style="padding:9px">
                 @if($qrPngPath ?? null)
-                  <img src="{{ $qrPngPath }}" alt="QR" style="width:130px;height:130px;display:block">
+                  <img src="{{ $qrPngPath }}" alt="QR" style="width:180px;height:180px;display:block">
                 @elseif($qrSvgPath ?? null)
-                  <div style="width:130px;height:130px">{!! file_get_contents($qrSvgPath) !!}</div>
+                  <div style="width:180px;height:180px">{!! file_get_contents($qrSvgPath) !!}</div>
                 @endif
               </td></tr>
             </table>
-            <div class="k" style="padding-top:7px;text-align:center;width:146px">SCAN &Agrave; L'ENTR&Eacute;E</div>
+            <div class="k" style="padding-top:9px;text-align:center;width:198px">SCAN &Agrave; L'ENTR&Eacute;E</div>
           </td>
-          <td style="padding-left:20px">
+          <td style="padding-left:24px">
             <div class="k-d">AU NOM DE</div>
-            <div style="font-size:26px;font-weight:bold;color:#ffffff;line-height:1.15;padding-top:3px">{{ $ticket->full_name ?? ($ticket->first_name.' '.$ticket->last_name) }}</div>
-
-            @if($mountainLabel)
-              <div style="padding-top:8px">
-                <span class="k-d">SPH&Egrave;RE D'INFLUENCE :</span>
-                <span class="mountain-badge">{{ strtoupper($mountainLabel) }}</span>
-              </div>
-            @endif
+            <div style="font-size:28px;font-weight:bold;color:#ffffff;line-height:1.15;padding-top:4px">{{ $ticket->full_name ?? ($ticket->first_name.' '.$ticket->last_name) }}</div>
 
             <table style="margin-top:13px">
               <tr>

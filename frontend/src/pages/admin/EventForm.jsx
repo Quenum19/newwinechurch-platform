@@ -53,18 +53,31 @@ export default function EventForm() {
       require_selfie: event.require_selfie ?? false,
       support_phone: event.support_phone ?? '',
       payment_mode: event.payment_mode ?? 'declarative',
+      // Modules — inscription mono-étape (ticket direct au submit)
+      auto_issue_ticket: event.modules_enabled?.auto_issue_ticket ?? false,
+      default_ticket_type_id: event.modules_enabled?.default_ticket_type_id ?? '',
     } : {
       type: 'culte', is_published: true, registration_required: false, is_online: false,
       ticketing_enabled: false, tickets_per_email_max: 3, allow_waitlist: true, require_selfie: false,
       payment_mode: 'declarative',
+      auto_issue_ticket: false, default_ticket_type_id: '',
     },
   })
 
   const isOnline = watch('is_online')
   const requireReg = watch('registration_required')
   const ticketingOn = watch('ticketing_enabled')
+  const autoIssueOn = watch('auto_issue_ticket')
   const startsAt = watch('starts_at')
   const isPastDate = startsAt && new Date(startsAt) < new Date()
+
+  // Ticket types pour dropdown "type par défaut" (mode auto-issue)
+  const { data: ticketTypesData } = useQuery({
+    queryKey: ['admin', 'events', id, 'ticket-types'],
+    queryFn: () => events.ticketTypesList(id),
+    enabled: isEdit && !!id,
+  })
+  const ticketTypes = ticketTypesData?.data ?? ticketTypesData ?? []
 
   const save = useMutation({
     mutationFn: (formData) => isEdit ? events.update(id, formData) : events.create(formData),
@@ -82,9 +95,18 @@ export default function EventForm() {
 
   const onSubmit = (data) => {
     const fd = new FormData()
+    // Clés du form qui doivent être groupées sous modules_enabled[...] pour Laravel
+    const moduleKeys = new Set(['auto_issue_ticket', 'default_ticket_type_id'])
+
     Object.entries(data).forEach(([k, v]) => {
       if (v === null || v === undefined || v === '') return
       if (k === 'cover_image') return
+      if (moduleKeys.has(k)) {
+        // Sérialisation en modules_enabled[auto_issue_ticket] etc.
+        if (typeof v === 'boolean') fd.append(`modules_enabled[${k}]`, v ? '1' : '0')
+        else fd.append(`modules_enabled[${k}]`, v)
+        return
+      }
       if (typeof v === 'boolean') fd.append(k, v ? '1' : '0')
       else fd.append(k, v)
     })
@@ -325,6 +347,55 @@ export default function EventForm() {
                      style={{ color: 'var(--adm-text-muted)' }}>
                     💡 Les types de tickets (Standard, VIP…) seront configurables après création.
                   </p>
+                )}
+
+                {/* ===== Inscription rapide (mono-étape) ===== */}
+                {isEdit && (
+                  <div className="border-t border-public-ink/10 pt-4 space-y-3">
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-public-flame">
+                        Inscription rapide
+                      </h3>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--adm-text-muted)' }}>
+                        Envoie le ticket direct par mail dès la soumission du formulaire.
+                        Pas de choix intermédiaire, pas de magic-link.
+                      </p>
+                    </div>
+                    <label className="flex items-start gap-2 text-sm cursor-pointer" style={{ color: 'var(--adm-text)' }}>
+                      <input
+                        type="checkbox"
+                        {...register('auto_issue_ticket')}
+                        className="h-4 w-4 mt-0.5 rounded border-zinc-300"
+                        style={{ accentColor: 'var(--adm-accent)' }}
+                      />
+                      <span>
+                        Émettre le ticket automatiquement à l'inscription
+                        <span className="block text-[11px] font-normal" style={{ color: 'var(--adm-text-muted)' }}>
+                          Le PDF part par mail dès que la personne clique "S'inscrire".
+                        </span>
+                      </span>
+                    </label>
+                    {autoIssueOn && (
+                      <div className="pl-6">
+                        <Field label="Type de ticket attribué par défaut">
+                          <select {...register('default_ticket_type_id')} className="adm-input">
+                            <option value="">Premier type actif (auto)</option>
+                            {ticketTypes.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.name} — {t.price_fcfa === 0 ? 'Gratuit' : `${t.price_fcfa.toLocaleString('fr-FR')} FCFA`}
+                                {t.is_active ? '' : ' (inactif)'}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        {ticketTypes.length === 0 && (
+                          <p className="text-[11px] mt-1 text-amber-700">
+                            ⚠ Aucun ticket type. Créez-en un ci-dessus avant d'activer.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

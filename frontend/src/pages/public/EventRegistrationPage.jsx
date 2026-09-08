@@ -22,7 +22,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Calendar, MapPin, Check, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react'
+import { Calendar, MapPin, Check, AlertCircle, ArrowLeft, Loader2, Mail, Ticket } from 'lucide-react'
 import api from '@/api/axios'
 import Spinner from '@/components/ui/Spinner.jsx'
 
@@ -133,8 +133,11 @@ export default function EventRegistrationPage() {
     )
   }
 
-  // Succès
+  // Succès — deux rendus : mono-étape (ticket envoyé) vs pré-inscription classique
   if (submitted) {
+    if (submitted.auto_issue) {
+      return <TicketSentScreen event={event} submitted={submitted} email={values.email}/>
+    }
     return (
       <StatusPage
         event={event}
@@ -409,6 +412,86 @@ function ErrorPage({ title, message }) {
         </Link>
       </div>
     </div>
+  )
+}
+
+// ============================================================================
+// Écran succès "ticket envoyé" — pour les events en mode inscription mono-étape.
+// Message clair + encart email premium + guide anti-spam.
+// ============================================================================
+function TicketSentScreen({ event, submitted, email }) {
+  const mailFailed = submitted?.ticket_sent === false
+  return (
+    <article className="bg-public-bone min-h-screen">
+      {event.cover_image && (
+        <div className="relative w-full overflow-hidden" style={{ height: 'clamp(160px, 24vw, 260px)' }}>
+          <img src={event.cover_image} alt="" className="w-full h-full object-cover"/>
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-public-bone to-transparent"/>
+        </div>
+      )}
+      <div className="container-nwc py-10 max-w-2xl text-center">
+        <div className="mb-6 flex justify-center">
+          <div className="w-20 h-20 rounded-full bg-public-flame/10 flex items-center justify-center">
+            <Ticket size={38} className="text-public-flame"/>
+          </div>
+        </div>
+        <p className="tag-mono text-public-flame mb-2">{event?.title}</p>
+        <h1 className="heading-anton text-4xl sm:text-5xl text-public-ink mb-3">
+          {submitted.duplicate ? 'Ton ticket est déjà émis' : 'Ton ticket t\'attend !'}
+        </h1>
+        <p className="text-lg text-public-ink/70 leading-relaxed mb-8">
+          {submitted.message}
+        </p>
+
+        {/* Encart email premium */}
+        <div className="text-left rounded-lg border-2 border-public-flame/20 bg-white p-5 sm:p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-public-flame/10 flex items-center justify-center">
+              <Mail size={18} className="text-public-flame"/>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-mono uppercase tracking-widest text-public-flame font-bold mb-1">
+                Ton mail
+              </p>
+              {email && (
+                <p className="text-base font-bold text-public-ink break-all">{email}</p>
+              )}
+              <p className="text-sm text-public-ink/70 mt-2 leading-relaxed">
+                On vient de t'envoyer ton <strong>ticket PDF avec QR code</strong> à cette
+                adresse. Vérifie ta boîte de réception <strong>dans les prochaines minutes</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-public-flame/10 pt-3 text-sm text-public-ink/70 space-y-1">
+            <p className="font-semibold text-public-ink">📬 Pas reçu ? Vérifie :</p>
+            <ul className="list-disc pl-5 space-y-1 text-sm">
+              <li>Ton dossier <strong>Spam</strong> ou <strong>Courrier indésirable</strong></li>
+              <li>L'onglet <strong>Promotions</strong> (Gmail)</li>
+              <li>Que ton adresse email est correcte</li>
+            </ul>
+          </div>
+
+          {mailFailed && (
+            <div className="border-t border-amber-300 pt-3 flex items-start gap-2 text-sm text-amber-800 bg-amber-50 rounded p-3">
+              <AlertCircle size={16} className="shrink-0 mt-0.5"/>
+              <p>
+                L'envoi automatique a rencontré un souci technique. Contacte-nous
+                {event.support_phone && <> au <strong>{event.support_phone}</strong></>}
+                {' '}pour recevoir ton ticket manuellement.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <Link
+          to={`/evenements/${event?.slug ?? ''}`}
+          className="mt-8 inline-flex items-center gap-1 text-xs font-mono uppercase tracking-widest text-public-flame hover:underline"
+        >
+          <ArrowLeft size={12}/> Voir l'événement
+        </Link>
+      </div>
+    </article>
   )
 }
 
