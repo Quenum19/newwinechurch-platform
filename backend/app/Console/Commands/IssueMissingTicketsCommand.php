@@ -75,8 +75,16 @@ class IssueMissingTicketsCommand extends Command
         $skipped = 0;
         $failed = 0;
 
-        $q->limit($limit)->chunk(50, function ($chunk) use (&$sent, &$skipped, &$failed, $issuer, $event, $dry) {
+        // ⚠ NE PAS utiliser chunk() ici : on modifie l'état (registration_step)
+        // pendant l'itération, ce qui décale l'OFFSET des chunks suivants et
+        // fait sauter la moitié des lignes. chunkById() pagine sur l'ID (WHERE
+        // id > lastId) → immunisé aux mutations concurrentes.
+        $processed = 0;
+        $q->chunkById(50, function ($chunk) use (&$sent, &$skipped, &$failed, &$processed, $issuer, $event, $dry, $limit) {
             foreach ($chunk as $reg) {
+                if ($processed >= $limit) return false; // signal chunkById d'arrêter
+                $processed++;
+
                 if ($dry) {
                     $this->line("  [dry] {$reg->email} — {$reg->first_name} {$reg->name}");
                     $skipped++;
