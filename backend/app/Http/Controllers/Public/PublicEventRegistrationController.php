@@ -87,6 +87,9 @@ class PublicEventRegistrationController extends Controller
                 'cover_image' => $event->cover_image
                     ? Storage::disk('public')->url($event->cover_image)
                     : null,
+                // Flag "mono-étape" : le frontend adapte le libellé du bouton
+                // et le message de succès si vrai (ticket direct par mail).
+                'auto_issue_ticket' => (bool) ($modules['auto_issue_ticket'] ?? false),
             ],
             'form' => [
                 'fields'          => $config['fields'] ?? self::DEFAULT_FIELDS,

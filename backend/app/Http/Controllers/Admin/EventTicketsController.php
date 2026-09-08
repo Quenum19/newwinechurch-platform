@@ -470,6 +470,7 @@ class EventTicketsController extends Controller
                     'order_code'  => $t->order_code,
                     'by_user'     => $request->user()?->id,
                 ]);
+                $this->cascadeDeleteMembership($eventId, $t);
                 $t->delete();
                 $ok++;
             }
@@ -510,9 +511,37 @@ class EventTicketsController extends Controller
             'order_code'  => $ticket->order_code,
             'by_user'     => $request->user()?->id,
         ]);
+        $this->cascadeDeleteMembership($eventId, $ticket);
         $ticket->delete();
 
         return response()->json(['message' => 'Ticket supprimé.']);
+    }
+
+    /**
+     * Cascade : à la suppression d'un ticket, supprime aussi la MembershipRequest
+     * qui l'a généré (même event + email OU phone matchent). Sans ça, l'inscrit
+     * ne peut pas re-tenter avec le même mail : le check de doublon dans
+     * PublicEventRegistrationController::store le bloque encore.
+     *
+     * Silencieux si aucune ligne ne matche (ticket créé sans préinscription).
+     */
+    private function cascadeDeleteMembership(int $eventId, EventTicket $ticket): void
+    {
+        $q = \App\Models\MembershipRequest::where('event_id', $eventId)
+            ->where(function ($sub) use ($ticket) {
+                if ($ticket->email) $sub->orWhere('email', $ticket->email);
+                if ($ticket->phone) $sub->orWhere('phone', $ticket->phone);
+            });
+
+        $deleted = $q->delete();
+        if ($deleted > 0) {
+            \Log::info('MembershipRequest liée supprimée (cascade ticket)', [
+                'event_id'  => $eventId,
+                'ticket_id' => $ticket->id,
+                'email'     => $ticket->email,
+                'count'     => $deleted,
+            ]);
+        }
     }
 
     /**

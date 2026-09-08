@@ -182,7 +182,9 @@ export default function EventRegistrationPage() {
 
         {/* Header event */}
         <header className="mb-8">
-          <p className="tag-mono text-public-flame mb-2">Pré-inscription</p>
+          <p className="tag-mono text-public-flame mb-2">
+            {event.auto_issue_ticket ? 'Inscription' : 'Pré-inscription'}
+          </p>
           <h1 className="heading-anton text-4xl sm:text-5xl text-public-ink leading-tight">
             {event.title}
           </h1>
@@ -251,7 +253,9 @@ export default function EventRegistrationPage() {
             disabled={submit.isPending}
             className="w-full inline-flex items-center justify-center gap-2 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-sm uppercase tracking-widest font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {submit.isPending ? <><Loader2 size={16} className="animate-spin"/> Envoi…</> : "Confirmer ma pré-inscription"}
+            {submit.isPending
+              ? <><Loader2 size={16} className="animate-spin"/> Envoi…</>
+              : (event.auto_issue_ticket ? "Recevoir mon ticket" : "Confirmer ma pré-inscription")}
           </button>
 
           <p className="text-[10px] text-public-ink/50 font-mono uppercase tracking-widest text-center">
