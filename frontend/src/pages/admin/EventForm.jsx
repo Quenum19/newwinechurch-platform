@@ -77,7 +77,11 @@ export default function EventForm() {
     queryFn: () => events.ticketTypesList(id),
     enabled: isEdit && !!id,
   })
-  const ticketTypes = ticketTypesData?.data ?? ticketTypesData ?? []
+  const ticketTypes = Array.isArray(ticketTypesData)
+    ? ticketTypesData
+    : Array.isArray(ticketTypesData?.data)
+      ? ticketTypesData.data
+      : []
 
   const save = useMutation({
     mutationFn: (formData) => isEdit ? events.update(id, formData) : events.create(formData),
@@ -380,12 +384,15 @@ export default function EventForm() {
                         <Field label="Type de ticket attribué par défaut">
                           <select {...register('default_ticket_type_id')} className="adm-input">
                             <option value="">Premier type actif (auto)</option>
-                            {ticketTypes.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.name} — {t.price_fcfa === 0 ? 'Gratuit' : `${t.price_fcfa.toLocaleString('fr-FR')} FCFA`}
-                                {t.is_active ? '' : ' (inactif)'}
-                              </option>
-                            ))}
+                            {ticketTypes.map((t) => {
+                              const price = Number(t.price_fcfa ?? 0)
+                              return (
+                                <option key={t.id} value={t.id}>
+                                  {t.name} — {price === 0 ? 'Gratuit' : `${price.toLocaleString('fr-FR')} FCFA`}
+                                  {t.is_active ? '' : ' (inactif)'}
+                                </option>
+                              )
+                            })}
                           </select>
                         </Field>
                         {ticketTypes.length === 0 && (
