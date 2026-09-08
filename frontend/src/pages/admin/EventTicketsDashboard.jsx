@@ -128,6 +128,16 @@ export default function EventTicketsDashboard() {
     onError: (e) => toast.error(e?.response?.data?.message || 'Erreur bulk.'),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (ticketId) => events.ticketDelete(id, ticketId),
+    onSuccess: () => {
+      toast.success('Ticket supprimé.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events', id, 'tickets'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events', id, 'tickets', 'stats'] })
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || 'Suppression impossible.'),
+  })
+
   const toggleSelect = (ticketId) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -383,6 +393,15 @@ export default function EventTicketsDashboard() {
                     <Ban size={12}/> Annuler
                   </button>
                   <button
+                    onClick={() => {
+                      if (!confirm(`Supprimer définitivement ${selectedIds.size} ticket(s) ? Cette action est irréversible. Les tickets déjà scannés seront ignorés.`)) return
+                      bulkMutation.mutate({ action: 'delete', ids: [...selectedIds] })
+                    }}
+                    disabled={bulkMutation.isPending}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs uppercase tracking-wider font-mono bg-red-600 border-2 border-red-600 text-white hover:bg-red-700 transition disabled:opacity-50">
+                    <Trash2 size={12}/> Supprimer
+                  </button>
+                  <button
                     onClick={() => setSelectedIds(new Set())}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs uppercase tracking-wider font-mono text-public-ink/60 hover:text-public-ink transition">
                     <X size={12}/>
@@ -491,6 +510,19 @@ export default function EventTicketsDashboard() {
                                     title="Rembourser / annuler"
                                     className="p-1.5 hover:bg-red-50 hover:text-red-600 transition">
                               <RefreshCw size={14}/>
+                            </button>
+                          )}
+                          {! t.used_at && (
+                            <button
+                              onClick={() => {
+                                if (! confirm(`Supprimer définitivement le ticket ${t.code} ? Cette action est irréversible.`)) return
+                                deleteMutation.mutate(t.id)
+                              }}
+                              disabled={deleteMutation.isPending}
+                              title="Supprimer définitivement"
+                              className="p-1.5 hover:bg-red-100 hover:text-red-700 text-zinc-500 transition disabled:opacity-50"
+                            >
+                              <Trash2 size={14}/>
                             </button>
                           )}
                         </div>

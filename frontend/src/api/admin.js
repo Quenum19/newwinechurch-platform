@@ -364,6 +364,8 @@ export const events = {
     (await api.post(`/admin/tickets/${ticketId}/unscan`)).data,
   ticketsBulk:  async (eventId, action, ids) =>
     (await api.post(`/admin/events/${eventId}/tickets/bulk`, { action, ids })).data,
+  ticketDelete: async (eventId, ticketId) =>
+    (await api.delete(`/admin/events/${eventId}/tickets/${ticketId}`)).data,
 
   // === Doublons — détection + vérification manuelle + export ===
   ticketsDuplicates: async (eventId) =>

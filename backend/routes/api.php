@@ -711,6 +711,8 @@ Route::middleware(['auth:sanctum'])
     // Validation paiements + bulk (Phase 2)
     Route::get ('/events/{eventId}/tickets/pending-orders', [AdminEventTicketsController::class, 'pendingOrders'])->whereNumber('eventId');
     Route::post('/events/{eventId}/tickets/bulk',           [AdminEventTicketsController::class, 'bulkAction'])->whereNumber('eventId');
+    Route::delete('/events/{eventId}/tickets/{tid}',        [AdminEventTicketsController::class, 'destroy'])
+         ->whereNumber('eventId')->whereNumber('tid');
 
     // Staff événement (Étape B) + magic-links invités (Étape C)
     Route::get   ('/events/{eventId}/staff',                                [AdminEventStaffController::class, 'index'])->whereNumber('eventId');

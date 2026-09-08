@@ -417,7 +417,7 @@ class EventTicketsController extends Controller
         $this->authorizeManage($request, $event);
 
         $data = $request->validate([
-            'action' => ['required', 'in:resend,cancel'],
+            'action' => ['required', 'in:resend,cancel,delete'],
             'ids'    => ['required', 'array', 'min:1', 'max:500'],
             'ids.*'  => ['integer'],
         ]);
@@ -458,7 +458,61 @@ class EventTicketsController extends Controller
             ]);
         }
 
+        if ($data['action'] === 'delete') {
+            foreach ($tickets as $t) {
+                // Refus si scanné (billet consommé) : la trace d'entrée doit
+                // rester en base pour audit et anti-fraude. Utiliser 'cancel'.
+                if ($t->scanned_at) { $failed++; continue; }
+                \Log::info('Ticket supprimé par admin', [
+                    'ticket_id'   => $t->id,
+                    'event_id'    => $eventId,
+                    'code'        => $t->code,
+                    'order_code'  => $t->order_code,
+                    'by_user'     => $request->user()?->id,
+                ]);
+                $t->delete();
+                $ok++;
+            }
+            return response()->json([
+                'message' => "{$ok} ticket(s) supprimé(s), {$failed} ignoré(s) (scannés).",
+                'ok' => $ok, 'failed' => $failed,
+            ]);
+        }
+
         return response()->json(['message' => 'Action inconnue.'], 422);
+    }
+
+    /**
+     * DELETE /admin/events/{id}/tickets/{ticketId}
+     *
+     * Suppression physique d'un ticket. Refuse si scanné (trace audit requise).
+     * Pour un billet scanné → utiliser bulk action 'cancel' (marque status=cancelled).
+     */
+    public function destroy(Request $request, int $eventId, int $ticketId): JsonResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorizeManage($request, $event);
+
+        $ticket = EventTicket::where('id', $ticketId)
+            ->where('event_id', $eventId)
+            ->firstOrFail();
+
+        if ($ticket->scanned_at) {
+            return response()->json([
+                'message' => 'Impossible de supprimer un ticket déjà scanné. Utilisez l\'annulation.',
+            ], 422);
+        }
+
+        \Log::info('Ticket supprimé par admin', [
+            'ticket_id'   => $ticket->id,
+            'event_id'    => $eventId,
+            'code'        => $ticket->code,
+            'order_code'  => $ticket->order_code,
+            'by_user'     => $request->user()?->id,
+        ]);
+        $ticket->delete();
+
+        return response()->json(['message' => 'Ticket supprimé.']);
     }
 
     /**
