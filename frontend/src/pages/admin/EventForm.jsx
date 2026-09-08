@@ -71,17 +71,16 @@ export default function EventForm() {
   const startsAt = watch('starts_at')
   const isPastDate = startsAt && new Date(startsAt) < new Date()
 
-  // Ticket types pour dropdown "type par défaut" (mode auto-issue)
+  // Ticket types pour dropdown "type par défaut" (mode auto-issue).
+  // ⚠ On utilise une queryKey distincte de TicketTypesEditor pour éviter
+  // qu'un consumer ne re-format la donnée cachée par l'autre (les 2 attendent
+  // des shapes différents ; sans clé séparée, .map crashe côté TTE).
   const { data: ticketTypesData } = useQuery({
-    queryKey: ['admin', 'events', id, 'ticket-types'],
-    queryFn: () => events.ticketTypesList(id),
+    queryKey: ['admin', 'events', id, 'ticket-types', 'form-select'],
+    queryFn: async () => (await events.ticketTypesList(id))?.data ?? [],
     enabled: isEdit && !!id,
   })
-  const ticketTypes = Array.isArray(ticketTypesData)
-    ? ticketTypesData
-    : Array.isArray(ticketTypesData?.data)
-      ? ticketTypesData.data
-      : []
+  const ticketTypes = Array.isArray(ticketTypesData) ? ticketTypesData : []
 
   const save = useMutation({
     mutationFn: (formData) => isEdit ? events.update(id, formData) : events.create(formData),
