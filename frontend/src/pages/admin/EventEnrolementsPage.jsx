@@ -18,6 +18,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Download, FileSpreadsheet, Loader2, Search,
   HeartHandshake, Trash2, MessageSquarePlus, Mountain,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from 'lucide-react'
 import api from '@/api/axios'
 import Modal from '@/components/ui/Modal'
@@ -43,12 +44,25 @@ export default function EventEnrolementsPage() {
   const [filterType, setFilterType] = useState('')
   const [search, setSearch] = useState('')
   const [notesTarget, setNotesTarget] = useState(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
+
+  // Toute modif de filtre remet la pagination à la page 1 pour éviter
+  // d'atterrir sur une page vide (ex : filtre "Convertis" sur page 5).
+  useEffect(() => { setPage(1) }, [filterStatus, filterType, search, perPage])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['event-enrolements', eventId, filterStatus, filterType, search],
+    queryKey: ['event-enrolements', eventId, filterStatus, filterType, search, page, perPage],
     queryFn: () => api.get(`/admin/events/${eventId}/enrolements`, {
-      params: { status: filterStatus || undefined, type: filterType || undefined, q: search || undefined },
+      params: {
+        status: filterStatus || undefined,
+        type: filterType || undefined,
+        q: search || undefined,
+        page,
+        per_page: perPage,
+      },
     }).then((r) => r.data),
+    keepPreviousData: true, // évite le clignotement liste vide entre 2 pages
   })
 
   const statusMutation = useMutation({
@@ -67,6 +81,7 @@ export default function EventEnrolementsPage() {
 
   const stats = data?.stats
   const rows = data?.enrolements?.data ?? []
+  const meta = data?.enrolements // Laravel paginate expose current_page/last_page/total au top-level
 
   const downloadExcel = () => {
     window.open(`${api.defaults.baseURL}/admin/events/${eventId}/enrolements/export/excel`, '_blank')
@@ -164,38 +179,50 @@ export default function EventEnrolementsPage() {
           Aucun enrôlement pour cet événement.
         </div>
       ) : (
-        <div className="adm-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[#F5EFE2] text-[#5C4A3D] text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="px-3 py-3 text-left">Contact</th>
-                  <th className="px-3 py-3 text-left">Lieu</th>
-                  <th className="px-3 py-3 text-left">Département</th>
-                  <th className="px-3 py-3 text-left">Montagne</th>
-                  <th className="px-3 py-3 text-left">Statut</th>
-                  <th className="px-3 py-3 text-left">Notes</th>
-                  <th className="px-3 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--adm-border)]">
-                {rows.map((r) => (
-                  <EnrolementRow
-                    key={r.id}
-                    row={r}
-                    onStatusChange={(s) => statusMutation.mutate({ id: r.id, status: s })}
-                    onNotesEdit={() => setNotesTarget(r)}
-                    onDelete={() => {
-                      if (confirm(`Supprimer l'enrôlement de ${r.first_name} ${r.name} ?`)) {
-                        deleteMutation.mutate(r.id)
-                      }
-                    }}
-                  />
-                ))}
-              </tbody>
-            </table>
+        <>
+          <div className="adm-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[#F5EFE2] text-[#5C4A3D] text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="px-3 py-3 text-left">Contact</th>
+                    <th className="px-3 py-3 text-left">Lieu</th>
+                    <th className="px-3 py-3 text-left">Département</th>
+                    <th className="px-3 py-3 text-left">Montagne</th>
+                    <th className="px-3 py-3 text-left">Statut</th>
+                    <th className="px-3 py-3 text-left">Notes</th>
+                    <th className="px-3 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--adm-border)]">
+                  {rows.map((r) => (
+                    <EnrolementRow
+                      key={r.id}
+                      row={r}
+                      onStatusChange={(s) => statusMutation.mutate({ id: r.id, status: s })}
+                      onNotesEdit={() => setNotesTarget(r)}
+                      onDelete={() => {
+                        if (confirm(`Supprimer l'enrôlement de ${r.first_name} ${r.name} ?`)) {
+                          deleteMutation.mutate(r.id)
+                        }
+                      }}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {meta && (
+            <PaginationBar
+              meta={meta}
+              page={page}
+              perPage={perPage}
+              onPageChange={setPage}
+              onPerPageChange={setPerPage}
+            />
+          )}
+        </>
       )}
 
       <NotesModal
@@ -204,6 +231,90 @@ export default function EventEnrolementsPage() {
         onSaved={() => qc.invalidateQueries({ queryKey: ['event-enrolements', eventId] })}
         eventId={eventId}
       />
+    </div>
+  )
+}
+
+function PaginationBar({ meta, page, perPage, onPageChange, onPerPageChange }) {
+  // Laravel paginate expose current_page / last_page / total / from / to au top-level.
+  // On préfère cette source, avec fallback sur props côté client.
+  const currentPage = meta.current_page ?? page
+  const lastPage    = meta.last_page ?? 1
+  const total       = meta.total ?? 0
+  const from        = meta.from ?? 0
+  const to          = meta.to ?? 0
+
+  if (lastPage <= 1 && total <= perPage) return null
+
+  const go = (p) => onPageChange(Math.max(1, Math.min(lastPage, p)))
+
+  return (
+    <div className="adm-card p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* Résumé */}
+      <div className="text-xs sm:text-sm text-zinc-500 order-2 sm:order-1">
+        <span className="font-mono tabular-nums text-zinc-700">{from}</span>
+        <span className="mx-1">–</span>
+        <span className="font-mono tabular-nums text-zinc-700">{to}</span>
+        <span className="mx-1.5">sur</span>
+        <span className="font-mono tabular-nums font-bold text-zinc-800">{total}</span>
+      </div>
+
+      {/* Boutons pages — cible tactile 40×40 min */}
+      <div className="flex items-center gap-1 order-1 sm:order-2">
+        <button
+          onClick={() => go(1)}
+          disabled={currentPage <= 1}
+          title="Première page"
+          className="h-10 w-10 flex items-center justify-center rounded-md border border-[var(--adm-border)] bg-white text-zinc-600 hover:text-[color:var(--adm-accent)] disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          <ChevronsLeft size={16}/>
+        </button>
+        <button
+          onClick={() => go(currentPage - 1)}
+          disabled={currentPage <= 1}
+          title="Page précédente"
+          className="h-10 w-10 flex items-center justify-center rounded-md border border-[var(--adm-border)] bg-white text-zinc-600 hover:text-[color:var(--adm-accent)] disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          <ChevronLeft size={16}/>
+        </button>
+
+        <div className="px-3 h-10 flex items-center rounded-md bg-[#FAF6EE] border border-[var(--adm-border)] text-sm font-mono tabular-nums">
+          <span className="font-bold text-[color:var(--adm-accent)]">{currentPage}</span>
+          <span className="mx-1.5 text-zinc-400">/</span>
+          <span className="text-zinc-600">{lastPage}</span>
+        </div>
+
+        <button
+          onClick={() => go(currentPage + 1)}
+          disabled={currentPage >= lastPage}
+          title="Page suivante"
+          className="h-10 w-10 flex items-center justify-center rounded-md border border-[var(--adm-border)] bg-white text-zinc-600 hover:text-[color:var(--adm-accent)] disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          <ChevronRight size={16}/>
+        </button>
+        <button
+          onClick={() => go(lastPage)}
+          disabled={currentPage >= lastPage}
+          title="Dernière page"
+          className="h-10 w-10 flex items-center justify-center rounded-md border border-[var(--adm-border)] bg-white text-zinc-600 hover:text-[color:var(--adm-accent)] disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          <ChevronsRight size={16}/>
+        </button>
+      </div>
+
+      {/* Nombre par page */}
+      <div className="flex items-center gap-2 order-3 text-xs">
+        <span className="text-zinc-500 hidden sm:inline">Par page</span>
+        <select
+          value={perPage}
+          onChange={(e) => onPerPageChange(Number(e.target.value))}
+          className="h-10 px-2 rounded-md border border-[var(--adm-border)] bg-white text-sm font-mono focus:outline-none focus:border-[color:var(--adm-accent)]"
+        >
+          {[10, 25, 50, 100].map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 }
