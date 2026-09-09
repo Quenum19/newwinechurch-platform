@@ -248,6 +248,12 @@ class PublicEventRegistrationController extends Controller
             'attended_final'=> $attendedFinal,
         ]);
 
+        // Géocode adresse en arrière-plan (queue si dispo, sync sinon).
+        // Sans ça le marker s'affiche au centroïde commune → cluster imprécis.
+        if ($req->commune) {
+            \App\Jobs\GeocodeMembershipJob::dispatch($req->id);
+        }
+
         // Mode "inscription mono-étape" : émission immédiate du ticket + envoi
         // du PDF par mail. Aucun choix intermédiaire. Activé par event via
         // modules_enabled.auto_issue_ticket = true.

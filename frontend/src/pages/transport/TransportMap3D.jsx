@@ -75,6 +75,24 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
 
     map.on('load', () => {
+      // Source + layer "fils araignée" : lignes de chaque marker vers l'église.
+      // Rempli dynamiquement via updateSpiderLinks() ci-dessous.
+      map.addSource('nwc-spider', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+      map.addLayer({
+        id: 'nwc-spider-lines',
+        type: 'line',
+        source: 'nwc-spider',
+        paint: {
+          'line-color': ['case', ['get', 'bal'], '#dc2626', '#eab308'],
+          'line-width': 1.4,
+          'line-opacity': 0.55,
+          'line-dasharray': [1.5, 1.5],
+        },
+      })
+
       // Buildings 3D via fill-extrusion sur le layer 'building' du style positron
       const layers = map.getStyle().layers || []
       const symbolIdx = layers.findIndex((l) => l.type === 'symbol')
@@ -195,7 +213,28 @@ export default function TransportMap3D({ church, markers, activeIds = null }) {
       map.fitBounds(bounds, { padding: 60, pitch: 50, bearing: -20, duration: 800 })
       map._nwcFitted = true
     }
-  }, [markers, church, ready])
+
+    // Fils araignée : GeoJSON de lignes Église → chaque marker.
+    // Filtré par activeIds (timelapse) si fourni.
+    const applySpider = () => {
+      const src = map.getSource('nwc-spider')
+      if (! src) return
+      const active = activeIds instanceof Set
+      const features = markers
+        .filter((m) => ! active || activeIds.has(m.id))
+        .map((m) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [[church.lng, church.lat], [m.lng, m.lat]],
+          },
+          properties: { id: m.id, bal: !!m.attended_bal },
+        }))
+      src.setData({ type: 'FeatureCollection', features })
+    }
+    if (map.isStyleLoaded()) applySpider()
+    else map.once('load', applySpider)
+  }, [markers, church, ready, activeIds])
 
   // 5) Timelapse : masque / affiche via display sans détruire les markers
   useEffect(() => {

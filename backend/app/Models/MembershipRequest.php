@@ -27,12 +27,17 @@ class MembershipRequest extends Model
         // === Formulaire d'inscription générique (Festi Grill '26 et suivants) ===
         'whatsapp', 'commune', 'quartier',
         'attended_bal', 'registration_token', 'registration_step',
+        // === Géocodage (précision quartier via Nominatim) ===
+        'latitude', 'longitude', 'geocoded_at', 'geocoded_source',
     ];
 
     protected $casts = [
-        'birth_date'   => 'date',
-        'processed_at' => 'datetime',
-        'attended_bal' => 'boolean',
+        'birth_date'    => 'date',
+        'processed_at'  => 'datetime',
+        'attended_bal'  => 'boolean',
+        'latitude'      => 'float',
+        'longitude'     => 'float',
+        'geocoded_at'   => 'datetime',
     ];
 
     public function processedBy(): BelongsTo

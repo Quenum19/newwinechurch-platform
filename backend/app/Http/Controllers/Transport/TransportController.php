@@ -80,7 +80,8 @@ class TransportController extends Controller
             ->orderBy('created_at')
             ->get(['id', 'first_name', 'name', 'email', 'phone', 'whatsapp',
                     'commune', 'quartier', 'interested_mountain',
-                    'attended_bal', 'registration_step', 'created_at']);
+                    'attended_bal', 'registration_step', 'created_at',
+                    'latitude', 'longitude', 'geocoded_source']);
 
         $centroids = AdminEventRegistrationsController::COMMUNE_CENTROIDS;
 
@@ -92,15 +93,25 @@ class TransportController extends Controller
         arsort($byCommune);
 
         $markers = $rows->map(function ($r) use ($centroids) {
-            $centroid = $centroids[$r->commune] ?? null;
-            if (! $centroid) return null;
-            // Jitter déterministe ±500 m pour éviter la superposition
-            $jitterLat = ((($r->id * 37) % 100) - 50) / 10000;
-            $jitterLng = ((($r->id * 73) % 100) - 50) / 10000;
+            // Priorité aux coords géocodées (précision quartier).
+            // Fallback : centroïde commune + jitter déterministe ±500m.
+            $usedGeocoded = ($r->latitude !== null && $r->longitude !== null);
+            if ($usedGeocoded) {
+                $lat = (float) $r->latitude;
+                $lng = (float) $r->longitude;
+            } else {
+                $centroid = $centroids[$r->commune] ?? null;
+                if (! $centroid) return null;
+                $jitterLat = ((($r->id * 37) % 100) - 50) / 10000;
+                $jitterLng = ((($r->id * 73) % 100) - 50) / 10000;
+                $lat = $centroid[0] + $jitterLat;
+                $lng = $centroid[1] + $jitterLng;
+            }
             return [
                 'id'         => $r->id,
-                'lat'        => $centroid[0] + $jitterLat,
-                'lng'        => $centroid[1] + $jitterLng,
+                'lat'        => $lat,
+                'lng'        => $lng,
+                'precise'    => $usedGeocoded, // frontend peut afficher un signal visuel
                 'first_name' => $r->first_name,
                 'name'       => $r->name,
                 'full_name'  => trim(($r->first_name ?? '') . ' ' . ($r->name ?? '')),
