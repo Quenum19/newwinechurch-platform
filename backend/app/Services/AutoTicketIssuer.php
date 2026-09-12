@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\EventTicketType;
 use App\Models\MembershipRequest;
+use App\Services\QrPayloadService;
 use App\Services\TicketCodeGenerator;
 use Illuminate\Support\Facades\Log;
 
@@ -32,6 +33,7 @@ class AutoTicketIssuer
     public function __construct(
         private TicketIssuer $issuer,
         private TicketCodeGenerator $codes,
+        private QrPayloadService $qrService,
     ) {}
 
     /**
@@ -89,7 +91,11 @@ class AutoTicketIssuer
         $ticketNumber = $this->codes->newTicketNumber();
         $shortCode    = $this->codes->newShortCode();
         $accessTok    = $this->codes->newAccessToken();
-        $qrPayload    = json_encode(['e' => $event->id, 't' => $accessTok, 'v' => 1]);
+
+        // ⚠ QR : DOIT être le HMAC signé (QrPayloadService::sign) sinon le
+        // scanner ne peut pas décoder → "code invalide" à l'entrée. Un JSON
+        // brut {e:X,t:Y,v:1} ne matche ni la signature HMAC ni un short_code.
+        $qrPayload = $this->qrService->sign($ticketNumber, $event->id);
 
         $ticket = EventTicket::create([
             'event_id'             => $event->id,
