@@ -67,7 +67,7 @@ class EventAttendanceController extends Controller
             ->where('event_id', $eventId)
             ->where('status', 'used')
             ->whereNotNull('used_at')
-            ->with(['ticketType:id,name,name_en,color', 'usedBy:id,name,first_name']);
+            ->with(['ticketType:id,name,name_en,color_hex', 'usedBy:id,name,first_name']);
 
         if ($sinceMinutes > 0) {
             $query->where('used_at', '>=', now()->subMinutes($sinceMinutes));
