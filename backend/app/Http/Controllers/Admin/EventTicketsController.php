@@ -276,11 +276,28 @@ class EventTicketsController extends Controller
         if ($decoded) {
             $ticket = EventTicket::where('ticket_number', $decoded['ticket_number'])->first();
         } else {
-            // 2. Fallback : recherche directe par short_code ou ticket_number
-            $upper = strtoupper($code);
-            $ticket = EventTicket::where('short_code', $upper)
-                ->orWhere('ticket_number', $code)
-                ->first();
+            // 2. Format JSON legacy (bug AutoTicketIssuer Festi Grill '26) :
+            //    QR contient {"e":14,"t":"ACCESS_TOKEN","v":1}. On résout via
+            //    access_token stocké en DB. Compat descendante pour les tickets
+            //    déjà imprimés avec l'ancien format.
+            $trimmed = trim($code);
+            if (str_starts_with($trimmed, '{')) {
+                try {
+                    $j = json_decode($trimmed, true);
+                    if (isset($j['t']) && is_string($j['t'])) {
+                        $ticket = EventTicket::where('access_token', $j['t'])->first();
+                    }
+                } catch (\Throwable $e) {
+                    // ignore, tombe sur le fallback short_code
+                }
+            }
+            if (! $ticket) {
+                // 3. Fallback : recherche directe par short_code ou ticket_number
+                $upper = strtoupper($code);
+                $ticket = EventTicket::where('short_code', $upper)
+                    ->orWhere('ticket_number', $code)
+                    ->first();
+            }
         }
 
         if (! $ticket) {
