@@ -351,6 +351,7 @@ export default function EventTicketsDashboard() {
             <option value="">Tous</option>
             <option value="confirmed">Confirmés</option>
             <option value="used">Entrés</option>
+            <option value="unscanned">Non scannés (no-shows)</option>
             <option value="cancelled">Annulés</option>
             <option value="waitlist">Liste d'attente</option>
           </select>

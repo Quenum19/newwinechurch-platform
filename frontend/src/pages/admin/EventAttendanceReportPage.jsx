@@ -16,13 +16,13 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Users, UserCheck, UserX, Percent, Clock, Download,
-  TrendingUp, AlertTriangle, ArrowRight, BarChart3,
+  TrendingUp, AlertTriangle, ArrowRight, BarChart3, FileSpreadsheet, FileText,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 
-import { fetchAttendanceReport } from '@/api/attendance.js'
+import { fetchAttendanceReport, exportReportXlsx, exportReportPdf } from '@/api/attendance.js'
 
 export default function EventAttendanceReportPage() {
   const { t, i18n } = useTranslation()
@@ -32,6 +32,9 @@ export default function EventAttendanceReportPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  // Section active dans la table + choix export : 'no_shows' | 'arrived' | 'all'
+  const [section, setSection] = useState('no_shows')
+  const [exporting, setExporting] = useState(null) // 'xlsx' | 'pdf' | null
 
   const load = async () => {
     try {
@@ -58,6 +61,29 @@ export default function EventAttendanceReportPage() {
   const event = report?.event ?? {}
   const kpi   = report?.kpi ?? {}
   const noShows = report?.no_shows ?? []
+
+  // Table dynamique : selon la section choisie via KPI cards.
+  // Le rapport n'expose actuellement que les no-shows détaillés → pour
+  // 'arrived' et 'all' l'user utilise l'export PDF/Excel.
+  const tableRows = section === 'no_shows' ? noShows : []
+  const sectionMeta = {
+    no_shows: { title: 'Absents (no-shows)', icon: <UserX size={12}/>, count: kpi.no_shows_count ?? 0 },
+    arrived:  { title: 'Présents (scannés)', icon: <UserCheck size={12}/>, count: kpi.total_arrived ?? 0 },
+    all:      { title: 'Attendus (total)',   icon: <Users size={12}/>, count: kpi.total_expected ?? 0 },
+  }[section]
+
+  const handleExport = async (kind) => {
+    try {
+      setExporting(kind)
+      if (kind === 'xlsx') await exportReportXlsx(eventId, section)
+      else await exportReportPdf(eventId, section)
+      toast.success(kind === 'xlsx' ? 'Export Excel téléchargé.' : 'Export PDF téléchargé.')
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Export échoué.')
+    } finally {
+      setExporting(null)
+    }
+  }
 
   const chartData = useMemo(() => {
     const b = report?.buckets_15m
@@ -161,24 +187,30 @@ export default function EventAttendanceReportPage() {
         </button>
       </header>
 
-      {/* ── KPI cards ── */}
+      {/* ── KPI cards (cliquables : filtrent la table + choix export) ── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KpiCard
           icon={<Users size={14} />}
           label={t('attendance.report.kpi.expected', 'Attendus')}
           value={kpi.total_expected ?? 0}
+          active={section === 'all'}
+          onClick={() => setSection('all')}
         />
         <KpiCard
           icon={<UserCheck size={14} />}
           label={t('attendance.report.kpi.arrived', 'Présents')}
           value={kpi.total_arrived ?? 0}
           accent
+          active={section === 'arrived'}
+          onClick={() => setSection('arrived')}
         />
         <KpiCard
           icon={<UserX size={14} />}
           label={t('attendance.report.kpi.noShows', 'No-shows')}
           value={kpi.no_shows_count ?? 0}
           danger
+          active={section === 'no_shows'}
+          onClick={() => setSection('no_shows')}
         />
         <KpiCard
           icon={<Percent size={14} />}
@@ -245,29 +277,51 @@ export default function EventAttendanceReportPage() {
         </section>
       )}
 
-      {/* ── Table no-shows ── */}
+      {/* ── Table dynamique selon section KPI cliquée + boutons exports ── */}
       <section className="adm-card overflow-hidden">
         <div className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2 border-b" style={{ borderColor: 'var(--adm-border)' }}>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--adm-accent)] inline-flex items-center gap-1">
-              <UserX size={12} /> {t('attendance.report.noShows.title', 'Absents (no-shows)')}
+              {sectionMeta.icon} {sectionMeta.title}
             </p>
             <p className="text-xs text-zinc-500 mt-0.5">
-              {t('attendance.report.noShows.count', '{{n}} personne(s) attendue(s) mais non venue(s)', {
-                n: noShows.length,
-              })}
+              {sectionMeta.count} personne(s)
+              {section !== 'no_shows' && ' · liste détaillée disponible via les exports ↓'}
             </p>
           </div>
-          <button
-            onClick={exportNoShowsCsv}
-            disabled={!noShows.length}
-            className="adm-btn adm-btn-ghost inline-flex items-center gap-1.5"
-          >
-            <Download size={14} /> {t('attendance.report.exportCsv', 'Export CSV')}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleExport('xlsx')}
+              disabled={exporting !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-[#15803D] text-white text-sm font-semibold hover:bg-[#0f5f2c] transition disabled:opacity-50"
+            >
+              <FileSpreadsheet size={14}/> Excel
+            </button>
+            <button
+              onClick={() => handleExport('pdf')}
+              disabled={exporting !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-[#8B1A2F] text-white text-sm font-semibold hover:bg-[#6b1523] transition disabled:opacity-50"
+            >
+              <FileText size={14}/> PDF
+            </button>
+            {section === 'no_shows' && (
+              <button
+                onClick={exportNoShowsCsv}
+                disabled={!noShows.length}
+                className="adm-btn adm-btn-ghost inline-flex items-center gap-1.5"
+              >
+                <Download size={14} /> CSV
+              </button>
+            )}
+          </div>
         </div>
 
-        {noShows.length === 0 ? (
+        {section !== 'no_shows' ? (
+          <div className="p-8 text-center text-zinc-500 text-sm">
+            <p className="mb-2">Liste des <strong>{sectionMeta.title.toLowerCase()}</strong> disponible dans les exports Excel et PDF.</p>
+            <p className="text-xs text-zinc-400">Bascule sur "No-shows" pour voir la liste détaillée à l'écran.</p>
+          </div>
+        ) : tableRows.length === 0 ? (
           <div className="p-12 text-center text-zinc-500 text-sm">
             {t('attendance.report.noShows.empty', 'Aucun no-show — 100% de présence 🎉')}
           </div>
@@ -285,7 +339,7 @@ export default function EventAttendanceReportPage() {
                 </tr>
               </thead>
               <tbody>
-                {noShows.map((r, i) => (
+                {tableRows.map((r, i) => (
                   <tr key={r.id} className={`border-b ${i % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}`} style={{ borderColor: 'var(--adm-border)' }}>
                     <td className="p-3 text-center font-bold text-[color:var(--adm-accent)] tabular-nums">{i + 1}</td>
                     <td className="p-3 font-semibold" style={{ color: 'var(--adm-text)' }}>{r.full_name}</td>
@@ -322,22 +376,31 @@ export default function EventAttendanceReportPage() {
 
 // ─── Sous-composants ───
 
-function KpiCard({ icon, label, value, accent = false, danger = false }) {
-  const ring = accent
+function KpiCard({ icon, label, value, accent = false, danger = false, active = false, onClick = null }) {
+  const baseRing = accent
     ? 'ring-2 ring-[color:var(--adm-accent)]/30'
     : danger
       ? 'ring-2 ring-red-300/60'
       : ''
+  const activeRing = active
+    ? (accent ? 'ring-2 ring-[color:var(--adm-accent)] shadow-lg'
+      : danger ? 'ring-2 ring-red-500 shadow-lg'
+      : 'ring-2 ring-zinc-500 shadow-lg')
+    : ''
   const color = accent ? 'text-[color:var(--adm-accent)]' : danger ? 'text-red-700' : ''
+  const Cmp = onClick ? 'button' : 'div'
   return (
-    <div className={`adm-card p-3 sm:p-4 ${ring}`}>
+    <Cmp
+      onClick={onClick}
+      className={`adm-card p-3 sm:p-4 text-left transition ${activeRing || baseRing} ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
+    >
       <p className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--adm-accent)] mb-1 inline-flex items-center gap-1">
         {icon} {label}
       </p>
       <p className={`text-2xl sm:text-3xl font-bold tabular-nums leading-none ${color}`} style={{ color: (accent || danger) ? undefined : 'var(--adm-text)' }}>
         {value}
       </p>
-    </div>
+    </Cmp>
   )
 }
 

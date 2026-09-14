@@ -700,7 +700,9 @@ Route::middleware(['auth:sanctum'])
     // PDF supports de table imprimables
     Route::get   ('/events/{id}/bal/table-supports',        [\App\Http\Controllers\Admin\BalSupportsController::class, 'tableSupportsPdf'])->whereNumber('id');
     Route::get   ('/events/{id}/bal/vote-qr-pdf',           [\App\Http\Controllers\Admin\BalSupportsController::class, 'voteQrPdf'])->whereNumber('id');
-    Route::get ('/events/{id}/attendance/report',         [AdminEventAttendanceController::class, 'report'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/report',              [AdminEventAttendanceController::class, 'report'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/report/export/xlsx',  [AdminEventAttendanceController::class, 'reportExportXlsx'])->whereNumber('id');
+    Route::get ('/events/{id}/attendance/report/export/pdf',   [AdminEventAttendanceController::class, 'reportExportPdf'])->whereNumber('id');
 
     // Types de tickets (Phase 2)
     Route::get   ('/events/{eventId}/ticket-types',        [AdminEventTicketTypesController::class, 'index'])->whereNumber('eventId');

@@ -356,6 +356,114 @@ class EventAttendanceController extends Controller
         ]);
     }
 
+    /**
+     * Rassemble les data + section filtrée pour les exports rapport.
+     * Section : 'no_shows' (défaut) | 'arrived' | 'all'.
+     */
+    private function buildReportData(int $eventId, string $section = 'no_shows'): array
+    {
+        $event = Event::findOrFail($eventId);
+        if ($event->starts_at && $event->starts_at->isFuture()) {
+            abort(409, "Le rapport n'est disponible qu'après le début de l'événement.");
+        }
+
+        $allSold = EventTicket::where('event_id', $eventId)
+            ->whereIn('status', ['confirmed', 'used'])
+            ->with(['ticketType:id,name'])
+            ->get();
+
+        $arrived = $allSold->where('status', 'used')->whereNotNull('used_at')
+            ->sortBy('used_at')->values();
+        $noShows = $allSold->where('status', 'confirmed')
+            ->sortBy(fn ($t) => mb_strtolower(($t->last_name ?? '') . ' ' . ($t->first_name ?? '')))
+            ->values();
+
+        $rows = match ($section) {
+            'arrived'  => $arrived,
+            'all'      => $allSold->sortBy(fn ($t) => mb_strtolower(($t->last_name ?? '') . ' ' . ($t->first_name ?? '')))->values(),
+            default    => $noShows,
+        };
+
+        $kpi = [
+            'total_expected' => $allSold->count(),
+            'total_arrived'  => $arrived->count(),
+            'no_shows_count' => $noShows->count(),
+            'taux_presence'  => $allSold->count() > 0
+                ? round($arrived->count() / $allSold->count() * 100, 1) : 0.0,
+        ];
+
+        $sectionLabels = [
+            'no_shows' => 'Absents (no-shows)',
+            'arrived'  => 'Présents (scannés)',
+            'all'      => 'Attendus (total)',
+        ];
+
+        return [
+            'event'         => $event,
+            'kpi'           => $kpi,
+            'rows'          => $rows,
+            'section'       => $section,
+            'section_label' => $sectionLabels[$section] ?? 'Rapport',
+        ];
+    }
+
+    /**
+     * Export Excel du rapport de présence (section paramétrable).
+     * URL : /admin/events/{id}/attendance/report/export/xlsx?section=no_shows|arrived|all
+     */
+    public function reportExportXlsx(Request $request, int $eventId): BinaryFileResponse
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorize($request, $event);
+        $section = $request->query('section', 'no_shows');
+        $data = $this->buildReportData($eventId, $section);
+
+        $suffix = match ($section) {
+            'arrived'  => '-presents',
+            'all'      => '-attendus',
+            default    => '-absents',
+        };
+        $filename = 'rapport-presence-' . Str::slug($event->title) . $suffix
+            . '-' . now()->format('Ymd-Hi') . '.xlsx';
+        return Excel::download(new \App\Exports\AttendanceReportExport($data), $filename);
+    }
+
+    /**
+     * Export PDF du rapport de présence — design pro logo + marges A4 normales.
+     * URL : /admin/events/{id}/attendance/report/export/pdf?section=no_shows|arrived|all
+     */
+    public function reportExportPdf(Request $request, int $eventId): Response
+    {
+        $event = Event::findOrFail($eventId);
+        $this->authorize($request, $event);
+        $section = $request->query('section', 'no_shows');
+        $data = $this->buildReportData($eventId, $section);
+
+        $logoPath = $this->resolveLogoPath();
+        $logoDataUri = null;
+        if ($logoPath) {
+            $ext = strtolower(pathinfo($logoPath, PATHINFO_EXTENSION));
+            $mime = $ext === 'svg' ? 'image/svg+xml'
+                : ($ext === 'jpg' || $ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+            $logoDataUri = 'data:' . $mime . ';base64,' . base64_encode(@file_get_contents($logoPath));
+        }
+
+        $suffix = match ($section) {
+            'arrived'  => '-presents',
+            'all'      => '-attendus',
+            default    => '-absents',
+        };
+        $filename = 'rapport-presence-' . Str::slug($event->title) . $suffix
+            . '-' . now()->format('Ymd-Hi') . '.pdf';
+
+        $pdf = Pdf::loadView('pdfs.attendance-report', array_merge($data, [
+            'logoDataUri' => $logoDataUri,
+            'generatedAt' => now(),
+        ]))->setPaper('a4', 'portrait');
+
+        return $pdf->stream($filename);
+    }
+
     // ─────────────────────────────────────────────────────────────
 
     private function mapTicket(EventTicket $t): array

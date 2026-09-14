@@ -24,22 +24,53 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
  */
 class EventTicketsExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithEvents, WithTitle
 {
-    public function __construct(protected Event $event) {}
+    // Compteur séquentiel pour la 1re colonne (1, 2, 3… au lieu de l'id DB).
+    private int $rowCounter = 0;
+
+    /**
+     * @param array $filters ['status' => 'confirmed|used|cancelled|unscanned|null',
+     *                        'search' => '…']
+     */
+    public function __construct(
+        protected Event $event,
+        protected array $filters = [],
+    ) {}
 
     public function title(): string { return 'Inscrits — ' . mb_substr($this->event->title, 0, 25); }
 
     public function collection()
     {
-        return $this->event->tickets()
-            ->with(['usedBy:id,name,first_name', 'ticketType:id,name,price_fcfa'])
-            ->orderByDesc('created_at')
-            ->get();
+        $query = $this->event->tickets()
+            ->with(['usedBy:id,name,first_name', 'ticketType:id,name,price_fcfa']);
+
+        // Filtre statut — support "unscanned" virtuel = confirmed + used_at IS NULL
+        $status = $this->filters['status'] ?? null;
+        if ($status === 'unscanned') {
+            $query->where('status', 'confirmed')->whereNull('used_at');
+        } elseif ($status) {
+            $query->where('status', $status);
+        }
+
+        if (! empty($this->filters['search'])) {
+            $search = trim($this->filters['search']);
+            $query->where(function ($q) use ($search) {
+                $q->where('email', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('order_code', $search)
+                  ->orWhere('short_code', strtoupper($search))
+                  ->orWhere('ticket_number', $search);
+            });
+        }
+
+        return $query->orderByDesc('created_at')->get();
     }
 
     public function headings(): array
     {
         return [
-            'ID', 'N° Commande', 'N° Ticket', 'Code Court',
+            'N°', 'N° Commande', 'N° Ticket', 'Code Court',
             'Prénom', 'Nom', 'Email', 'Téléphone',
             'Type', 'Prix (FCFA)', 'Statut', 'Paiement',
             'Scanné le', 'Scanné par', 'Inscrit le',
@@ -64,7 +95,7 @@ class EventTicketsExport implements FromCollection, WithHeadings, WithMapping, S
         ];
 
         return [
-            $t->id,
+            ++$this->rowCounter, // N° séquentiel 1, 2, 3…
             $t->order_code,
             $t->ticket_number,
             $t->short_code,

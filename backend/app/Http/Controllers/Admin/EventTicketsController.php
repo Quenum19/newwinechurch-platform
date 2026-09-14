@@ -106,9 +106,28 @@ class EventTicketsController extends Controller
 
         $query = $event->tickets()->with('usedBy:id,name,first_name');
 
-        if ($status = $request->query('status')) {
+        $this->applyListFilters($query, $request);
+        $query->orderByDesc('created_at');
+
+        return EventTicketResource::collection($query->paginate($perPage));
+    }
+
+    /**
+     * Applique les filtres query communs (status/search) à une query builder
+     * de tickets. Extrait pour être réutilisé par index() ET export() —
+     * sans ça l'export ignorait le dropdown STATUT du frontend.
+     *
+     * Le statut "unscanned" est virtuel : confirmed + used_at IS NULL.
+     */
+    private function applyListFilters($query, Request $request): void
+    {
+        $status = $request->query('status');
+        if ($status === 'unscanned') {
+            $query->where('status', 'confirmed')->whereNull('used_at');
+        } elseif ($status) {
             $query->where('status', $status);
         }
+
         if ($search = trim((string) $request->query('search'))) {
             $query->where(function ($q) use ($search) {
                 $q->where('email', 'like', "%{$search}%")
@@ -120,10 +139,6 @@ class EventTicketsController extends Controller
                   ->orWhere('ticket_number', $search);
             });
         }
-
-        $query->orderByDesc('created_at');
-
-        return EventTicketResource::collection($query->paginate($perPage));
     }
 
     public function stats(Request $request, int $eventId): JsonResponse
@@ -405,12 +420,27 @@ class EventTicketsController extends Controller
         $event = Event::findOrFail($eventId);
         $this->authorizeManage($request, $event);
 
-        // Nom fichier : slugifié (accents, espaces, caractères spéciaux nettoyés)
+        // Passe les filtres UI au générateur pour que l'export corresponde
+        // exactement à la liste que l'user voit (dropdown STATUT + recherche).
+        $filters = [
+            'status' => $request->query('status'),
+            'search' => $request->query('search'),
+        ];
+
+        // Suffixe fichier reflète le filtre pour éviter la confusion (ex: -non-scannes)
+        $suffixMap = [
+            'confirmed' => '-confirmes',
+            'used'      => '-entres',
+            'cancelled' => '-annules',
+            'unscanned' => '-non-scannes',
+        ];
+        $suffix = $suffixMap[$filters['status']] ?? '';
+
         $safeTitle = \Illuminate\Support\Str::slug($event->title, '-') ?: 'event';
-        $filename  = "inscrits-{$safeTitle}-" . now()->format('Y-m-d_His') . '.xlsx';
+        $filename  = "inscrits-{$safeTitle}{$suffix}-" . now()->format('Y-m-d_His') . '.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\EventTicketsExport($event),
+            new \App\Exports\EventTicketsExport($event, $filters),
             $filename,
         );
     }

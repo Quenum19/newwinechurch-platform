@@ -101,3 +101,19 @@ export function exportAttendanceBackupPdf(eventId) {
     `presence-backup-${eventId}.pdf`,
   )
 }
+
+// === Exports rapport post-event (section paramétrable) ===
+
+export function exportReportXlsx(eventId, section = 'no_shows') {
+  return downloadBlob(
+    `/admin/events/${eventId}/attendance/report/export/xlsx?section=${encodeURIComponent(section)}`,
+    `rapport-${eventId}-${section}.xlsx`,
+  )
+}
+
+export function exportReportPdf(eventId, section = 'no_shows') {
+  return downloadBlob(
+    `/admin/events/${eventId}/attendance/report/export/pdf?section=${encodeURIComponent(section)}`,
+    `rapport-${eventId}-${section}.pdf`,
+  )
+}
