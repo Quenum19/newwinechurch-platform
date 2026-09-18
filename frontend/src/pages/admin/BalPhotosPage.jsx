@@ -64,15 +64,16 @@ export default function BalPhotosPage() {
   return (
     <div className="space-y-5 max-w-5xl">
       <div>
-        <Link to={`/admin/bal/${eventId}/regie`} className="text-xs font-mono uppercase tracking-widest text-[color:var(--adm-accent)] hover:underline inline-flex items-center gap-1">
-          <ArrowLeft size={13}/> Retour régie
+        <Link to={`/admin/events/${eventId}/hub`} className="text-xs font-mono uppercase tracking-widest text-[color:var(--adm-accent)] hover:underline inline-flex items-center gap-1">
+          <ArrowLeft size={13}/> Retour à l'événement
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold mt-1" style={{ color: 'var(--adm-text)' }}>
           <Camera size={22} className="inline mr-2 text-[color:var(--adm-accent)]"/>
-          Photos ambiance
+          Photos de l'événement
         </h1>
         <p className="text-sm text-zinc-500 mt-1">
-          {visibleCount} photo{visibleCount > 1 ? 's' : ''} visible{visibleCount > 1 ? 's' : ''} à l'écran (sur {photos.length}).
+          {visibleCount} photo{visibleCount > 1 ? 's' : ''} visible{visibleCount > 1 ? 's' : ''} sur la galerie publique (sur {photos.length}).
+          Le cadre de l'événement est appliqué automatiquement à chaque format.
         </p>
       </div>
 
