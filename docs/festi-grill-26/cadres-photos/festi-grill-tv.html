@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Festi Grill '26 — cadre tv 1920×1080</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@800;900&family=Kaushan+Script&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; overflow: hidden; }
+  body { width: 1920px; height: 1080px; position: relative; font-family: 'Inter', sans-serif; }
+
+  .strip {
+    position: absolute; top: 0; bottom: 0; left: 0;
+    width: 20px;
+    background: #F2A623;
+    border-right: 5px solid #6E1420;
+  }
+
+  .vtext {
+    position: absolute;
+    white-space: nowrap;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+  }
+  .vtext .star { margin: 0 0.6em; letter-spacing: 0; }
+
+  .logo {
+    position: absolute;
+    top: 60px; right: 17px;
+    width: 213px; height: auto;
+    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+  }
+
+  .title {
+    position: absolute;
+    left: 111px; bottom: 98px;
+    display: flex; flex-direction: column; align-items: flex-start;
+  }
+  .festi {
+    font-family: 'Kaushan Script', cursive;
+    font-size: 85px;
+    line-height: 1;
+    color: #FFFFFF;
+    margin-left: 17px;
+    margin-bottom: -12px;
+    transform: rotate(-4deg);
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.55);
+    position: relative; z-index: 3;
+  }
+  .grill {
+    font-family: 'Anton', 'Impact', sans-serif;
+    font-size: 162px;
+    line-height: 1.02;
+    color: #1E1413;
+    background: #F2A623;
+    padding: 5px 29px 0;
+    box-shadow: 12px 12px 0 #6E1420;
+    transform: rotate(-2deg);
+    position: relative; z-index: 2;
+  }
+  .date {
+    font-weight: 900;
+    font-size: 29px;
+    letter-spacing: 0.3em;
+    color: #7A1B2A;
+    background: #FFFFFF;
+    padding: 14px 22px 12px 24px;
+    margin-top: 7px;
+    transform: rotate(-2deg);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    position: relative; z-index: 1;
+  }
+</style>
+</head>
+<body>
+  <div class="strip"></div>
+
+  <div class="vtext" id="vtext">New Wine Church<span class="star">✦</span>Festi Grill'26<span class="star">✦</span>12 Septembre 2026</div>
+
+  <img class="logo" src="../../../frontend/public/logos/logo_newwine.png" alt="New Wine Church">
+
+  <div class="title">
+    <div class="festi">Festi</div>
+    <div class="grill">GRILL'26</div>
+    <div class="date">12 SEPTEMBRE 2026</div>
+  </div>
+
+<script>
+  // Ajuste la taille du texte vertical pour tenir dans la hauteur, puis le
+  // centre sur (cx, cy) avant rotation.
+  document.fonts.ready.then(() => {
+    const el = document.getElementById('vtext');
+    let fs = 22;
+    while (el.offsetWidth > 800 && fs > 10) { fs--; el.style.fontSize = fs + 'px'; }
+    el.style.left = (74 - el.offsetWidth / 2) + 'px';
+    el.style.top  = (470 - el.offsetHeight / 2) + 'px';
+    document.body.dataset.ready = '1';
+  });
+</script>
+</body>
+</html>

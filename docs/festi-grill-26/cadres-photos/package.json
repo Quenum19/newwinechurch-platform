@@ -1,0 +1,13 @@
+{
+  "name": "festi-grill-26-cadres-photos",
+  "private": true,
+  "description": "Génère les 4 PNG de cadre photo Festi Grill '26 (templates HTML rendus par Playwright).",
+  "type": "module",
+  "scripts": {
+    "build": "php generate-frames-html.php && node rasterize.mjs",
+    "install-browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

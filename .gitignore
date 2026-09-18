@@ -70,3 +70,10 @@ pnpm-debug.log*
 
 # === Claude Code ===
 .claude/
+
+# === Docs : données personnelles (participants, téléphones, e-mails) ===
+# Ne JAMAIS commiter : listes de présence, exports billetterie, photos de fiches.
+docs/_prive/
+
+# === Docs : outillage local (génération des cadres photo, etc.) ===
+docs/**/node_modules/
