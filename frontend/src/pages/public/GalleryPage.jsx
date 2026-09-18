@@ -630,7 +630,7 @@ function Lightbox({ items, index, onClose, onNavigate }) {
                 key={selectedFormat}
                 src={
                   item.event?.has_brand_frames
-                    ? `${API_BASE}/media/${item.id}/preview?format=${selectedFormat}`
+                    ? `${API_BASE}/media/${item.id}/preview?format=${selectedFormat}&v=${item.event.frames_version ?? ''}`
                     : item.file_path
                 }
                 onLoadStart={() => setImgLoading(true)}
@@ -818,7 +818,7 @@ function DownloadCurrent({ item, format }) {
   const effectiveFormat = hasBrand ? format : 'original'
   return (
     <a
-      href={`${API_BASE}/media/${item.id}/download?format=${effectiveFormat}`}
+      href={`${API_BASE}/media/${item.id}/download?format=${effectiveFormat}${hasBrand ? `&v=${item.event.frames_version ?? ''}` : ''}`}
       onClick={(e) => e.stopPropagation()}
       className="inline-flex items-center gap-2 px-3 py-2 rounded bg-public-flame text-public-bone hover:bg-public-bone hover:text-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
       aria-label={t('gallery.downloadFile', 'Télécharger')}

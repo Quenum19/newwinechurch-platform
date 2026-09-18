@@ -125,6 +125,28 @@ class BalPhotoComposer
         return substr(sha1(implode('|', $parts)), 0, 12);
     }
 
+    /**
+     * Version courte du rendu d'un event (algo + cadres + date des fichiers cadre).
+     * Ajoutée en paramètre ?v= aux URLs de preview/téléchargement : elle change
+     * dès qu'on modifie un cadre ou l'algorithme, ce qui empêche le CDN Hostinger
+     * de resservir une ancienne image (les URLs sont mises en cache 1 h).
+     */
+    public static function framesVersion(Event $event): string
+    {
+        static $memo = [];
+        $frames = is_array($event->brand_frames) ? $event->brand_frames : [];
+        $key = $event->id . '|' . json_encode($frames);
+        if (isset($memo[$key])) return $memo[$key];
+
+        $parts = [self::ALGO_VERSION, json_encode($frames)];
+        foreach ($frames as $file) {
+            if (is_string($file) && ! str_contains($file, '..')) {
+                $parts[] = (string) @filemtime(base_path('resources/' . ltrim($file, '/')));
+            }
+        }
+        return $memo[$key] = substr(sha1(implode('|', $parts)), 0, 8);
+    }
+
     // === API rétrocompatibles (utilisées par BalPhoto/upload existant) ===
     public function composeTvPublic(string $sourcePath, Event $event): ?string
     {

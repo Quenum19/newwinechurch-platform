@@ -65,6 +65,9 @@ class EventGalleryController extends Controller
                     ]),
                     'caption'    => $p->caption,
                     'created_at' => $p->created_at?->toIso8601String(),
+                    // À ajouter en ?v= à l'URL de téléchargement : change à chaque
+                    // recomposition, ce qui évite que le CDN serve l'ancien fichier.
+                    'version'    => $p->updated_at?->timestamp,
                 ];
             })
             ->values();

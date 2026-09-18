@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Http\Resources\Concerns\FormatsStorageUrls;
+use App\Services\BalPhotoComposer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -46,6 +47,10 @@ class MediaGalleryResource extends JsonResource
                 // Un event sans brand_frames configurés ne peut PAS produire
                 // de version brandée — les autres options seraient trompeuses.
                 'has_brand_frames' => ! empty($this->event->brand_frames),
+                // À ajouter en ?v= aux URLs preview/download (anti-cache CDN).
+                'frames_version' => ! empty($this->event->brand_frames)
+                    ? BalPhotoComposer::framesVersion($this->event)
+                    : null,
             ] : null),
 
             'department' => $this->whenLoaded('department', fn () => $this->department ? [

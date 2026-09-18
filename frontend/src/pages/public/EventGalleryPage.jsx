@@ -189,7 +189,7 @@ export default function EventGalleryPage() {
                 return (
                   <a
                     key={format}
-                    href={`${import.meta.env.VITE_API_URL || '/api'}/public/events/${eventId}/gallery/${active.id}/download?format=${format}`}
+                    href={`${import.meta.env.VITE_API_URL || '/api'}/public/events/${eventId}/gallery/${active.id}/download?format=${format}&v=${active.version ?? ''}`}
                     className="inline-flex items-center gap-2 px-4 py-2 border border-public-bone/40 hover:border-public-flame hover:bg-public-flame hover:text-white text-sm font-mono uppercase tracking-widest transition"
                     title={meta.hint}
                   >
