@@ -20,7 +20,8 @@ use Intervention\Image\ImageManager;
  *   tv        : 1920×1080 (cover) — écran live 16:9 + partage général
  *   landscape : 1350× 900 (cover) — publication Facebook
  *   square    : 1080×1080 (cover) — Instagram feed
- *   story     : 1080×1920 (blur-bg) — Story IG/TikTok, photo entière visible
+ *   story     : 1080×1920 — Story IG/TikTok : plein cadre si photo portrait,
+ *               sinon photo entière sur fond flouté
  *
  * === Modes ===
  *   COVER   : photo remplit toute la surface
@@ -54,29 +55,39 @@ class BalPhotoComposer
     }
 
     /**
+     * Part minimale de la photo conservée pour passer une story en plein cadre.
+     * 0.65 = on accepte de rogner jusqu'à 35 % de la largeur : une photo
+     * portrait 4:5 ou 3:4 remplit la story, une photo paysage garde le fond flouté
+     * (le plein cadre en couperait les deux tiers).
+     */
+    private const STORY_MIN_KEPT = 0.65;
+
+    /**
      * Compose un format donné (nouvelle API event-aware).
      *
-     * Mode adaptatif : si le ratio de la source et le ratio du format cible
-     * diffèrent de plus de 12%, on bascule automatiquement en blur-bg (photo
-     * entière visible + fond flouté) au lieu de cover qui couperait le sujet.
-     * Exemple : photo 4:3 (1.33) demandée en TV 16:9 (1.78) → 34% de diff →
-     * bascule blur-bg → têtes et pieds préservés.
+     * Mode adaptatif :
+     *  - tv / paysage / carré : si le ratio de la source et celui du format
+     *    diffèrent de plus de 12 %, bascule en blur-bg (photo entière visible +
+     *    fond flouté) au lieu de cover qui couperait le sujet.
+     *    Exemple : photo 4:3 (1.33) en TV 16:9 (1.78) → 34 % → blur-bg.
+     *  - story : blur-bg par défaut, mais plein cadre (cover) dès que la photo
+     *    est assez verticale (voir STORY_MIN_KEPT).
      */
     public function composeFormat(string $sourcePath, string $format, ?Event $event = null): ?string
     {
         if (! isset(self::FORMATS[$format])) return null;
         [$w, $h, $defaultFrame, $mode] = self::FORMATS[$format];
 
-        // Adaptatif uniquement pour les formats COVER (le story est déjà blur-bg).
-        if ($mode === self::MODE_COVER) {
-            $dim = @getimagesize($sourcePath);
-            if ($dim && $dim[0] > 0 && $dim[1] > 0) {
-                $sourceRatio = $dim[0] / $dim[1];
-                $targetRatio = $w / $h;
-                $diff = abs($sourceRatio - $targetRatio) / $targetRatio;
-                if ($diff > 0.12) {
+        $dim = @getimagesize($sourcePath);
+        if ($dim && $dim[0] > 0 && $dim[1] > 0) {
+            $sourceRatio = $dim[0] / $dim[1];
+            $targetRatio = $w / $h;
+            if ($mode === self::MODE_COVER) {
+                if (abs($sourceRatio - $targetRatio) / $targetRatio > 0.12) {
                     $mode = self::MODE_BLUR_BG;
                 }
+            } elseif (min($sourceRatio, $targetRatio) / max($sourceRatio, $targetRatio) >= self::STORY_MIN_KEPT) {
+                $mode = self::MODE_COVER;
             }
         }
 
@@ -89,7 +100,7 @@ class BalPhotoComposer
      * logique (cover→adaptatif, auto-pick refactor…) — invalide tous les
      * caches disque existants en un coup.
      */
-    private const ALGO_VERSION = 'v2-adaptive';
+    private const ALGO_VERSION = 'v3-flou-visible-story-plein-cadre';
 
     /**
      * Fingerprint pour la clé de cache disque : dépend du fichier source
@@ -160,7 +171,9 @@ class BalPhotoComposer
         try {
             if ($mode === self::MODE_BLUR_BG) {
                 $canvas = $this->manager->decodePath($sourcePath)->cover($w, $h)->blur(35);
-                $photo  = $this->manager->decodePath($sourcePath)->contain($w, $h);
+                // scale() et non contain() : depuis Intervention 4, contain() renvoie
+                // une image de $w×$h complétée de BLANC, qui recouvrait tout le fond flouté.
+                $photo  = $this->manager->decodePath($sourcePath)->scale($w, $h);
                 $x = intval(($w - $photo->width()) / 2);
                 $y = intval(($h - $photo->height()) / 2);
                 $canvas->insert($photo, $x, $y);
