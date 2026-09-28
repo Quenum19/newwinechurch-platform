@@ -56,11 +56,12 @@ export default function EventForm() {
       // Modules — inscription mono-étape (ticket direct au submit)
       auto_issue_ticket: event.modules_enabled?.auto_issue_ticket ?? false,
       default_ticket_type_id: event.modules_enabled?.default_ticket_type_id ?? '',
+      download_window_days: event.modules_enabled?.download_window_days ?? '',
     } : {
       type: 'culte', is_published: true, registration_required: false, is_online: false,
       ticketing_enabled: false, tickets_per_email_max: 3, allow_waitlist: true, require_selfie: false,
       payment_mode: 'declarative',
-      auto_issue_ticket: false, default_ticket_type_id: '',
+      auto_issue_ticket: false, default_ticket_type_id: '', download_window_days: '',
     },
   })
 
@@ -99,7 +100,7 @@ export default function EventForm() {
   const onSubmit = (data) => {
     const fd = new FormData()
     // Clés du form qui doivent être groupées sous modules_enabled[...] pour Laravel
-    const moduleKeys = new Set(['auto_issue_ticket', 'default_ticket_type_id'])
+    const moduleKeys = new Set(['auto_issue_ticket', 'default_ticket_type_id', 'download_window_days'])
 
     Object.entries(data).forEach(([k, v]) => {
       if (v === null || v === undefined || v === '') return
@@ -276,6 +277,27 @@ export default function EventForm() {
                 </Field>
               </div>
             )}
+          </div>
+
+          {/* ===== Galerie photos ===== */}
+          <div className="adm-card p-4 sm:p-6 space-y-4">
+            <h2>Galerie photos</h2>
+            <Field label="Téléchargement possible pendant (jours)">
+              <input
+                type="number"
+                min="1"
+                max="3650"
+                placeholder="15 (par défaut)"
+                {...register('download_window_days')}
+                className="adm-input"
+              />
+            </Field>
+            <p className="text-xs" style={{ color: 'var(--adm-text-muted)' }}>
+              Délai compté à partir de la mise en ligne de chaque photo, et non de
+              la date de l'événement. Passé ce délai, les photos restent visibles
+              sur le site mais ne sont plus téléchargeables. Laisser vide applique
+              le délai par défaut de 15 jours.
+            </p>
           </div>
 
           {/* ===== Billetterie (Phase 1) ===== */}

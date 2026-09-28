@@ -52,6 +52,8 @@ class UpdateEventRequest extends FormRequest
             'modules_enabled.auto_issue_ticket'        => ['nullable', 'boolean'],
             'modules_enabled.default_ticket_type_id'   => ['nullable', 'integer'],
             'modules_enabled.address_capture'          => ['nullable', 'boolean'],
+            // Durée de téléchargement des photos de l'event, en jours. Vide = défaut.
+            'modules_enabled.download_window_days'     => ['nullable', 'integer', 'min:1', 'max:3650'],
             'modules_enabled.cross_check_previous_event_id' => ['nullable', 'integer'],
         ];
     }

@@ -38,13 +38,26 @@ class MediaGallery extends Model
      * Fenêtre de téléchargement public, en jours à partir de la MISE EN LIGNE
      * du média (created_at) — et non de la date de l'événement. Passé ce délai
      * la photo reste visible sur le site, mais n'est plus téléchargeable.
+     *
+     * Valeur par défaut, surchargeable par événement depuis l'admin
+     * (modules_enabled.download_window_days).
      */
     public const DOWNLOAD_WINDOW_DAYS = 15;
+
+    /** Durée retenue pour ce média : réglage de son événement, sinon défaut. */
+    public function downloadWindowDays(): int
+    {
+        $days = $this->event?->modules_enabled['download_window_days'] ?? null;
+
+        return (is_numeric($days) && (int) $days > 0)
+            ? (int) $days
+            : self::DOWNLOAD_WINDOW_DAYS;
+    }
 
     /** Date de fermeture des téléchargements pour ce média. */
     public function downloadUntil(): ?\Illuminate\Support\Carbon
     {
-        return $this->created_at?->copy()->addDays(self::DOWNLOAD_WINDOW_DAYS);
+        return $this->created_at?->copy()->addDays($this->downloadWindowDays());
     }
 
     public function isDownloadable(): bool
@@ -53,10 +66,14 @@ class MediaGallery extends Model
         return $until === null || $until->isFuture();
     }
 
-    /** Limite une requête aux médias encore téléchargeables. */
-    public function scopeDownloadable(Builder $q): Builder
+    /**
+     * Limite une requête aux médias encore téléchargeables.
+     * $days permet de passer la durée de l'événement concerné ; sans argument,
+     * la durée par défaut s'applique.
+     */
+    public function scopeDownloadable(Builder $q, ?int $days = null): Builder
     {
-        return $q->where('created_at', '>', now()->subDays(self::DOWNLOAD_WINDOW_DAYS));
+        return $q->where('created_at', '>', now()->subDays($days ?: self::DOWNLOAD_WINDOW_DAYS));
     }
 
     public function event(): BelongsTo

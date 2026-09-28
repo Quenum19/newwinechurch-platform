@@ -50,7 +50,7 @@ class MediaGalleryController extends Controller
         $query = MediaGallery::query()
             // brand_frames indispensable pour que MediaGalleryResource puisse
             // exposer has_brand_frames au frontend (sans ça, toujours false).
-            ->with(['event:id,title,slug,brand_frames', 'department:id,name,slug'])
+            ->with(['event:id,title,slug,brand_frames,modules_enabled', 'department:id,name,slug'])
             ->where('is_published', true);
 
         // Tri : aléatoire si ?random=1, sinon par défaut tri par date desc.
@@ -148,10 +148,14 @@ class MediaGalleryController extends Controller
 
         // Injecte l'event pré-chargé sur chaque média pour éviter le SELECT
         // dans la boucle ZIP + pour que $m->event soit dispo dans buildZipResponse.
+        // Durée réglée sur l'event (admin), sinon durée par défaut.
+        $windowDays = (int) ($event->modules_enabled['download_window_days'] ?? 0)
+            ?: MediaGallery::DOWNLOAD_WINDOW_DAYS;
+
         $medias = MediaGallery::where('event_id', $event->id)
             ->where('is_published', true)
             ->where('file_type', 'image')
-            ->downloadable()
+            ->downloadable($windowDays)
             ->orderBy('id')
             ->limit(300)
             ->get()
@@ -189,13 +193,16 @@ class MediaGalleryController extends Controller
             abort(422, 'Aucun média sélectionné.');
         }
 
+        // La sélection peut mélanger plusieurs events, chacun avec sa propre
+        // durée : on filtre média par média une fois les events chargés.
         $medias = MediaGallery::whereIn('id', $ids)
             ->where('is_published', true)
             ->where('file_type', 'image')
-            ->downloadable()
-            ->with('event:id,slug,brand_frames')
+            ->with('event:id,slug,brand_frames,modules_enabled')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->filter(fn (MediaGallery $m) => $m->isDownloadable())
+            ->values();
 
         if ($medias->isEmpty()) {
             abort(410, 'Les téléchargements de ces photos sont clos (' . MediaGallery::DOWNLOAD_WINDOW_DAYS . ' jours après leur mise en ligne).');
