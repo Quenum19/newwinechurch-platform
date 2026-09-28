@@ -151,13 +151,14 @@ class MediaGalleryController extends Controller
         $medias = MediaGallery::where('event_id', $event->id)
             ->where('is_published', true)
             ->where('file_type', 'image')
+            ->downloadable()
             ->orderBy('id')
             ->limit(300)
             ->get()
             ->each(fn ($m) => $m->setRelation('event', $event));
 
         if ($medias->isEmpty()) {
-            abort(404, 'Aucune photo à télécharger.');
+            abort(410, 'Les téléchargements de cet événement sont clos (' . MediaGallery::DOWNLOAD_WINDOW_DAYS . ' jours après la mise en ligne des photos).');
         }
 
         return $this->buildZipResponse($medias, $format, "nwc-{$event->slug}-photos.zip", $cache);
@@ -191,12 +192,13 @@ class MediaGalleryController extends Controller
         $medias = MediaGallery::whereIn('id', $ids)
             ->where('is_published', true)
             ->where('file_type', 'image')
+            ->downloadable()
             ->with('event:id,slug,brand_frames')
             ->orderBy('id')
             ->get();
 
         if ($medias->isEmpty()) {
-            abort(404, 'Aucune photo à télécharger.');
+            abort(410, 'Les téléchargements de ces photos sont clos (' . MediaGallery::DOWNLOAD_WINDOW_DAYS . ' jours après leur mise en ligne).');
         }
 
         return $this->buildZipResponse($medias, $format, 'nwc-selection.zip', $cache);
@@ -252,6 +254,12 @@ class MediaGalleryController extends Controller
     private function serve(Request $request, int $id, GalleryDownloadCache $cache, bool $attachment): Response|StreamedResponse
     {
         $media = MediaGallery::where('is_published', true)->findOrFail($id);
+
+        // Téléchargement limité à 15 jours après la mise en ligne. L'aperçu
+        // (attachment = false) reste ouvert : la photo demeure visible sur le site.
+        if ($attachment && ! $media->isDownloadable()) {
+            abort(410, 'Les téléchargements de cette photo sont clos (' . MediaGallery::DOWNLOAD_WINDOW_DAYS . ' jours après sa mise en ligne).');
+        }
 
         $path = $media->file_path;
         if (! $path || ! Storage::disk('public')->exists($path)) {

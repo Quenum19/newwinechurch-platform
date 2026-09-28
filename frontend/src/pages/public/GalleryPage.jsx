@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive, Check, CheckSquare, ChevronDown } from 'lucide-react'
+import { Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Play, Calendar, Building2, Download, Archive, Check, CheckSquare, ChevronDown, Clock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { publicDepartments, publicEvents, publicMedia } from '@/api/public'
@@ -38,6 +38,13 @@ const DOWNLOAD_FORMATS = [
   { key: 'landscape', label: 'Paysage 3:2', hint: 'Facebook / partage' },
   { key: 'tv',        label: 'TV 16:9',     hint: 'Écran / bannière' },
 ]
+
+/** Date de fin de téléchargement, en toutes lettres (ex : 3 octobre 2026). */
+function formatDeadline(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+}
 
 export default function GalleryPage() {
   const { t } = useTranslation()
@@ -93,6 +100,14 @@ export default function GalleryPage() {
   const items = data?.data ?? []
   const meta = data?.meta ?? null
   const totalPages = meta?.last_page ?? 1
+
+  // Fenêtre de téléchargement : ouverte tant qu'au moins une photo de la page
+  // l'est encore. On annonce l'échéance la plus proche.
+  const openPhotos = items.filter((m) => m.file_type === 'image' && m.downloadable !== false)
+  const nextDeadline = openPhotos
+    .map((m) => m.download_until)
+    .filter(Boolean)
+    .sort()[0] ?? null
 
   // Reset page quand un filtre change.
   useEffect(() => { setPage(1) }, [filter, deptSlug, eventSlug])
@@ -230,14 +245,31 @@ export default function GalleryPage() {
             "wtf 0 photos"). Rate-limité côté serveur (throttle:3,1). */}
         {activeEvent && (meta?.total ?? 0) > 0 && (
           <div className="mt-6">
-            <a
-              href={`${API_BASE}/events/${activeEvent.slug}/gallery-zip?format=auto`}
-              className="inline-flex items-center gap-2 px-4 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
-              title={t('gallery.zipHint', 'Télécharger toutes les photos avec le cadre événement')}
-            >
-              <Archive size={14}/>
-              {t('gallery.downloadAllZip', 'Télécharger toutes les photos (.zip)')}
-            </a>
+            {openPhotos.length > 0 ? (
+              <>
+                <a
+                  href={`${API_BASE}/events/${activeEvent.slug}/gallery-zip?format=auto`}
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
+                  title={t('gallery.zipHint', 'Télécharger toutes les photos avec le cadre événement')}
+                >
+                  <Archive size={14}/>
+                  {t('gallery.downloadAllZip', 'Télécharger toutes les photos (.zip)')}
+                </a>
+                {nextDeadline && (
+                  <p className="mt-2 flex items-center gap-1.5 tag-mono text-public-ink/50">
+                    <Clock size={12}/>
+                    {t('gallery.downloadUntil', 'Téléchargement possible jusqu\'au {{date}}', {
+                      date: formatDeadline(nextDeadline),
+                    })}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="flex items-center gap-1.5 tag-mono text-public-ink/50">
+                <Clock size={12}/>
+                {t('gallery.downloadEnded', 'Téléchargements clos. Les photos restent visibles ici.')}
+              </p>
+            )}
           </div>
         )}
       </header>
@@ -377,7 +409,8 @@ function FilterTab({ active, onClick, children }) {
 function MediaTile({ item, onClick, selected = false, onToggleSelect }) {
   const { t } = useTranslation()
   const isVideo = item.file_type === 'video'
-  const canSelect = !isVideo && typeof onToggleSelect === 'function'
+  // Photo hors délai de téléchargement → plus sélectionnable pour le ZIP.
+  const canSelect = !isVideo && item.downloadable !== false && typeof onToggleSelect === 'function'
   const videoRef = useAutoplayVideo({ threshold: 0.4 })
 
   return (
@@ -733,7 +766,8 @@ function FormatSelector({ item, value, onChange }) {
   const menuRef = useRef(null)
 
   const hasBrand = item.file_type === 'image' && item.event?.has_brand_frames
-  if (! hasBrand) return null
+  // Hors délai : plus de téléchargement, donc plus de choix de format.
+  if (! hasBrand || item.downloadable === false) return null
 
   const current = DOWNLOAD_FORMATS.find((f) => f.key === value) ?? DOWNLOAD_FORMATS[0]
 
@@ -816,6 +850,17 @@ function DownloadCurrent({ item, format }) {
   const { t } = useTranslation()
   const hasBrand = item.file_type === 'image' && item.event?.has_brand_frames
   const effectiveFormat = hasBrand ? format : 'original'
+
+  // Délai de téléchargement dépassé : on retire le bouton et on explique.
+  if (item.downloadable === false) {
+    return (
+      <span className="inline-flex items-center gap-2 px-3 py-2 rounded bg-public-bone/10 text-public-bone/60 font-mono text-[11px] uppercase tracking-widest">
+        <Clock size={14}/>
+        {t('gallery.downloadClosed', 'Téléchargement clos')}
+      </span>
+    )
+  }
+
   return (
     <a
       href={`${API_BASE}/media/${item.id}/download?format=${effectiveFormat}${hasBrand ? `&v=${item.event.frames_version ?? ''}` : ''}`}

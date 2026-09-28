@@ -34,6 +34,31 @@ class MediaGallery extends Model
         'sort_order'   => 'integer',
     ];
 
+    /**
+     * Fenêtre de téléchargement public, en jours à partir de la MISE EN LIGNE
+     * du média (created_at) — et non de la date de l'événement. Passé ce délai
+     * la photo reste visible sur le site, mais n'est plus téléchargeable.
+     */
+    public const DOWNLOAD_WINDOW_DAYS = 15;
+
+    /** Date de fermeture des téléchargements pour ce média. */
+    public function downloadUntil(): ?\Illuminate\Support\Carbon
+    {
+        return $this->created_at?->copy()->addDays(self::DOWNLOAD_WINDOW_DAYS);
+    }
+
+    public function isDownloadable(): bool
+    {
+        $until = $this->downloadUntil();
+        return $until === null || $until->isFuture();
+    }
+
+    /** Limite une requête aux médias encore téléchargeables. */
+    public function scopeDownloadable(Builder $q): Builder
+    {
+        return $q->where('created_at', '>', now()->subDays(self::DOWNLOAD_WINDOW_DAYS));
+    }
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);

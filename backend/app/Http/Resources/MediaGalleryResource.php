@@ -34,6 +34,10 @@ class MediaGalleryResource extends JsonResource
             'is_featured'   => (bool) $this->is_featured,
             'sort_order'    => (int) $this->sort_order,
             'created_at'    => $this->created_at?->toIso8601String(),
+            // Téléchargement ouvert 15 jours après la mise en ligne (cf. modèle).
+            // Passé ce délai la photo reste visible, mais plus téléchargeable.
+            'downloadable'   => $this->isDownloadable(),
+            'download_until' => $this->downloadUntil()?->toIso8601String(),
             // Compteur téléchargements — exposé uniquement quand withCount() a
             // été appelé (admin uniquement pour l'instant). Null côté public.
             'downloads_count' => $this->whenCounted('downloads'),
