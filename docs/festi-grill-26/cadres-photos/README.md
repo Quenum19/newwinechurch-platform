@@ -43,8 +43,8 @@ headless sous Windows ne gère plus la transparence via `--default-background-co
 1. Commit + push des PNG → déploiement automatique.
 2. Les téléchargements de la **médiathèque** prennent le nouveau cadre tout seuls
    (le cache est indexé sur la date du fichier cadre).
-3. Les photos de la **galerie de l'événement** sont pré-composées à l'envoi :
-   les régénérer sur le serveur avec
+3. Les photos de l'**écran live** (hub de l'événement → « Photos écran live »)
+   sont pré-composées à l'envoi : les régénérer sur le serveur avec
 
    ```bash
    cd ~/nwc_backend && php artisan gallery:recompose --event=festi-grill-26

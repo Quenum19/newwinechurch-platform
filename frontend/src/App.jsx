@@ -24,7 +24,6 @@ const PublicSeriesPage = lazy(() => import('./pages/public/SermonSeriesDetail.js
 import SermonDetail from './pages/public/SermonDetail.jsx'
 import EventsPage from './pages/public/EventsPage.jsx'
 import EventDetail from './pages/public/EventDetail.jsx'
-import EventGalleryPage from './pages/public/EventGalleryPage.jsx'
 import EventRegistrationPage from './pages/public/EventRegistrationPage.jsx'
 import EventChoicePage from './pages/public/EventChoicePage.jsx'
 import BlogPage from './pages/public/BlogPage.jsx'
@@ -198,7 +197,6 @@ export default function App() {
           <Route path="/messages/:slug"            element={<SermonDetail />} />
           <Route path="/evenements"          element={<EventsPage />} />
           <Route path="/evenements/:slug"    element={<EventDetail />} />
-          <Route path="/evenements/:slug/galerie" element={<EventGalleryPage />} />
           <Route path="/evenements/:slug/inscription" element={<EventRegistrationPage />} />
           <Route path="/evenements/:slug/choix"       element={<EventChoicePage />} />
           <Route path="/blog"                element={<BlogPage />} />

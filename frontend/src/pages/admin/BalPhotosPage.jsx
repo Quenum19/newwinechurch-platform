@@ -69,11 +69,11 @@ export default function BalPhotosPage() {
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold mt-1" style={{ color: 'var(--adm-text)' }}>
           <Camera size={22} className="inline mr-2 text-[color:var(--adm-accent)]"/>
-          Photos de l'événement
+          Photos écran live
         </h1>
         <p className="text-sm text-zinc-500 mt-1">
-          {visibleCount} photo{visibleCount > 1 ? 's' : ''} visible{visibleCount > 1 ? 's' : ''} sur la galerie publique (sur {photos.length}).
-          Le cadre de l'événement est appliqué automatiquement à chaque format.
+          {visibleCount} photo{visibleCount > 1 ? 's' : ''} affichée{visibleCount > 1 ? 's' : ''} à l'écran (sur {photos.length}).
+          Pour publier des photos sur le site, passe par la médiathèque en les rattachant à l'événement.
         </p>
       </div>
 

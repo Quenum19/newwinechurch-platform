@@ -91,9 +91,11 @@ function makeTabs(eventId) {
     },
     {
       key: 'gallery',
-      label: 'Galerie · Photos',
+      label: 'Photos écran live',
       icon: Camera,
-      visible: (ev) => modules(ev).media_gallery === true,
+      // Ces photos alimentent uniquement l'écran live : la galerie publique
+      // d'un event, c'est la médiathèque (/admin/media, rattachée à l'event).
+      visible: (ev) => modules(ev).live_screen === true,
       redirect: () => `/admin/bal/${eventId}/photos`,
     },
     {

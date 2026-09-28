@@ -106,24 +106,9 @@ export default function EventDetail() {
               </p>
             </div>
 
-            {/* Boutons "Voir la galerie" — 2 sources potentielles :
-                1. gallery_count → photos post-événement (BalPhoto générique,
-                   uploadées par les photographes le jour J, avec cadre event
-                   appliqué par le composer). Prioritaire car dédiée à l'event.
-                2. media_count → médiathèque générale du site. */}
+            {/* Galerie publique unique : la médiathèque du site, filtrée sur
+                l'event (photos + vidéos, cadre appliqué au téléchargement). */}
             <div className="mt-8 flex flex-wrap gap-3">
-              {event.gallery_count > 0 && (
-                <Link
-                  to={`/evenements/${event.slug}/galerie`}
-                  className="group inline-flex items-center gap-2 px-5 py-3 bg-public-flame text-public-bone hover:bg-public-ink transition font-mono text-xs uppercase tracking-widest font-semibold"
-                >
-                  <ImageIcon size={14} strokeWidth={2.2}/>
-                  {t('events.viewGallery', 'Voir la galerie')}
-                  <span className="px-2 py-0.5 bg-public-bone text-public-flame group-hover:bg-public-flame group-hover:text-public-bone transition">
-                    {event.gallery_count}
-                  </span>
-                </Link>
-              )}
               {event.media_count > 0 && (
                 <Link
                   to={`/galerie?event=${event.slug}`}
