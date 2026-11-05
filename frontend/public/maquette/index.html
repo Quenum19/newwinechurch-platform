@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="css/site.css?v=3">
+<link rel="stylesheet" href="css/site.css?v=4">
 </head>
 <body data-page="accueil">
 <!-- ═══════════ Intro : logo + compteur ═══════════ -->
@@ -151,6 +151,7 @@
       <span class="mono">Marc 2:22</span>
       <span>Le verset d'où vient notre nom : un enseignement nouveau pour des cœurs neufs.</span>
       <span class="manifesto-sign">Église fille de La Maison de la Destinée<br>Pasteur Georges Amoako-Prempeh</span>
+      <a class="link-arrow" href="eglise/" style="color:var(--ivoire)">Qui sommes-nous →</a>
     </div>
   </div>
 </section>
@@ -171,6 +172,8 @@
       <div class="fam-tabs" id="famTabs" role="tablist" aria-label="Familles de départements"></div>
       <ul class="dept-list" id="deptList" aria-live="polite"></ul>
     </div>
+
+    <div class="more-row" style="margin-top:28px"><a class="btn btn-ghost" href="communaute/">Voir les fiches des 35 départements</a></div>
 
     <aside class="quiz ilot" id="quiz" aria-labelledby="quizTitle">
       <div class="quiz-head">
@@ -208,7 +211,7 @@
         <div class="player-main">
           <p class="kicker">Dernier message</p>
           <h3 class="player-title">Un enseignement nouveau</h3>
-          <p class="player-meta">Pasteur Georges Amoako-Prempeh · Dim. 1er nov. 2026</p>
+          <p class="player-meta">Pasteur Georges Amoako-Prempeh · Dim. 1er nov. 2026 · <a class="linkbtn" href="messages/un-enseignement-nouveau/" style="color:var(--ivoire)">Ouvrir la page du message</a></p>
           <canvas class="wave" id="wave" height="90" aria-label="Barre de lecture, cliquer pour avancer"></canvas>
           <div class="player-time mono"><span id="tCur">00:00</span><span id="tDur">48:12</span></div>
           <div class="player-ctrls">
@@ -234,7 +237,7 @@
           <span class="tag mono">Académie de Fondation et Formation</span>
           <h3 class="h3">Les bases de la foi, en quelques semaines.</h3>
           <p>Pour les nouveaux comme pour ceux qui veulent consolider. Cours en petits groupes, questions bienvenues.</p>
-          <a class="link-arrow" href="#visite">Rejoindre la prochaine session →</a>
+          <a class="link-arrow" href="evenements/academie-session-janvier/">Rejoindre la prochaine session →</a>
         </div>
       </article>
 
@@ -243,7 +246,7 @@
         <img src="img/g-vibecast.webp" alt="Console de mixage et micro du Vibecast" loading="lazy">
         <div class="b-card-body">
           <span class="tag mono">Podcast</span>
-          <h3 class="h3">New Wine Vibecast</h3>
+          <h3 class="h3"><a href="communaute/new-wine-vibecast/">New Wine Vibecast</a></h3>
           <p>Le podcast fait par les jeunes de NWC. Foi, études, couple, ambition : on parle de tout.</p>
           <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         </div>
@@ -259,7 +262,7 @@
         </div>
         <div class="b-card-body">
           <span class="tag mono">Magazine</span>
-          <h3 class="h3">Lire le New Wine Mag</h3>
+          <h3 class="h3"><a href="blog/">Lire le New Wine Mag →</a></h3>
         </div>
       </article>
 
@@ -269,7 +272,7 @@
           <span class="tag mono">En semaine</span>
           <h3 class="h3">Une cellule près de chez toi</h3>
           <p>Petits groupes de maison dans tout Abidjan pour prier, partager et se porter les uns les autres.</p>
-          <a class="link-arrow" href="#visite">Trouver ma cellule →</a>
+          <a class="link-arrow" href="contact/">Trouver ma cellule →</a>
         </div>
         <img src="img/g-cellules.webp" alt="Des jeunes assis ensemble pendant une rencontre" loading="lazy">
       </article>
@@ -295,6 +298,7 @@
       <div class="live-ctas">
         <a class="btn btn-ivoire" href="https://www.youtube.com/@NewWineChurchMD" target="_blank" rel="noopener"><span class="btn-txt" data-txt="Ouvrir la chaîne YouTube">Ouvrir la chaîne YouTube</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg></span></a>
         <button class="btn btn-ghost" type="button" id="remindBtn" aria-pressed="false">M'envoyer un rappel 15 min avant</button>
+        <a class="btn btn-ghost" href="live/">Page du direct</a>
       </div>
     </div>
   </div>
@@ -350,7 +354,7 @@
     </div>
     <ol class="chapter-nav" id="chapterNav" aria-label="Chapitres"></ol>
     <div class="moments-progress" aria-hidden="true"><span id="momentsBar"></span></div>
-    <a class="btn btn-ghost moments-cta" href="#moments" id="mediathequeBtn">Toute la médiathèque · 487 médias</a>
+    <a class="btn btn-ghost moments-cta" href="galerie/" id="mediathequeBtn">Toute la médiathèque · 487 médias</a>
   </div>
 </section>
 
@@ -405,6 +409,7 @@
         </div>
       </article>
 
+      <a class="btn btn-bordeaux" href="donner/" style="justify-self:start">Ouvrir la page Donner</a>
       <form class="ref-form" id="refForm" novalidate>
         <label for="refInput">Tu as donné ? Colle ta référence pour recevoir ton reçu.</label>
         <div class="ref-row">
@@ -453,6 +458,7 @@
         <li><span class="label">Rythme</span>Le dimanche + une rencontre d'équipe par mois</li>
       </ul>
       <button class="btn btn-bordeaux btn-block" type="button" id="deptJoin">Je veux servir ici</button>
+      <a class="btn-text" id="deptMore" href="communaute/">Voir la fiche complète du département</a>
       <p class="drawer-hint">Ta demande arrive directement au gouverneur du département.</p>
     </div>
   </div>
@@ -462,10 +468,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/layout.js?v=3"></script>
-<script src="js/hero.js?v=3"></script>
-<script src="js/monts.js?v=3"></script>
-<script src="js/site.js?v=3"></script>
+<script src="js/layout.js?v=4"></script>
+<script src="js/hero.js?v=4"></script>
+<script src="js/monts.js?v=4"></script>
+<script src="js/site.js?v=4"></script>
 
 </body>
 </html>

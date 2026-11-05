@@ -116,10 +116,10 @@
   ];
   var EVTYPES = { culte: 'Culte', priere: 'Prière', evangelisation: 'Évangélisation', concert: 'Concert', formation: 'Formation', autre: 'Événement' };
   var PAST = [
-    { t: 'Festi Grill ’26', when: 'Sam. 12 sept. 2026', img: 't-fg-1', media: '77 photos' },
-    { t: 'A Dark Night in Elegance', when: 'Gala', img: 't-dn-1', media: '333 photos' },
-    { t: 'Saveurs Sunday · Vol. 1', when: 'Concours de cuisine', img: 't-sv-3', media: '33 photos' },
-    { t: 'Babi Giant Cypher · Vol. 1', when: 'Scène ouverte', img: 't-cy-1', media: '44 photos · 4 vidéos' }
+    { t: 'Festi Grill ’26', when: 'Sam. 12 sept. 2026', img: 't-fg-1', media: '77 photos', ev: 'festi-grill-26' },
+    { t: 'A Dark Night in Elegance', when: 'Gala', img: 't-dn-1', media: '333 photos', ev: 'a-dark-night-in-elegance' },
+    { t: 'Saveurs Sunday · Vol. 1', when: 'Concours de cuisine', img: 't-sv-3', media: '33 photos', ev: 'saveurs-sunday-vol-1' },
+    { t: 'Babi Giant Cypher · Vol. 1', when: 'Scène ouverte', img: 't-cy-1', media: '44 photos · 4 vidéos', ev: 'babi-giant-cypher-for-christ-vol-1' }
   ];
   var MONTS = [['ararat', 'Ararat', 'Le Gouvernement'], ['transfiguration', 'Transfiguration', 'L\'Art, le Sport, la Musique'], ['oliviers', 'Oliviers', 'L\'Économie'], ['carmel', 'Carmel', 'Le Média'], ['sinai', 'Sinaï', 'L\'Éducation'], ['hermon', 'Hermon', 'La Famille'], ['morijah', 'Morijah', 'La Religion']];
   var COMMUNES = ['Abobo', 'Adjamé', 'Anyama', 'Attécoubé', 'Bingerville', 'Cocody', 'Koumassi', 'Marcory', 'Plateau', 'Port-Bouët', 'Songon', 'Treichville', 'Yopougon'];
@@ -372,7 +372,7 @@
       $('#etypes').hidden = st.tab === 'passes';
       var box = $('#agendaBody');
       if (st.tab === 'passes') {
-        box.innerHTML = '<div class="pgrid">' + PAST.map(function (p) { return '<a class="pcard reveal" href="./#moments"><img src="img/' + p.img + '.webp" alt="" loading="lazy"><span class="mono">' + esc(p.when) + '</span><h3>' + esc(p.t) + '</h3><span class="link-arrow" style="color:var(--ivoire)">Revivre en photos · ' + esc(p.media) + ' →</span></a>'; }).join('') + '</div>';
+        box.innerHTML = '<div class="pgrid">' + PAST.map(function (p) { return '<a class="pcard reveal" href="galerie/?event=' + p.ev + '"><img src="img/' + p.img + '.webp" alt="" loading="lazy"><span class="mono">' + esc(p.when) + '</span><h3>' + esc(p.t) + '</h3><span class="link-arrow" style="color:var(--ivoire)">Revivre en photos · ' + esc(p.media) + ' →</span></a>'; }).join('') + '</div>';
         return;
       }
       var list = EVENTS.filter(function (e) { return evStart(e) >= NOW && (!st.type || e.type === st.type) && (st.tab !== 'billetterie' || e.mode === 'billet'); });
@@ -465,7 +465,7 @@
       '<button class="drawer-close" type="button" data-close aria-label="Fermer">' + I.close + '</button><div class="drawer-body">' + title + inner + '</div></div></div>';
   }
   function buyDrawer(e) {
-    var steps = ['Billets', 'Tes infos', e.types.every(function (t) { return t.p === 0; }) ? null : 'Paiement', 'Confirmation'].filter(Boolean);
+    var steps = ['Billets', 'Tes infos', e.types.every(function (t) { return t.p === 0; }) ? 'Confirmation' : 'Paiement'];
     return drawerShell('buyDrawer', '<p class="kicker kicker-dark">' + esc(e.t) + (e.vol ? ' · ' + esc(e.vol) : '') + '</p><h2 class="drawer-title" id="buyDrawerT">Obtenir mon ticket</h2>' +
       '<ol class="steps" id="bSteps">' + steps.map(function (s, i) { return '<li' + (i ? '' : ' class="is-on"') + '>' + s + '</li>'; }).join('') + '</ol>',
       // Étape 1 — billets
@@ -487,15 +487,8 @@
       (e.selfie ? '<div class="field"><label for="bSelfie">Ton selfie <small>(obligatoire pour ce gala, 5 Mo max)</small></label><input id="bSelfie" type="file" accept="image/jpeg,image/png,image/webp"><p class="field-err" hidden>Ajoute un selfie (jpg, png ou webp, 5 Mo maximum).</p></div>' : '') +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:.94rem"><input type="checkbox" id="bWa" checked style="margin-top:4px">Recevoir aussi mon billet sur WhatsApp</label>' +
       '<button class="btn btn-bordeaux btn-block" type="submit" id="bNext2">Continuer</button><button class="btn-text" type="button" data-back="1">Modifier mes billets</button></form>' +
-      // Étape 3 — paiement Mobile Money déclaratif
-      '<div data-step="3" hidden style="display:grid;gap:12px"><div class="paybox"><span class="status s-wait">Commande <b class="mono" id="bCode">NWC-8F3K2Q</b> réservée</span>' +
-      '<p style="margin:0">Tu as <b id="bTimer">24 h 00 min</b> pour payer. Passé ce délai, les places sont remises en vente.</p><div class="total" style="border:0;padding:0"><span>Montant à envoyer</span><b id="bAmount">0 FCFA</b></div></div>' +
-      '<fieldset class="field"><legend>Paie avec</legend><div class="paygrid">' + OPS.map(function (o, i) { return '<label class="payopt" style="--op:' + o.c + '"><input type="radio" name="bOp" value="' + o.id + '"' + (i ? '' : ' checked') + '><span><i' + (o.dark ? ' style="color:var(--encre)"' : '') + '>' + o.short + '</i>' + o.n + '</span></label>'; }).join('') + '</div></fieldset>' +
-      '<div class="paybox" id="bOpBox"></div>' +
-      '<div class="field"><label for="bRef">Référence de la transaction</label><input id="bRef" class="mono" placeholder="Ex. CI241128.1432.A12345" autocomplete="off"><p class="field-err" hidden>Colle la référence reçue par SMS (4 à 80 caractères).</p></div>' +
-      '<div class="field"><label for="bProof">Capture du reçu <small>(facultatif, 5 Mo max)</small></label><input id="bProof" type="file" accept="image/*"></div>' +
-      '<button class="btn btn-bordeaux btn-block" type="button" id="bPay">J\'ai payé, envoyer ma référence</button><p class="drawer-hint">Paiement en ligne par carte (CinetPay) possible si l\'événement est configuré ainsi.</p></div>' +
-      // Étape 4 — confirmation
+      // Étape 3 (gratuit) — confirmation. Pour un billet payant, la commande est
+      // réservée 24 h et le paiement se fait sur la page « Ma commande ».
       '<div data-step="4" hidden style="display:grid;gap:14px" id="bDone"></div>');
   }
   function regDrawer(e) {
@@ -578,36 +571,16 @@
       var sf = $('#bSelfie');
       if (sf) bad = fieldErr(sf, !sf.files.length || sf.files[0].size > 5 * 1048576) || bad;
       if (bad) { var f = dr.querySelector('[aria-invalid="true"]'); if (f) f.focus(); return; }
-      if (free) { done(true); return; }
-      $('#bAmount').textContent = money(total());
-      drawOp(); go(3); timer();
+      if (free) { done(); return; }
+      // Billet payant : commande réservée 24 h → page « Ma commande » (paiement Mobile Money)
+      var p = new URLSearchParams({ e: e.slug, q: q.join('.'), m: $('#bEmail').value.trim(), n: $('#bFirst').value.trim() });
+      location.href = 'ma-commande/?' + p.toString();
     });
-    function drawOp() {
-      var id = (dr.querySelector('input[name="bOp"]:checked') || {}).value, o = OPS.filter(function (x) { return x.id === id; })[0] || OPS[0];
-      $('#bOpBox').innerHTML = '<div class="op-num"><span class="mono" data-copy-src>' + o.num + '</span><button class="copy" type="button" data-copy="' + o.raw + '">Copier</button></div><p style="margin:0">Bénéficiaire : <b>NEW WINE CHURCH</b></p><ol>' + o.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '<li>Colle la référence reçue par SMS ci-dessous</li></ol>';
-      var c = $('#bOpBox [data-copy]'); c.addEventListener('click', function () { N.copy(c); });
-    }
-    $$('input[name="bOp"]', dr).forEach(function (r) { r.addEventListener('change', drawOp); });
-    var tmr;
-    function timer() {
-      var end = Date.now() + 24 * 3600e3; clearInterval(tmr);
-      tmr = setInterval(function () { var s = Math.max(0, end - Date.now()); $('#bTimer').textContent = Math.floor(s / 3600e3) + ' h ' + N.pad(Math.floor(s / 60e3) % 60) + ' min ' + N.pad(Math.floor(s / 1e3) % 60) + ' s'; }, 1000);
-    }
-    $('#bPay').addEventListener('click', function () {
-      var r = $('#bRef'), v = r.value.trim();
-      if (fieldErr(r, v.length < 4 || v.length > 80)) { r.focus(); return; }
-      clearInterval(tmr); done(false);
-    });
-    function done(isFree) {
+    function done() {
       var email = $('#bEmail').value.trim(), lines = q.map(function (n, i) { return n ? '<li><span>' + n + ' × ' + esc(e.types[i].n) + '</span><b>' + money(n * e.types[i].p) + '</b></li>' : ''; }).join('');
-      $('#bDone').innerHTML = (isFree
-        ? '<div class="done-badge" aria-hidden="true">' + I.check + '</div><h3 class="drawer-title" style="font-size:2.2rem">C\'est fait !</h3><p class="drawer-lead">Tes billets ont été envoyés à <b>' + esc(email) + '</b>' + ($('#bWa').checked ? ' et sur WhatsApp' : '') + '. Montre le QR code à l\'entrée.</p>'
-        : '<span class="status s-wait" style="justify-self:start">Paiement en vérification</span><h3 class="drawer-title" style="font-size:2.2rem">Référence reçue</h3><p class="drawer-lead">L\'équipe Finance vérifie ton paiement, en général en moins d\'une heure. Tu recevras tes billets à <b>' + esc(email) + '</b>' + ($('#bWa').checked ? ' et sur WhatsApp' : '') + ' dès la validation.</p>') +
-        '<ul class="recap"><li><span>Commande</span><b class="mono">NWC-8F3K2Q</b></li>' + lines + '<li><span>Total</span><b>' + (total() ? money(total()) : 'Gratuit') + '</b></li></ul>' +
-        '<a class="btn btn-bordeaux btn-block" href="mon-ticket/">' + (isFree ? 'Voir mon ticket' : 'Voir un ticket validé (démo)') + '</a>' +
-        (isFree ? '' : '<button class="btn btn-ghost btn-block" type="button" id="bFollow" style="--fg:var(--modal-txt);border-color:var(--modal-line)">Suivre ma commande</button>') +
-        '<p class="drawer-hint">Sur le site final : page « Ma commande » avec actualisation automatique du statut.</p>';
-      var f = $('#bFollow'); if (f) f.addEventListener('click', function () { N.toast('Statut actuel : en vérification. La page se met à jour toute seule dès que la Finance valide.'); });
+      $('#bDone').innerHTML = '<div class="done-badge" aria-hidden="true">' + I.check + '</div><h3 class="drawer-title" style="font-size:2.2rem">C\'est fait !</h3><p class="drawer-lead">Tes billets ont été envoyés à <b>' + esc(email) + '</b>' + ($('#bWa').checked ? ' et sur WhatsApp' : '') + '. Montre le QR code à l\'entrée.</p>' +
+        '<ul class="recap"><li><span>Commande</span><b class="mono">NWC-8F3K2Q</b></li>' + lines + '<li><span>Total</span><b>Gratuit</b></li></ul>' +
+        '<a class="btn btn-bordeaux btn-block" href="mon-ticket/">Voir mon ticket</a>';
       go(4);
     }
   }
@@ -702,14 +675,36 @@
     window.NWC.toast('Fichier agenda téléchargé : ouvre-le pour ajouter l\'événement.');
   }
 
+  /* ═════════════ Outils et données partagés avec les vues externes (js/vues/*.js) ═════════════ */
+  var P = window.NWCP = {
+    esc: esc, d: d, fdate: fdate, ftime: ftime, dur: dur, money: money, num: num, qs: qs, I: I,
+    art: art, crumbs: crumbs, phero: phero, mcard: mcard, themeChip: themeChip, share: share, ics: ics,
+    drawerShell: drawerShell, fieldErr: fieldErr, reName: reName, reMail: reMail, rePhone: rePhone,
+    M: M, SERIES: SERIES, THEMES: THEMES, EVENTS: EVENTS, PAST: PAST, MONTS: MONTS, COMMUNES: COMMUNES, OPS: OPS,
+    LIEU: LIEU, ADR: ADR, EVTYPES: EVTYPES, evLink: evLink, erow: erow, evTags: evTags, capBar: capBar, thumb: thumb,
+    minPrice: minPrice, remaining: remaining, evStart: evStart, host: host, slug: slug, view: view,
+    // Accordéons (FAQ, confession de foi…) : bouton .faq-q relié à son panneau par aria-controls
+    faq: function (N) {
+      N.$$('.faq-q').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var open = b.getAttribute('aria-expanded') !== 'true';
+          b.setAttribute('aria-expanded', open ? 'true' : 'false');
+          document.getElementById(b.getAttribute('aria-controls')).hidden = !open;
+        });
+      });
+    }
+  };
+
   /* ═════════════ Lancement ═════════════ */
-  main.className = 'light';
+  // Les vues des autres pages s'enregistrent dans window.NWCV (fichiers chargés avant celui-ci)
+  var EXT = (window.NWCV || {})[view];
+  main.className = (EXT && EXT.mainClass) || 'light';
   var R = { messages: renderMessages, message: renderMessage, agenda: renderAgenda, event: renderEvent, ticket: renderTicket };
   var S = { messages: setupMessages, message: setupMessage, agenda: setupAgenda, event: setupEvent, ticket: setupTicket };
-  try { (R[view] || renderMessages)(); } catch (err) { console.warn('[NWC] rendu « ' + view + ' » :', err); }
+  try { if (EXT) EXT.render(P); else (R[view] || renderMessages)(); } catch (err) { console.warn('[NWC] rendu « ' + view + ' » :', err); }
   document.addEventListener('DOMContentLoaded', function () {
     var N = window.NWC;
     if (!N || !N.$) return;
-    try { (S[view] || function () {})(N); } catch (err) { console.warn('[NWC] interactions « ' + view + ' » :', err); }
+    try { if (EXT) { if (EXT.setup) EXT.setup(N, P); } else (S[view] || function () {})(N); } catch (err) { console.warn('[NWC] interactions « ' + view + ' » :', err); }
   });
 })();

@@ -132,6 +132,7 @@
       var D = Math.floor(diff / 86400e3), H = Math.floor(diff / 3600e3) % 24, M = Math.floor(diff / 60e3) % 60, S = Math.floor(diff / 1e3) % 60;
       var longDate = frDate(s.start, { weekday: 'long', day: 'numeric', month: 'long' });
       if (chip) chip.classList.toggle('is-live', s.live);
+      var lb = $('#liveBar'); if (lb) { lb.hidden = !s.live; document.body.classList.toggle('has-livebar', s.live); }
       if (live) live.classList.toggle('is-live', s.live);
       if (s.live) {
         put(next, 'En direct maintenant'); put(cd, 'Le culte a commencé à 13h00');
@@ -161,6 +162,7 @@
   /* ───────── Navigation ───────── */
   mod('navigation', function () {
     var nav = $('#nav'), links = $$('#navLinks a'), blob = $('#navBlob'), menu = $('#menu'), burger = $('#burger');
+    if (!nav) { NWC.closeMenu = function () {}; return; } // pages sans menu (compte, 404, Suivez-nous)
     var lastY = window.scrollY, menuOpen = false;
     function onScroll() {
       var y = window.scrollY;
@@ -461,6 +463,7 @@
     $('#deptDesc').textContent = d.d;
     $('#deptDo').textContent = d.fam.fait;
     $('#deptWho').textContent = d.fam.qui;
+    var more = $('#deptMore'); if (more) more.href = 'communaute/' + d.n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '/';
     openDrawer($('#deptDrawer'));
   }
   mod('departement', function () {
@@ -649,7 +652,6 @@
       if (first) apply(); else { chEl.classList.add('is-swapping'); setTimeout(apply, 260); }
     }
     setChapter(0);
-    $('#mediathequeBtn').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); NWC.toast('Dans le site final, ce bouton ouvre la médiathèque : 487 photos et vidéos, filtrables par événement.'); });
 
     if (reduced) return;
     var bar = $('#momentsBar'), inView = false, wz = ZMIN, mx = 0, my = 0, tmx = 0, tmy = 0;
@@ -694,6 +696,7 @@
   function closeLB() { var lb = $('#lightbox'); lb.hidden = true; lockScroll(false); if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true }); }
   mod('visionneuse', function () {
     var lb = $('#lightbox');
+    if (!lb) return;
     lb.addEventListener('click', function (e) { if (e.target === lb || e.target.closest('[data-close]')) closeLB(); });
     $('#lbPrev').addEventListener('click', function () { lbIdx = (lbIdx - 1 + LB.length) % LB.length; showLB(); });
     $('#lbNext').addEventListener('click', function () { lbIdx = (lbIdx + 1) % LB.length; showLB(); });
@@ -739,6 +742,7 @@
   /* ───────── Planifier sa visite ───────── */
   mod('formulaire-visite', function () {
     var drawer = $('#visitDrawer'), form = $('#visitForm'), sundays = $('#vSundays');
+    if (!drawer) return;
     function buildSundays() {
       sundays.innerHTML = '';
       var s = service(Date.now()).start;
@@ -783,6 +787,7 @@
   /* ───────── Lettre du dimanche ───────── */
   mod('newsletter', function () {
     var f = $('#newsForm'), i = $('#newsEmail');
+    if (!f) return;
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(i.value.trim())) { i.setAttribute('aria-invalid', 'true'); NWC.toast('Vérifie ton adresse e-mail : il manque sans doute un « @ » ou un domaine.'); i.focus(); return; }
@@ -796,6 +801,7 @@
   mod('curseur', function () {
     if (!fine || reduced) return;
     var c = $('#cursor'), lab = $('#cursorLabel'), x = -100, y = -100, cx = -100, cy = -100;
+    if (!c) return;
     if ($('#montsStage')) $('#montsStage').dataset.cursor = 'Explorer';
     window.addEventListener('pointermove', function (e) {
       x = e.clientX; y = e.clientY; c.classList.add('is-visible');
