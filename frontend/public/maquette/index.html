@@ -8,22 +8,29 @@
 <base href="/maquette/">
 <title>New Wine Church · Maquette de refonte</title>
 <meta name="description" content="New Wine Church, une armée de jeunes pour Christ. Église de jeunes adultes à Cocody-Bonoumin, Abidjan. Culte chaque dimanche à 13h.">
-<meta name="theme-color" content="#0D0406">
+<meta name="theme-color" content="#8B1A2F">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta property="og:title" content="New Wine Church · Maquette de refonte">
-<meta property="og:description" content="Proposition de nouveau site : Servir · Grandir · Impacter.">
+<meta property="og:description" content="Une armée de jeunes pour Christ. Culte chaque dimanche à 13h, Cocody-Bonoumin.">
 <meta property="og:image" content="https://newinechurch.org/maquette/img/cta-famille.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="css/site.css?v=4">
+<link rel="stylesheet" href="css/site.css?v=5">
+<link rel="stylesheet" href="css/pages.css?v=5">
+<link rel="stylesheet" href="css/vues.css?v=5">
+<link rel="preload" as="image" href="img/s/t-fg-1.webp">
 </head>
 <body data-page="accueil">
-<!-- ═══════════ Intro : logo + compteur ═══════════ -->
+<!--
+  Accueil allégé : chaque section résume une page du site et y renvoie.
+  Hero → Ce dimanche → Manifeste → Servir · Grandir · Impacter → 7 Monts
+  → À l'affiche → Moments → Donner → Rejoindre.
+-->
 <div class="loader" id="loader" aria-hidden="true">
   <div class="loader-fill" id="loaderFill"></div>
   <div class="loader-inner">
-    <img src="img/logo-nwc.png" alt="" width="120" height="120">
+    <img src="img/logo-nwc-240.png" alt="" width="112" height="112">
     <span class="loader-word">Sauvé pour sauver</span>
     <span class="loader-count mono" id="loaderCount">00</span>
   </div>
@@ -33,49 +40,35 @@
 
 <main id="top">
 
-<!-- ═══════════ HERO : l'armée de lumière (3D) ═══════════ -->
+<!-- ═══════════ Hero : l'armée de lumière ═══════════ -->
 <section class="hero" id="hero">
   <canvas class="hero-gl" id="heroGl" aria-hidden="true"></canvas>
   <div class="hero-fallback" aria-hidden="true"></div>
   <div class="hero-shade" aria-hidden="true"></div>
   <p class="hero-caption" aria-hidden="true"><span class="mono">Formation</span><strong id="heroCaptionTxt">Rassemblés autour de Christ</strong></p>
-
   <div class="hero-inner wrap">
     <p class="eyebrow hero-eyebrow"><span class="eyebrow-dot"></span>Église de jeunes adultes · Cocody-Bonoumin, Abidjan</p>
     <h1 class="hero-title display" aria-label="Une armée de jeunes pour Christ.">
       <span class="line"><span class="line-in">Une armée <span class="pill-photo" id="pillPhoto" aria-hidden="true">
-        <img src="img/t-fg-1.webp" alt="" class="is-on"><img src="img/t-cy-3.webp" alt=""><img src="img/t-sv-1.webp" alt=""><img src="img/t-dn-3.webp" alt="">
+        <img src="img/s/t-fg-1.webp" srcset="img/t/t-fg-1.webp 256w, img/s/t-fg-1.webp 576w" sizes="(max-width: 900px) 140px, 21vw" alt="" class="is-on"><img src="img/s/t-cy-3.webp" srcset="img/t/t-cy-3.webp 320w, img/s/t-cy-3.webp 720w" sizes="(max-width: 900px) 140px, 21vw" alt="" loading="lazy"><img src="img/s/t-sv-1.webp" srcset="img/t/t-sv-1.webp 320w, img/s/t-sv-1.webp 720w" sizes="(max-width: 900px) 140px, 21vw" alt="" loading="lazy"><img src="img/s/t-dn-3.webp" srcset="img/t/t-dn-3.webp 320w, img/s/t-dn-3.webp 720w" sizes="(max-width: 900px) 140px, 21vw" alt="" loading="lazy">
       </span></span></span>
       <span class="line"><span class="line-in">de jeunes</span></span>
       <span class="line"><span class="line-in"><em class="serif">pour Christ.</em></span></span>
     </h1>
     <div class="hero-bottom">
-      <p class="hero-lead">Chaque dimanche à 13h, des centaines de jeunes d'Abidjan se retrouvent pour adorer fort, ouvrir la Bible pour de vrai et repartir envoyés. <strong>Sauvé pour sauver.</strong></p>
+      <p class="hero-lead">Chaque dimanche à 13h, des jeunes de tout Abidjan se retrouvent pour adorer, apprendre et repartir envoyés. <strong>Sauvé pour sauver.</strong></p>
       <div class="hero-ctas">
         <button class="btn btn-ivoire magnetic" type="button" data-open-visit><span class="btn-txt" data-txt="Plan ta première visite">Plan ta première visite</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
-        <a class="btn btn-ghost" href="#grandir"><span class="play-disc" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>Écouter le dernier message</a>
+        <a class="btn btn-ghost" href="messages/un-enseignement-nouveau/"><span class="play-disc" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>Dernier message</a>
       </div>
     </div>
   </div>
-
   <div class="hero-strip">
     <div class="wrap hero-strip-grid">
-      <div class="strip-cell strip-next">
-        <span class="label">Prochain culte</span>
-        <strong id="nextService">Dimanche · 13h00</strong>
-        <span class="mono countdown" id="countdown" aria-live="off">— j — h — min</span>
-      </div>
-      <div class="strip-cell">
-        <span class="label">Où</span>
-        <strong>Cocody-Bonoumin</strong>
-        <span>près d'Abidjan Mall</span>
-      </div>
-      <div class="strip-cell">
-        <span class="label">En ligne</span>
-        <strong>YouTube · TikTok · Insta</strong>
-        <span>@NewWineChurchMD</span>
-      </div>
-      <a class="strip-scroll" href="#visite" aria-label="Défiler vers la suite"><span>Défiler</span><span class="scroll-line" aria-hidden="true"></span></a>
+      <div class="strip-cell strip-next"><span class="label">Prochain culte</span><strong id="nextService">Dimanche · 13h00</strong><span class="mono countdown" id="countdown">— j — h — min</span></div>
+      <div class="strip-cell"><span class="label">Où</span><strong>Cocody-Bonoumin</strong><span>près d'Abidjan Mall</span></div>
+      <div class="strip-cell"><span class="label">En ligne</span><strong>En direct chaque dimanche</strong><a class="strip-link" href="live/">Regarder le direct →</a></div>
+      <a class="strip-scroll" href="./#visite" aria-label="Défiler vers la suite"><span>Défiler</span><span class="scroll-line" aria-hidden="true"></span></a>
     </div>
   </div>
 </section>
@@ -90,54 +83,24 @@
   </div></div>
 </section>
 
-<!-- ═══════════ Ta première visite ═══════════ -->
-<section class="visit section light" id="visite">
-  <div class="wrap visit-grid">
-    <div class="visit-side">
-      <p class="kicker">Ta première visite</p>
-      <h2 class="h2 display">On t'attend,<br><em class="serif">sans chichis.</em></h2>
-      <p class="lead">Deux heures, une salle pleine de jeunes, une louange qui bouge et une Parole qui parle à ta vie. Voilà ce qui se passe, minute par minute.</p>
-      <div class="visit-frame" id="visitFrame">
-        <img src="img/v-arrive.webp" alt="Une jeune femme arrive souriante dans la cour de l'église" class="is-on" data-step="0">
-        <img src="img/v-adore.webp" alt="Des jeunes prient, mains ouvertes, pendant le culte" data-step="1">
-        <img src="img/g-message.webp" alt="Un prédicateur partage la Parole sur scène" data-step="2">
-        <img src="img/v-reste.webp" alt="Deux amies posent en riant après le culte" data-step="3">
-        <span class="visit-frame-tag mono" id="visitTag">12h45 · Arrivée</span>
+<!-- ═══════════ Ce dimanche ═══════════ -->
+<section class="sunday light" id="visite">
+  <div class="wrap">
+    <div class="sun-head">
+      <div><p class="kicker">Ta première visite</p><h2 class="h2 display">Ce dimanche,<br><em class="serif">viens comme tu es.</em></h2></div>
+      <div class="sun-side">
+        <p class="lead">Deux heures de louange, de Parole et de rencontres. Préviens-nous : l'équipe Accueil t'attend à l'entrée.</p>
+        <div class="row-btns">
+          <button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Je préviens que je viens">Je préviens que je viens</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+          <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&amp;query=Abidjan+Mall+Bonoumin+Cocody" target="_blank" rel="noopener">Itinéraire ↗</a>
+        </div>
       </div>
-      <ul class="chips">
-        <li>≈ 2 heures</li><li>Viens comme tu es</li><li>Parking sur place</li><li>Entrée libre</li>
-      </ul>
     </div>
-
-    <ol class="visit-steps">
-      <li class="vstep is-active" data-step="0">
-        <span class="vtime">12h45</span>
-        <h3 class="h3">Tu arrives</h3>
-        <p>L'équipe Parking &amp; Sécurité t'oriente, l'Accueil te reçoit à l'entrée et te trouve une place. Pas besoin de connaître qui que ce soit.</p>
-        <img class="vstep-img" src="img/v-arrive.webp" alt="" loading="lazy">
-      </li>
-      <li class="vstep" data-step="1">
-        <span class="vtime">13h00</span>
-        <h3 class="h3">On adore, fort</h3>
-        <p>Louange live avec le Chant, les Dancing Star et le Rap &amp; Musique Urbaine. Ça chante, ça danse, ça prie. Tu peux juste écouter, personne ne te mettra la pression.</p>
-        <img class="vstep-img" src="img/v-adore.webp" alt="" loading="lazy">
-      </li>
-      <li class="vstep" data-step="2">
-        <span class="vtime">13h45</span>
-        <h3 class="h3">La Parole</h3>
-        <p>Un message direct, ancré dans la Bible, pensé pour ta vie du lundi au samedi : études, boulot, relations, appel.</p>
-        <img class="vstep-img" src="img/g-message.webp" alt="" loading="lazy">
-      </li>
-      <li class="vstep" data-step="3">
-        <span class="vtime">15h00</span>
-        <h3 class="h3">On reste un peu</h3>
-        <p>Après le culte, on traîne, on se rencontre, on prend des nouvelles. C'est souvent là que les amitiés commencent.</p>
-        <img class="vstep-img" src="img/v-reste.webp" alt="" loading="lazy">
-      </li>
-      <li class="vstep-cta">
-        <button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Je préviens que je viens">Je préviens que je viens</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
-        <a class="link-arrow" href="https://www.google.com/maps/search/?api=1&amp;query=Abidjan+Mall+Bonoumin+Cocody" target="_blank" rel="noopener">Itinéraire vers Cocody-Bonoumin ↗</a>
-      </li>
+    <ol class="sun-steps">
+      <li class="reveal"><img src="img/s/v-arrive.webp" srcset="img/t/v-arrive.webp 320w, img/s/v-arrive.webp 720w" sizes="(max-width: 560px) 120px, (max-width: 1100px) 46vw, 330px" alt="Une jeune femme arrive souriante dans la cour de l'église" loading="lazy"><div><span class="sun-time">12h45</span><b>Tu arrives</b><p>Le Parking t'oriente, l'Accueil te trouve une place.</p></div></li>
+      <li class="reveal"><img src="img/s/v-adore.webp" srcset="img/t/v-adore.webp 320w, img/s/v-adore.webp 720w" sizes="(max-width: 560px) 120px, (max-width: 1100px) 46vw, 330px" alt="Des jeunes prient, mains ouvertes" loading="lazy"><div><span class="sun-time">13h00</span><b>On adore</b><p>Louange live : chant, danse, prière.</p></div></li>
+      <li class="reveal"><img src="img/s/g-message.webp" srcset="img/t/g-message.webp 320w, img/s/g-message.webp 720w" sizes="(max-width: 560px) 120px, (max-width: 1100px) 46vw, 330px" alt="Un prédicateur sur scène" loading="lazy"><div><span class="sun-time">13h45</span><b>La Parole</b><p>Un message clair pour ta semaine.</p></div></li>
+      <li class="reveal"><img src="img/s/v-reste.webp" srcset="img/t/v-reste.webp 320w, img/s/v-reste.webp 720w" sizes="(max-width: 560px) 120px, (max-width: 1100px) 46vw, 330px" alt="Deux amies rient après le culte" loading="lazy"><div><span class="sun-time">15h00</span><b>On reste</b><p>On se rencontre, on prend des nouvelles.</p></div></li>
     </ol>
   </div>
 </section>
@@ -146,294 +109,91 @@
 <section class="manifesto" id="manifeste">
   <div class="wrap">
     <p class="kicker">Pourquoi « New Wine » ?</p>
-    <p class="manifesto-text" id="manifestoText">New Wine, c'est une <mark>nouvelle génération</mark> de jeunes à qui l'on transmet un <mark>enseignement nouveau</mark>. Des cœurs neufs, prêts à recevoir la Parole et à la vivre pour de vrai. On apprend sérieusement. On adore fort. On sert avec nos talents, du micro au parking. Et on repart envoyés : <mark>sauvés pour sauver</mark>.</p>
+    <p class="manifesto-text" id="manifestoText">New Wine, c'est une <mark>nouvelle génération</mark> de jeunes à qui l'on transmet un <mark>enseignement nouveau</mark>. Des cœurs neufs, prêts à vivre la Parole pour de vrai, puis envoyés : <mark>sauvés pour sauver</mark>.</p>
     <div class="manifesto-foot">
       <span class="mono">Marc 2:22</span>
-      <span>Le verset d'où vient notre nom : un enseignement nouveau pour des cœurs neufs.</span>
-      <span class="manifesto-sign">Église fille de La Maison de la Destinée<br>Pasteur Georges Amoako-Prempeh</span>
-      <a class="link-arrow" href="eglise/" style="color:var(--ivoire)">Qui sommes-nous →</a>
+      <span>Le verset d'où vient notre nom.</span>
+      <a class="link-arrow manifesto-link" href="eglise/">Qui sommes-nous →</a>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ 1 · SERVIR ═══════════ -->
-<section class="serve section light" id="servir">
+<!-- ═══════════ Servir · Grandir · Impacter ═══════════ -->
+<section class="pillars-home light" id="servir">
   <div class="wrap">
-    <header class="pillar-head">
-      <span class="pillar-n" aria-hidden="true">1</span>
-      <div class="pillar-title">
-        <p class="kicker">Servir</p>
-        <h2 class="h2 display">35 départements.<br><em class="serif">Une place pour toi.</em></h2>
-      </div>
-      <p class="lead pillar-lead">Du micro au parking, de la caméra à la cuisine : à New Wine, personne ne reste spectateur. Choisis une famille et découvre les équipes.</p>
-    </header>
-
-    <div class="serve-grid">
-      <div class="fam-tabs" id="famTabs" role="tablist" aria-label="Familles de départements"></div>
-      <ul class="dept-list" id="deptList" aria-live="polite"></ul>
+    <div class="center-head"><p class="kicker">Notre vision</p><h2 class="h2 display">Servir. Grandir.<br><em class="serif">Impacter.</em></h2></div>
+    <div class="ph-grid">
+      <a class="ph-card reveal" href="communaute/"><img src="img/s/fam-arts.webp" alt="" loading="lazy"><span class="ph-n" aria-hidden="true">1</span><div class="ph-body"><h3 class="display">Servir</h3><p>35 départements, du micro au parking. Trouve l'équipe faite pour toi.</p><span class="link-arrow">Voir les départements →</span></div></a>
+      <a class="ph-card reveal" href="messages/"><img src="img/s/v-parole.webp" alt="" loading="lazy"><span class="ph-n" aria-hidden="true">2</span><div class="ph-body"><h3 class="display">Grandir</h3><p>Un message chaque dimanche, l'Académie de Fondation et les cellules de maison.</p><span class="link-arrow">Écouter les messages →</span></div></a>
+      <a class="ph-card reveal" href="./#monts"><img src="img/s/m-sinai.webp" alt="" loading="lazy"><span class="ph-n" aria-hidden="true">3</span><div class="ph-body"><h3 class="display">Impacter</h3><p>Sept monts, sept sphères de la société où nous sommes envoyés.</p><span class="link-arrow">Découvrir les 7 Monts →</span></div></a>
     </div>
-
-    <div class="more-row" style="margin-top:28px"><a class="btn btn-ghost" href="communaute/">Voir les fiches des 35 départements</a></div>
-
-    <aside class="quiz ilot" id="quiz" aria-labelledby="quizTitle">
-      <div class="quiz-head">
-        <p class="kicker">Pas sûr ?</p>
-        <h3 class="h3" id="quizTitle">Trouve ta place en 3 questions</h3>
-        <div class="quiz-bar" aria-hidden="true"><span id="quizBar"></span></div>
-      </div>
-      <div class="quiz-body" id="quizBody"></div>
-    </aside>
   </div>
-  <div class="dept-float" id="deptFloat" aria-hidden="true"><img id="deptFloatImg" src="img/fam-arts.webp" alt=""></div>
 </section>
 
-<!-- ═══════════ 2 · GRANDIR ═══════════ -->
-<section class="grow section sable" id="grandir">
+<!-- ═══════════ Les 7 Monts : la chaîne ═══════════ -->
+<section class="monts-home" id="monts">
   <div class="wrap">
-    <header class="pillar-head">
-      <span class="pillar-n" aria-hidden="true">2</span>
-      <div class="pillar-title">
-        <p class="kicker">Grandir</p>
-        <h2 class="h2 display">Grandir,<br><em class="serif">pour de vrai.</em></h2>
-      </div>
-      <p class="lead pillar-lead">Un message chaque dimanche, un podcast, un magazine, une académie et des cellules près de chez toi. La foi se construit toute la semaine.</p>
-    </header>
-
-    <div class="bento">
-      <!-- Lecteur du dernier message -->
-      <article class="b-player" id="player" aria-label="Dernier message">
-        <div class="series-art" aria-hidden="true">
-          <span class="series-ring"></span>
-          <span class="series-kicker mono">Série · Novembre 2026</span>
-          <span class="series-name display">Cœurs<br>neufs</span>
-          <span class="series-ref serif">Marc 2:18-22</span>
-        </div>
-        <div class="player-main">
-          <p class="kicker">Dernier message</p>
-          <h3 class="player-title">Un enseignement nouveau</h3>
-          <p class="player-meta">Pasteur Georges Amoako-Prempeh · Dim. 1er nov. 2026 · <a class="linkbtn" href="messages/un-enseignement-nouveau/" style="color:var(--ivoire)">Ouvrir la page du message</a></p>
-          <canvas class="wave" id="wave" height="90" aria-label="Barre de lecture, cliquer pour avancer"></canvas>
-          <div class="player-time mono"><span id="tCur">00:00</span><span id="tDur">48:12</span></div>
-          <div class="player-ctrls">
-            <button class="pbtn" type="button" id="pBack" aria-label="Reculer de 15 secondes"><svg viewBox="0 0 24 24"><path d="M11 5 4 12l7 7M20 12H5"/></svg><small>15</small></button>
-            <button class="pbtn pbtn-main" type="button" id="pPlay" aria-label="Lecture"><svg class="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="i-pause" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
-            <button class="pbtn" type="button" id="pFwd" aria-label="Avancer de 15 secondes"><small>15</small><svg viewBox="0 0 24 24"><path d="m13 5 7 7-7 7M4 12h15"/></svg></button>
-            <button class="pbtn pbtn-speed mono" type="button" id="pSpeed" aria-label="Vitesse de lecture">1×</button>
-          </div>
-          <ol class="chapters" id="chapters">
-            <li><button type="button" data-t="0"><span class="mono">00:00</span>Accueil et prière</button></li>
-            <li><button type="button" data-t="390"><span class="mono">06:30</span>Ce que Jésus enseigne de nouveau</button></li>
-            <li><button type="button" data-t="1185"><span class="mono">19:45</span>Ce qui doit changer en moi</button></li>
-            <li><button type="button" data-t="2050"><span class="mono">34:10</span>Sauvé pour sauver</button></li>
-            <li><button type="button" data-t="2640"><span class="mono">44:00</span>Appel et bénédiction</button></li>
-          </ol>
-        </div>
-      </article>
-
-      <!-- Académie -->
-      <article class="b-card b-academie">
-        <img src="img/v-parole.webp" alt="Un enseignant échange avec des jeunes pendant une session de formation" loading="lazy">
-        <div class="b-card-body">
-          <span class="tag mono">Académie de Fondation et Formation</span>
-          <h3 class="h3">Les bases de la foi, en quelques semaines.</h3>
-          <p>Pour les nouveaux comme pour ceux qui veulent consolider. Cours en petits groupes, questions bienvenues.</p>
-          <a class="link-arrow" href="evenements/academie-session-janvier/">Rejoindre la prochaine session →</a>
-        </div>
-      </article>
-
-      <!-- Vibecast -->
-      <article class="b-card b-vibecast">
-        <img src="img/g-vibecast.webp" alt="Console de mixage et micro du Vibecast" loading="lazy">
-        <div class="b-card-body">
-          <span class="tag mono">Podcast</span>
-          <h3 class="h3"><a href="communaute/new-wine-vibecast/">New Wine Vibecast</a></h3>
-          <p>Le podcast fait par les jeunes de NWC. Foi, études, couple, ambition : on parle de tout.</p>
-          <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        </div>
-      </article>
-
-      <!-- Magazine -->
-      <article class="b-card b-mag">
-        <div class="mag-cover">
-          <img src="img/g-mag.webp" alt="Portrait en noir et blanc d'un jeune homme, couverture du New Wine Mag" loading="lazy">
-          <span class="mag-mast display">New Wine<br>Mag</span>
-          <span class="mag-line serif">« Ma génération ne sera pas tiède. »</span>
-          <span class="mag-issue mono">Édition rentrée 2026</span>
-        </div>
-        <div class="b-card-body">
-          <span class="tag mono">Magazine</span>
-          <h3 class="h3"><a href="blog/">Lire le New Wine Mag →</a></h3>
-        </div>
-      </article>
-
-      <!-- Cellules -->
-      <article class="b-card b-cells ilot">
-        <div class="b-card-body">
-          <span class="tag mono">En semaine</span>
-          <h3 class="h3">Une cellule près de chez toi</h3>
-          <p>Petits groupes de maison dans tout Abidjan pour prier, partager et se porter les uns les autres.</p>
-          <a class="link-arrow" href="contact/">Trouver ma cellule →</a>
-        </div>
-        <img src="img/g-cellules.webp" alt="Des jeunes assis ensemble pendant une rencontre" loading="lazy">
-      </article>
+    <div class="mh-head">
+      <div><p class="kicker">Impacter</p><h2 class="h2 display">Les 7 Monts</h2></div>
+      <div class="mh-side"><p class="lead">Chaque membre rejoint une famille, un mont, liée à une sphère de la société. Survole les sommets et choisis le tien.</p><a class="link-arrow" href="monts/">Tout savoir sur les monts →</a></div>
     </div>
+    <div data-monts="compact" data-open="hermon"></div>
   </div>
 </section>
 
-<!-- ═══════════ Live ═══════════ -->
-<section class="live" id="live">
-  <div class="wrap live-grid">
-    <div class="live-left">
-      <p class="live-status"><span class="live-dot"></span><span id="liveStatus">Hors antenne</span></p>
-      <h2 class="h2 display live-title">Pas à Abidjan<br><em class="serif">ce dimanche ?</em></h2>
-      <p class="lead">Le culte est diffusé en direct chaque dimanche de 13h00 à 15h00 (heure d'Abidjan). La diaspora est la bienvenue.</p>
-    </div>
-    <div class="live-right">
-      <div class="live-count" id="liveCount" aria-label="Temps restant avant le direct">
-        <div><span class="mono" id="lcD">0</span><small>jours</small></div>
-        <div><span class="mono" id="lcH">00</span><small>heures</small></div>
-        <div><span class="mono" id="lcM">00</span><small>minutes</small></div>
-        <div><span class="mono" id="lcS">00</span><small>secondes</small></div>
-      </div>
-      <div class="live-ctas">
-        <a class="btn btn-ivoire" href="https://www.youtube.com/@NewWineChurchMD" target="_blank" rel="noopener"><span class="btn-txt" data-txt="Ouvrir la chaîne YouTube">Ouvrir la chaîne YouTube</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg></span></a>
-        <button class="btn btn-ghost" type="button" id="remindBtn" aria-pressed="false">M'envoyer un rappel 15 min avant</button>
-        <a class="btn btn-ghost" href="live/">Page du direct</a>
+<!-- ═══════════ À l'affiche ═══════════ -->
+<section class="affiche light" id="grandir">
+  <div class="wrap">
+    <div class="rail-head"><div><p class="kicker">À l'affiche</p><h2 class="h2 display">En ce<br><em class="serif">moment.</em></h2></div><a class="link-arrow" href="evenements/">Tout l'agenda →</a></div>
+    <div class="af-grid">
+      <a class="af-msg reveal" href="messages/un-enseignement-nouveau/">
+        <div class="series-art" aria-hidden="true"><span class="series-ring"></span><span class="series-kicker mono">Série · Cœurs neufs</span><span class="series-name display">Cœurs<br>neufs</span><span class="series-ref serif">Marc 2:18-22</span></div>
+        <div class="af-msg-body"><p class="kicker">Dernier message · Dim. 1er nov.</p><h3 class="display">Un enseignement nouveau</h3><p class="meta"><span>Pasteur Georges Amoako-Prempeh</span><span>48:12</span></p><span class="btn btn-ivoire btn-sm">Regarder ou écouter</span></div>
+      </a>
+      <div class="af-events">
+        <a class="af-ev reveal" href="evenements/babi-giant-cypher-vol-2/"><span class="edate"><span>nov</span><b>28</b><i>sam.</i></span><img src="img/t/t-cy-4.webp" alt="" loading="lazy"><div><span class="etag t-billet">Billetterie · dès 2 000 FCFA</span><b>Babi Giant Cypher · Vol. 2</b><span class="af-meta">16h00 · Cocody-Bonoumin</span></div></a>
+        <a class="af-ev reveal" href="evenements/culte-de-noel/"><span class="edate"><span>déc</span><b>20</b><i>dim.</i></span><img src="img/t/v-adore.webp" alt="" loading="lazy"><div><span class="etag t-libre">Entrée libre</span><b>Culte de Noël</b><span class="af-meta">13h00 · Invite un ami</span></div></a>
+        <a class="af-ev af-live reveal" href="live/"><span class="af-live-dot"><span class="live-dot is-live"></span></span><div><span class="etag" style="background:var(--rubis);color:var(--ivoire)">En direct</span><b>Pas à Abidjan ce dimanche ?</b><span class="af-meta">Le culte est diffusé en direct à 13h00</span></div></a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ 3 · IMPACTER : les 7 Monts en 3D ═══════════ -->
-<section class="monts" id="monts">
-  <div class="wrap monts-head">
-    <header class="pillar-head">
-      <span class="pillar-n" aria-hidden="true">3</span>
-      <div class="pillar-title">
-        <p class="kicker">Impacter</p>
-        <h2 class="h2 display">7 monts.<br><em class="serif">7 sphères à gagner.</em></h2>
-      </div>
-      <p class="lead pillar-lead">Chaque membre rejoint une famille, un « mont », liée à une sphère de la société. Parce qu'être sauvé, c'est être envoyé : au gouvernement comme sur les réseaux. Touche un sommet pour le découvrir.</p>
-    </header>
+<!-- ═══════════ Moments : photos qui défilent ═══════════ -->
+<section class="momentos" id="moments" aria-label="Moments forts en photos">
+  <div class="wrap mo-head">
+    <div><p class="kicker">Moments forts</p><h2 class="h2 display">La vie<br><em class="serif">à NWC.</em></h2></div>
+    <a class="btn btn-ghost" href="galerie/">Ouvrir la médiathèque · 487 médias</a>
   </div>
-  <div class="monts-stage" id="montsStage">
-    <canvas class="monts-gl" id="montsGl" aria-hidden="true"></canvas>
-    <div class="monts-labels" id="montsLabels"></div>
-    <div class="monts-vignette" aria-hidden="true"></div>
-  </div>
-  <div class="wrap monts-dock">
-    <ol class="mont-list" id="montList" aria-label="Les 7 monts"></ol>
-    <article class="mont-card" id="montCard" aria-live="polite">
-      <div class="mont-card-img"><img id="montImg" src="img/m-hermon.webp" alt=""></div>
-      <div class="mont-card-body">
-        <p class="mont-sphere mono" id="montSphere">La Famille</p>
-        <h3 class="mont-name display" id="montName">Hermon</h3>
-        <p class="mont-q serif" id="montQ">« Tu aimes te sentir en famille ? »</p>
-        <p class="mont-txt" id="montTxt"></p>
-        <div class="mont-foot">
-          <span class="mono" id="montRef">Psaume 133:3</span>
-          <button class="btn btn-ivoire btn-sm" type="button" id="montJoin">Rejoindre ce mont</button>
-        </div>
-      </div>
-    </article>
-  </div>
-</section>
-
-<!-- ═══════════ Moments forts : tunnel 3D ═══════════ -->
-<section class="moments light" id="moments" aria-label="Moments forts">
-  <div class="moments-pin">
-    <div class="tunnel" id="tunnel"><div class="tunnel-world" id="tunnelWorld"></div></div>
-    <div class="moments-hud">
-      <p class="kicker">Moments forts</p>
-      <div class="chapter" id="chapter">
-        <span class="chapter-vol mono" id="chVol">Vol. 1</span>
-        <h2 class="chapter-title display" id="chTitle">Babi Giant Cypher for Christ</h2>
-        <p class="chapter-desc" id="chDesc"></p>
-        <span class="chapter-count mono" id="chCount"></span>
-      </div>
-    </div>
-    <ol class="chapter-nav" id="chapterNav" aria-label="Chapitres"></ol>
-    <div class="moments-progress" aria-hidden="true"><span id="momentsBar"></span></div>
-    <a class="btn btn-ghost moments-cta" href="galerie/" id="mediathequeBtn">Toute la médiathèque · 487 médias</a>
-  </div>
+  <div class="mo-row"><div class="mo-track">
+    <a href="galerie/?event=festi-grill-26"><img src="img/s/t-fg-1.webp" srcset="img/t/t-fg-1.webp 256w, img/s/t-fg-1.webp 576w" sizes="(max-width: 900px) 220px, 24vw" alt="Festi Grill 2026" loading="lazy"></a><a href="galerie/?event=babi-giant-cypher-for-christ-vol-1"><img src="img/s/t-cy-2.webp" srcset="img/t/t-cy-2.webp 320w, img/s/t-cy-2.webp 720w" sizes="(max-width: 900px) 220px, 24vw" alt="Babi Giant Cypher" loading="lazy"></a><a href="galerie/?event=a-dark-night-in-elegance"><img src="img/s/t-dn-1.webp" srcset="img/t/t-dn-1.webp 213w, img/s/t-dn-1.webp 480w" sizes="(max-width: 900px) 220px, 24vw" alt="A Dark Night in Elegance" loading="lazy"></a><a href="galerie/?event=saveurs-sunday-vol-1"><img src="img/s/t-sv-1.webp" srcset="img/t/t-sv-1.webp 320w, img/s/t-sv-1.webp 720w" sizes="(max-width: 900px) 220px, 24vw" alt="Saveurs Sunday" loading="lazy"></a><a href="galerie/?event=festi-grill-26"><img src="img/s/t-fg-5.webp" srcset="img/t/t-fg-5.webp 256w, img/s/t-fg-5.webp 575w" sizes="(max-width: 900px) 220px, 24vw" alt="Festi Grill 2026" loading="lazy"></a><a href="galerie/?event=babi-giant-cypher-for-christ-vol-1"><img src="img/s/t-cy-6.webp" srcset="img/t/t-cy-6.webp 213w, img/s/t-cy-6.webp 480w" sizes="(max-width: 900px) 220px, 24vw" alt="Babi Giant Cypher" loading="lazy"></a>
+  </div></div>
+  <div class="mo-row mo-rev"><div class="mo-track">
+    <a href="galerie/?event=a-dark-night-in-elegance"><img src="img/s/t-dn-3.webp" srcset="img/t/t-dn-3.webp 320w, img/s/t-dn-3.webp 720w" sizes="(max-width: 900px) 220px, 24vw" alt="A Dark Night in Elegance" loading="lazy"></a><a href="galerie/?event=saveurs-sunday-vol-1"><img src="img/s/t-sv-3.webp" srcset="img/t/t-sv-3.webp 320w, img/s/t-sv-3.webp 720w" sizes="(max-width: 900px) 220px, 24vw" alt="Saveurs Sunday" loading="lazy"></a><a href="galerie/?event=festi-grill-26"><img src="img/s/t-fg-2.webp" srcset="img/t/t-fg-2.webp 256w, img/s/t-fg-2.webp 576w" sizes="(max-width: 900px) 220px, 24vw" alt="Festi Grill 2026" loading="lazy"></a><a href="galerie/?event=babi-giant-cypher-for-christ-vol-1"><img src="img/s/t-cy-3.webp" srcset="img/t/t-cy-3.webp 320w, img/s/t-cy-3.webp 720w" sizes="(max-width: 900px) 220px, 24vw" alt="Babi Giant Cypher" loading="lazy"></a><a href="galerie/?event=a-dark-night-in-elegance"><img src="img/s/t-dn-4.webp" srcset="img/t/t-dn-4.webp 320w, img/s/t-dn-4.webp 720w" sizes="(max-width: 900px) 220px, 24vw" alt="A Dark Night in Elegance" loading="lazy"></a><a href="galerie/?event=festi-grill-26"><img src="img/s/t-fg-3.webp" srcset="img/t/t-fg-3.webp 256w, img/s/t-fg-3.webp 576w" sizes="(max-width: 900px) 220px, 24vw" alt="Festi Grill 2026" loading="lazy"></a>
+  </div></div>
 </section>
 
 <!-- ═══════════ Donner ═══════════ -->
-<section class="give sable section" id="donner">
-  <div class="wrap give-grid">
-    <header class="give-head">
-      <p class="kicker kicker-dark">Donner</p>
-      <h2 class="h2 display">Sème dans<br><em class="serif">la vision.</em></h2>
-      <p class="lead">Tes dons financent les cultes, l'évangélisation et les actions sociales de l'église. Avec ton Mobile Money, c'est fait en moins d'une minute.</p>
-      <blockquote class="give-verse">
-        <p class="serif">« Que chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; car Dieu aime celui qui donne avec joie. »</p>
-        <cite class="mono">2 Corinthiens 9:7</cite>
-      </blockquote>
-    </header>
-
-    <div class="ops" id="ops">
-      <article class="op is-open" style="--op:#FF7900">
-        <button class="op-head" type="button" aria-expanded="true">
-          <span class="op-logo" aria-hidden="true">OM</span>
-          <span class="op-name">Orange Money<small>Code #144#</small></span>
-          <span class="op-chev" aria-hidden="true"></span>
-        </button>
-        <div class="op-body"><div class="op-body-inner">
-          <div class="op-num"><span class="mono" data-copy-src>+225 07 10 31 21 08</span><button class="copy" type="button" data-copy="+2250710312108">Copier</button></div>
-          <p class="op-to">Bénéficiaire : <strong>NEW WINE CHURCH</strong></p>
-          <ol class="op-steps"><li>Compose <b class="mono">#144#</b></li><li>Choisis « Transfert d'argent »</li><li>Entre le numéro et le montant</li><li>Confirme avec ton code secret</li><li>Note la référence de la transaction</li></ol></div>
-        </div>
-      </article>
-      <article class="op" style="--op:#FFD52E">
-        <button class="op-head" type="button" aria-expanded="false">
-          <span class="op-logo op-logo-dark" aria-hidden="true">MoMo</span>
-          <span class="op-name">MTN Mobile Money<small>Code *133#</small></span>
-          <span class="op-chev" aria-hidden="true"></span>
-        </button>
-        <div class="op-body"><div class="op-body-inner">
-          <div class="op-num"><span class="mono" data-copy-src>+225 05 01 31 60 73</span><button class="copy" type="button" data-copy="+2250501316073">Copier</button></div>
-          <p class="op-to">Bénéficiaire : <strong>NEW WINE CHURCH</strong></p>
-          <ol class="op-steps"><li>Compose <b class="mono">*133#</b></li><li>Choisis « Transfert »</li><li>Entre le numéro et le montant</li><li>Valide avec ton code MoMo</li><li>Note le code de transaction</li></ol></div>
-        </div>
-      </article>
-      <article class="op" style="--op:#1DC8FF">
-        <button class="op-head" type="button" aria-expanded="false">
-          <span class="op-logo op-logo-dark" aria-hidden="true">W</span>
-          <span class="op-name">Wave<small>Depuis l'application</small></span>
-          <span class="op-chev" aria-hidden="true"></span>
-        </button>
-        <div class="op-body"><div class="op-body-inner">
-          <div class="op-num"><span class="mono" data-copy-src>+225 05 01 31 60 73</span><button class="copy" type="button" data-copy="+2250501316073">Copier</button></div>
-          <p class="op-to">Bénéficiaire : <strong>NEW WINE CHURCH</strong></p>
-          <ol class="op-steps"><li>Ouvre l'application Wave</li><li>Tape « Envoyer de l'argent »</li><li>Entre le numéro et le montant</li><li>Valide la transaction</li><li>Note l'ID de transaction</li></ol></div>
-        </div>
-      </article>
-
-      <a class="btn btn-bordeaux" href="donner/" style="justify-self:start">Ouvrir la page Donner</a>
-      <form class="ref-form" id="refForm" novalidate>
-        <label for="refInput">Tu as donné ? Colle ta référence pour recevoir ton reçu.</label>
-        <div class="ref-row">
-          <input id="refInput" name="ref" type="text" inputmode="text" autocomplete="off" placeholder="Ex. CI241105.1432.A12345">
-          <button class="btn btn-bordeaux btn-sm" type="submit">Envoyer</button>
-        </div>
-        <p class="ref-err" id="refErr" hidden>Entre la référence reçue par SMS après ton transfert.</p>
-      </form>
+<section class="give-band ilot" id="donner">
+  <div class="wrap give-band-in">
+    <div><p class="kicker">Donner</p><h2 class="h2 display">Sème dans<br><em class="serif">la vision.</em></h2></div>
+    <div class="give-band-side">
+      <p class="lead">Orange Money, MTN MoMo ou Wave : ton don finance les cultes, l'évangélisation et le social, en moins d'une minute.</p>
+      <ul class="op-chips" aria-label="Opérateurs acceptés"><li style="--op:#FF7900">Orange Money</li><li style="--op:#FFD52E">MTN MoMo</li><li style="--op:#1DC8FF">Wave</li></ul>
+      <a class="btn btn-ivoire" href="donner/"><span class="btn-txt" data-txt="Faire un don">Faire un don</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     </div>
   </div>
 </section>
 
 <!-- ═══════════ Rejoindre ═══════════ -->
 <section class="join" id="rejoindre">
-  <img class="join-bg" src="img/cta-famille.webp" alt="Les jeunes de New Wine Church réunis en tenue de soirée" loading="lazy">
+  <img class="join-bg" src="img/cta-famille.webp" srcset="img/s/cta-famille.webp 720w, img/cta-famille.webp 2000w" sizes="100vw" alt="Les jeunes de New Wine Church réunis en tenue de soirée" loading="lazy">
   <div class="join-shade" aria-hidden="true"></div>
   <div class="wrap join-inner">
     <h2 class="join-title display">Ta place est<br><em class="serif">déjà prête.</em></h2>
     <div class="join-row">
       <button class="btn btn-ivoire magnetic" type="button" data-open-visit><span class="btn-txt" data-txt="Plan ta visite">Plan ta visite</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
-      <div class="join-contact">
-        <span class="label">Une question ? Écris-nous sur WhatsApp</span>
-        <span class="join-phone"><span class="mono">+225 07 79 16 98 78</span><button class="copy copy-light" type="button" data-copy="+2250779169878">Copier</button></span>
-      </div>
+      <div class="join-contact"><span class="label">Une question ? Écris-nous sur WhatsApp</span><span class="join-phone"><span class="mono" data-copy-src>+225 07 79 16 98 78</span><button class="copy copy-light" type="button" data-copy="+2250779169878">Copier</button></span></div>
     </div>
   </div>
 </section>
@@ -442,36 +202,12 @@
 
 <div id="layoutBottom"></div>
 
-<!-- Tiroir : fiche département -->
-<div class="drawer" id="deptDrawer" role="dialog" aria-modal="true" aria-labelledby="deptTitle" hidden>
-  <div class="drawer-scrim" data-close></div>
-  <div class="drawer-panel">
-    <button class="drawer-close" type="button" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-    <div class="drawer-hero"><img id="deptImg" src="img/fam-arts.webp" alt=""></div>
-    <div class="drawer-body">
-      <p class="kicker kicker-dark" id="deptFam">Famille</p>
-      <h2 class="drawer-title" id="deptTitle">Département</h2>
-      <p class="drawer-lead" id="deptDesc"></p>
-      <ul class="done-list">
-        <li><span class="label">Ce que tu y fais</span><span id="deptDo"></span></li>
-        <li><span class="label">Pour qui</span><span id="deptWho"></span></li>
-        <li><span class="label">Rythme</span>Le dimanche + une rencontre d'équipe par mois</li>
-      </ul>
-      <button class="btn btn-bordeaux btn-block" type="button" id="deptJoin">Je veux servir ici</button>
-      <a class="btn-text" id="deptMore" href="communaute/">Voir la fiche complète du département</a>
-      <p class="drawer-hint">Ta demande arrive directement au gouverneur du département.</p>
-    </div>
-  </div>
-</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/layout.js?v=4"></script>
-<script src="js/hero.js?v=4"></script>
-<script src="js/monts.js?v=4"></script>
-<script src="js/site.js?v=4"></script>
-
+<script src="js/layout.js?v=5"></script>
+<script src="js/hero.js?v=5"></script>
+<script src="js/monts-chaine.js?v=5"></script>
+<script src="js/site.js?v=5"></script>
 </body>
 </html>

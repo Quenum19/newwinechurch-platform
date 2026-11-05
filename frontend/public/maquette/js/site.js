@@ -507,10 +507,15 @@
       res.innerHTML = '<p class="kicker">Ta famille</p><p class="serif"></p><p class="lead">Commence par l\'un de ces départements. Tu pourras toujours changer.</p><div class="quiz-picks"></div>';
       res.querySelector('.serif').textContent = fam.nom;
       var pk = res.querySelector('.quiz-picks');
-      picks.forEach(function (d) { var b = document.createElement('button'); b.type = 'button'; b.className = 'quiz-pick'; b.textContent = d.n; b.addEventListener('click', function () { openDept(d); }); pk.appendChild(b); });
+      // Chaque suggestion ouvre la fiche du département
+      picks.forEach(function (d) { var a = document.createElement('a'); a.className = 'quiz-pick'; a.textContent = d.n; a.href = 'communaute/' + d.n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '/'; pk.appendChild(a); });
       var row = document.createElement('div'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px;align-items:center';
       var all = document.createElement('button'); all.type = 'button'; all.className = 'btn btn-ivoire btn-sm'; all.textContent = 'Voir toute la famille';
-      all.addEventListener('click', function () { NWC.showFam(best, true); scrollToEl($('#famTabs'), -110); });
+      all.addEventListener('click', function () {
+        // Page Communauté : on filtre la liste sur la famille ; ailleurs, on y va
+        var chip = document.querySelector('#cfam [data-f="' + best + '"]');
+        if (chip) { chip.click(); scrollToEl($('#clist'), -140); } else location.href = 'communaute/?famille=' + best;
+      });
       var again = document.createElement('button'); again.type = 'button'; again.className = 'quiz-again'; again.textContent = 'Recommencer';
       again.addEventListener('click', function () { step = 0; score = {}; first = null; render(); });
       row.appendChild(all); row.appendChild(again); res.appendChild(row);
@@ -838,6 +843,27 @@
     gsap.fromTo('.foot-word', { xPercent: 4 }, { xPercent: -6, ease: 'none', scrollTrigger: { trigger: '.foot', start: 'top bottom', end: 'bottom bottom', scrub: true } });
     if ($('.b-player')) gsap.from('.series-name', { yPercent: 30, ease: 'none', scrollTrigger: { trigger: '.b-player', start: 'top bottom', end: 'center center', scrub: true } });
     window.addEventListener('load', function () { ScrollTrigger.refresh(); });
+  });
+
+  /* ───────── Photos qui défilent (accueil) : contenu doublé pour une boucle sans saut ───────── */
+  mod('photos-defilantes', function () {
+    $$('.mo-track').forEach(function (t) {
+      var n = t.children.length;
+      t.insertAdjacentHTML('beforeend', t.innerHTML);
+      Array.prototype.slice.call(t.children, n).forEach(function (a) { a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1; });
+    });
+  });
+
+  /* ───────── Typographie française : espaces insécables fines avant : ; ? ! et dans « » ───────── */
+  mod('typographie', function () {
+    var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, CODE: 1, PRE: 1 };
+    function fix(root) {
+      var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode; return p && !SKIP[p.nodeName] && /[ ][:;?!»]|«[ ]/.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; } });
+      var list = [], n; while ((n = w.nextNode())) list.push(n);
+      list.forEach(function (t) { t.nodeValue = t.nodeValue.replace(/ ([:;?!»])/g, ' $1').replace(/« /g, '« '); });
+    }
+    fix(document.body);
+    if ('MutationObserver' in window) new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(function (x) { if (x.nodeType === 1) fix(x); else if (x.nodeType === 3 && x.parentNode) fix(x.parentNode); }); }); }).observe(document.body, { childList: true, subtree: true });
   });
 
   /* ───────── Outils partagés avec les pages intérieures (pages.js) ───────── */

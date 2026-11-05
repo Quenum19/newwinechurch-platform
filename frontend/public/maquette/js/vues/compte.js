@@ -14,7 +14,7 @@
   ];
   function shell(P, inner) {
     var v = VERSETS[Math.floor(Math.random() * VERSETS.length)];
-    return '<div class="auth"><aside class="auth-art"><img src="' + v[0] + '" alt=""><div class="auth-art-in"><a class="auth-logo" href="./"><img src="img/logo-nwc.png" alt="" width="52" height="52"><span>New Wine<small>Church · Abidjan</small></span></a>' +
+    return '<div class="auth"><aside class="auth-art"><img src="' + v[0] + '" alt=""><div class="auth-art-in"><a class="auth-logo" href="./"><img src="img/logo-nwc-96.png" alt="" width="52" height="52"><span>New Wine<small>Church · Abidjan</small></span></a>' +
       '<blockquote><p class="serif">« ' + P.esc(v[1]) + ' »</p><cite class="mono">' + v[2] + '</cite></blockquote></div></aside>' +
       '<div class="auth-main"><a class="auth-back" href="./">← Retour à l\'accueil</a><div class="auth-card">' + inner + '</div><p class="auth-foot">© ' + new Date().getFullYear() + ' New Wine Church · <a href="confidentialite/">Confidentialité</a></p></div></div>';
   }
@@ -48,9 +48,10 @@
 
   V.rejoindre = {
     render: function (P) {
-      var dept = P.qs('dept'), cell = P.qs('cell');
+      var dept = P.qs('dept'), cell = P.qs('cell'), mont = P.qs('mont');
+      var Mo = P.MONTS.filter(function (m) { return m[0] === mont; })[0];
       var D = (window.NWCV._depts || []).filter(function (d) { return d.slug === dept; })[0];
-      var pre = D ? '<div class="auth-pre"><span>Département souhaité : <b>' + P.esc(D.n) + '</b></span><button type="button" data-unpre aria-label="Retirer">×</button></div>'
+      var pre = Mo ? '<div class="auth-pre"><span>Mont souhaité : <b>' + P.esc(Mo[1]) + '</b> · ' + P.esc(Mo[2]) + '</span><button type="button" data-unpre aria-label="Retirer">×</button></div>' : D ? '<div class="auth-pre"><span>Département souhaité : <b>' + P.esc(D.n) + '</b></span><button type="button" data-unpre aria-label="Retirer">×</button></div>'
         : cell ? '<div class="auth-pre"><span>Cellule souhaitée : <b>' + P.esc(cell.replace(/-/g, ' ')) + '</b></span><button type="button" data-unpre aria-label="Retirer">×</button></div>' : '';
       P.host.innerHTML = shell(P, '<p class="kicker">Rejoindre</p><h1 class="display auth-title">Deviens membre<br><em class="serif">de la famille.</em></h1>' +
         '<ul class="auth-perks"><li>Ton espace : tes dons, tes événements, ta cellule</li><li>Les infos de ton département et de ton mont</li><li>Un accompagnement par l\'équipe Insertion</li></ul>' + pre +
@@ -60,7 +61,7 @@
         '<div class="cform-row"><fieldset class="field"><legend>Genre <small>(facultatif)</small></legend><div class="seg"><label><input type="radio" name="rgG" value="M"><span>Homme</span></label><label><input type="radio" name="rgG" value="F"><span>Femme</span></label></div></fieldset><div class="field"><label for="rgCity">Ville / commune <small>(facultatif)</small></label><input id="rgCity" list="rgCities"><datalist id="rgCities">' + P.COMMUNES.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist></div></div>' +
         '<div class="field"><label for="rgSponsor">Qui t\'a invité ? <small>(facultatif)</small></label><input id="rgSponsor" maxlength="120"></div>' +
         '<div class="field"><label for="rgWhy">Pourquoi veux-tu rejoindre New Wine ? <small>(facultatif)</small></label><textarea id="rgWhy" rows="3" maxlength="1500"></textarea></div>' +
-        '<label class="check"><input type="checkbox" id="rgCgu"> J\'accepte les <a class="linkbtn" href="cgu/" target="_blank">conditions d\'utilisation</a> et la <a class="linkbtn" href="confidentialite/" target="_blank">politique de confidentialité</a>.</label><p class="field-err" id="rgCguErr" hidden>Coche cette case pour envoyer ta demande.</p>' +
+        '<label class="check"><input type="checkbox" id="rgCgu"><span>J\'accepte les <a class="linkbtn" href="cgu/" target="_blank">conditions d\'utilisation</a> et la <a class="linkbtn" href="confidentialite/" target="_blank">politique de confidentialité</a>.</span></label><p class="field-err" id="rgCguErr" hidden>Coche cette case pour envoyer ta demande.</p>' +
         '<input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">' +
         '<button class="btn btn-bordeaux btn-block" type="submit">Envoyer ma demande</button></form>' +
         '<p class="auth-alt">Déjà membre ? <a class="linkbtn" href="connexion/">Se connecter</a></p>');

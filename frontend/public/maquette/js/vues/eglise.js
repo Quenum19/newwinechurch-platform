@@ -19,7 +19,7 @@
     var PILIERS = [
       ['1', 'Servir', '35 départements où chacun met ses talents au service de Dieu et des autres.', 'communaute/', 'Trouver ma place'],
       ['2', 'Grandir', 'Un message chaque dimanche, l\'Académie de Fondation et les cellules de maison.', 'messages/', 'Écouter les messages'],
-      ['3', 'Impacter', 'Sept monts, sept sphères de la société où nous sommes envoyés.', './#monts', 'Découvrir les 7 Monts']
+      ['3', 'Impacter', 'Sept monts, sept sphères de la société où nous sommes envoyés.', 'monts/', 'Découvrir les 7 Monts']
     ];
     P.host.innerHTML =
       '<section class="ehero">' +
@@ -46,7 +46,7 @@
       // Pasteur + maison mère
       '<section class="light section"><div class="wrap duo">' +
       '<article class="pcard2 ilot reveal"><span class="mono-tag">Notre pasteur</span><span class="monogram display" aria-hidden="true">GAP</span><h3 class="display">Pasteur Georges<br>Amoako-Prempeh</h3><p>Il conduit New Wine Church et porte la vision d\'une génération de jeunes enseignés, formés et envoyés.</p><a class="btn btn-ivoire btn-sm" href="messages/">Écouter ses messages</a></article>' +
-      '<article class="pcard2 reveal"><span class="mono-tag">Notre famille d\'églises</span><img src="img/logo-md.png" alt="Logo de l\'Église La Maison de la Destinée" width="80" height="85"><h3 class="display">Église La Maison<br>de la Destinée</h3><p>New Wine Church est l\'église de jeunes adultes de La Maison de la Destinée. Les grands événements se tiennent dans ses locaux, à Cocody-Bonoumin.</p><a class="link-arrow" href="contact/">Nous écrire →</a></article>' +
+      '<article class="pcard2 reveal"><span class="mono-tag">Notre famille d\'églises</span><img src="img/logo-md-64.png" alt="Logo de l\'Église La Maison de la Destinée" width="80" height="85"><h3 class="display">Église La Maison<br>de la Destinée</h3><p>New Wine Church est l\'église de jeunes adultes de La Maison de la Destinée. Les grands événements se tiennent dans ses locaux, à Cocody-Bonoumin.</p><a class="link-arrow" href="contact/">Nous écrire →</a></article>' +
       '</div></section>' +
 
       // Confession de foi
@@ -59,9 +59,7 @@
       // 7 Monts
       '<section class="light section"><div class="wrap">' +
       '<div class="center-head"><p class="kicker">Impacter</p><h2 class="h2 display">Les 7 Monts</h2><p class="lead" style="margin-inline:auto">Chaque membre rejoint une famille, un mont, liée à une sphère de la société.</p></div>' +
-      '<ul class="montgrid">' + P.MONTS.map(function (m) {
-        return '<li class="reveal"><img src="img/m-' + m[0] + '.webp" alt="Les membres du Mont ' + esc(m[1]) + '" loading="lazy"><div><span class="mono">' + esc(m[2]) + '</span><b class="display">' + esc(m[1]) + '</b></div></li>';
-      }).join('') + '</ul><div class="more-row"><a class="btn btn-ivoire" href="./#monts"><span class="btn-txt" data-txt="Explorer les monts en 3D">Explorer les monts en 3D</span><span class="btn-ico" aria-hidden="true">' + I.arrow + '</span></a></div></div></section>' +
+      '<div data-monts="compact" data-open="sinai"></div><div class="more-row"><a class="btn btn-ivoire" href="monts/"><span class="btn-txt" data-txt="Découvrir les 7 Monts">Découvrir les 7 Monts</span><span class="btn-ico" aria-hidden="true">' + I.arrow + '</span></a></div></div></section>' +
 
       // Rendez-vous
       '<section class="section rdv ilot"><div class="wrap">' +

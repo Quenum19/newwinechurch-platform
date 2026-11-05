@@ -12,25 +12,25 @@
   var MONTS = [
     { id: 'ararat', nom: 'Ararat', sphere: 'Le Gouvernement', q: 'Tu rêves d’être un haut dirigeant ?', ref: 'Genèse 8:4',
       txt: 'Ceux qui se préparent à diriger : politique, administration, leadership public. Former des dirigeants intègres pour la Côte d’Ivoire et l’Afrique.',
-      img: 'img/m-ararat.webp', x: -6.0, z: 0.8, h: 2.1, s: .95 },
+      img: 'img/s/m-ararat.webp', x: -6.0, z: 0.8, h: 2.1, s: .95 },
     { id: 'transfiguration', nom: 'Transfiguration', sphere: 'L’Art, le Sport, la Musique', q: 'Tu aimes l’art, le sport, la musique ?', ref: 'Matthieu 17:1-2',
       txt: 'Artistes, sportifs, musiciens. Faire briller la lumière de Christ sur scène, sur le terrain et dans les studios.',
-      img: 'img/m-transfiguration.webp', x: -4.0, z: -1.6, h: 2.6, s: 1.0 },
+      img: 'img/s/m-transfiguration.webp', x: -4.0, z: -1.6, h: 2.6, s: 1.0 },
     { id: 'oliviers', nom: 'Oliviers', sphere: 'L’Économie', q: 'Tu souhaites concevoir la politique économique des nations ?', ref: 'Actes 1:12',
       txt: 'Entrepreneurs, financiers, bâtisseurs. Créer de la richesse avec justice et financer la mission.',
-      img: 'img/m-oliviers.webp', x: -2.0, z: 1.3, h: 1.65, s: .9 },
+      img: 'img/s/m-oliviers.webp', x: -2.0, z: 1.3, h: 1.65, s: .9 },
     { id: 'carmel', nom: 'Carmel', sphere: 'Le Média', q: 'Tu es passionné·e par l’image ?', ref: '1 Rois 18:19',
       txt: 'Créateurs de contenu, journalistes, vidéastes. Raconter les histoires qui changent les regards.',
-      img: 'img/m-carmel.webp', x: 0.0, z: -1.2, h: 2.4, s: 1.0 },
+      img: 'img/s/m-carmel.webp', x: 0.0, z: -1.2, h: 2.4, s: 1.0 },
     { id: 'sinai', nom: 'Sinaï', sphere: 'L’Éducation', q: 'Tu as la passion de transmettre ?', ref: 'Exode 19:20',
       txt: 'Enseignants, étudiants, chercheurs. Transmettre le savoir et former les esprits de demain.',
-      img: 'img/m-sinai.webp', x: 2.1, z: 1.0, h: 3.0, s: .95 },
+      img: 'img/s/m-sinai.webp', x: 2.1, z: 1.0, h: 3.0, s: .95 },
     { id: 'hermon', nom: 'Hermon', sphere: 'La Famille', q: 'Tu aimes te sentir en famille ?', ref: 'Psaume 133:3',
       txt: 'Le cœur de la maison : couples, parents, célibataires. Bâtir des familles solides et accueillantes.',
-      img: 'img/m-hermon.webp', x: 4.1, z: -1.5, h: 2.3, s: 1.0 },
+      img: 'img/s/m-hermon.webp', x: 4.1, z: -1.5, h: 2.3, s: 1.0 },
     { id: 'morijah', nom: 'Morijah', sphere: 'La Religion', q: 'Tu as à cœur la maison de Dieu ?', ref: '2 Chroniques 3:1',
       txt: 'Intercesseurs, serviteurs, futurs ministres. Garder le feu de l’adoration et de la prière au centre.',
-      img: 'img/m-morijah.webp', x: 6.0, z: 0.7, h: 2.0, s: .9 }
+      img: 'img/s/m-morijah.webp', x: 6.0, z: 0.7, h: 2.0, s: .9 }
   ];
 
   var section = document.getElementById('monts');

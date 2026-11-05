@@ -57,9 +57,9 @@
         [[POSTS.length, 'articles'], [Object.keys(CATS).length, 'rubriques'], ['Chaque mois', 'un nouveau numéro']]) +
         '<section class="light" style="padding-bottom:clamp(64px,8vw,120px)"><div class="wrap">' +
         card(P, f, true) +
-        '<div class="fbar fbar-2" role="search" style="margin-top:clamp(40px,5vw,64px)"><label class="search">' + P.I.search + '<input id="bq" type="search" placeholder="Rechercher un article…" aria-label="Rechercher un article"></label>' +
+        '<div class="fzone" style="margin-top:clamp(40px,5vw,64px)"><div class="fbar fbar-2" role="search"><label class="search">' + P.I.search + '<input id="bq" type="search" placeholder="Rechercher un article…" aria-label="Rechercher un article"></label>' +
         '<div class="chiprow" id="bcats"><button class="chip" type="button" data-cat="" aria-pressed="true">Toutes</button>' + Object.keys(CATS).map(function (k) { return '<button class="chip" type="button" data-cat="' + k + '" aria-pressed="false">' + CATS[k] + '</button>'; }).join('') + '</div></div>' +
-        '<div class="results-line"><span id="bcount"></span></div><div class="bgrid" id="bgrid"></div>' +
+        '<div class="results-line"><span id="bcount"></span></div><div class="bgrid" id="bgrid"></div></div>' +
         '<div class="band ilot reveal" style="background:var(--bordeaux);margin-top:clamp(56px,7vw,96px)"><span class="band-ico">' + P.I.dl + '</span><div><h3 class="h3">Le New Wine Mag papier</h3><p>Le magazine est aussi distribué le dimanche à l\'accueil. Tu veux écrire ? Rejoins le département New Wine Mag.</p></div><a class="btn btn-ivoire btn-sm" href="communaute/new-wine-mag/">Rejoindre la rédaction</a></div>' +
         '</div></section>';
     },
@@ -71,6 +71,7 @@
         N.$$('#bcats .chip').forEach(function (c) { c.setAttribute('aria-pressed', c.dataset.cat === st.cat ? 'true' : 'false'); });
         N.$('#bcount').textContent = list.length + (list.length > 1 ? ' articles' : ' article');
         N.$('#bgrid').innerHTML = list.length ? list.map(function (p) { return card(P, p); }).join('') : '<div class="empty" style="grid-column:1/-1"><b>Aucun article trouvé</b><span>Essaie un autre mot-clé ou une autre rubrique.</span></div>';
+        P.opt(N.$('#bgrid'));
       }
       var t; N.$('#bq').addEventListener('input', function (e) { clearTimeout(t); t = setTimeout(function () { st.q = e.target.value; run(); }, 250); });
       N.$$('#bcats .chip').forEach(function (c) { c.addEventListener('click', function () { st.cat = c.dataset.cat; run(); }); });

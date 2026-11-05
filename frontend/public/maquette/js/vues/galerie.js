@@ -104,6 +104,7 @@
             '<span class="gcap">' + esc(EV[it.ev].t) + '</span></button>' +
             (dl ? '<label class="gcheck" title="Sélectionner"><input type="checkbox" data-sel="' + it.id + '"' + (on ? ' checked' : '') + ' aria-label="Sélectionner cette photo"><span></span></label>' : '') + '</div>';
         }).join('') : '<div class="empty" style="grid-column:1/-1"><b>Galerie en construction</b><span>Aucun média pour ce filtre pour le moment.</span></div>';
+        P.opt($('#gGrid'));
         $$('.gopen').forEach(function (b) { b.addEventListener('click', function () { view(slice, +b.dataset.i); }); });
         $$('[data-sel]').forEach(function (c) { c.addEventListener('change', function () { toggleSel(+c.dataset.sel, c.checked, c); }); });
         // Vidéos : lecture muette quand elles sont visibles

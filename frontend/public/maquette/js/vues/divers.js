@@ -14,7 +14,7 @@
     mainClass: 'follow-main',
     render: function (P) {
       var SOC = [['Instagram', '@new_wine_church1', 'https://www.instagram.com/new_wine_church1', '#E1306C'], ['TikTok', '@newwinechurch2', 'https://www.tiktok.com/@newwinechurch2', '#111111'], ['YouTube', '@NewWineChurchMD', 'https://www.youtube.com/@NewWineChurchMD', '#FF0000'], ['Facebook', 'New Wine Church', 'https://www.facebook.com/profile.php?id=61574286441065', '#1877F2'], ['WhatsApp', '+225 07 79 16 98 78', 'https://wa.me/2250779169878', '#25D366']];
-      P.host.innerHTML = '<div class="follow"><div class="follow-card"><img src="img/logo-nwc.png" alt="New Wine Church" width="120" height="120">' +
+      P.host.innerHTML = '<div class="follow"><div class="follow-card"><img src="img/logo-nwc-240.png" alt="New Wine Church" width="120" height="120">' +
         '<p class="kicker" style="color:var(--or)">Une armée de jeunes pour Christ</p><h1 class="display follow-title">Suivez-<br><em class="serif">nous.</em></h1>' +
         '<a class="btn btn-ivoire btn-block" href="./"><span class="btn-txt" data-txt="Découvrir notre site">Découvrir notre site</span><span class="btn-ico" aria-hidden="true">' + P.I.arrow + '</span></a>' +
         '<button class="follow-toggle" type="button" id="fToggle" aria-expanded="true" aria-controls="fSoc">Réseaux sociaux <span class="mono">' + SOC.length + '</span><i aria-hidden="true"></i></button>' +
@@ -52,7 +52,7 @@
   V.introuvable = {
     mainClass: 'light nf-main',
     render: function (P) {
-      P.host.innerHTML = '<div class="nf"><a class="auth-logo" href="./"><img src="img/logo-nwc.png" alt="" width="52" height="52"><span>New Wine<small>Church · Abidjan</small></span></a>' +
+      P.host.innerHTML = '<div class="nf"><a class="auth-logo" href="./"><img src="img/logo-nwc-96.png" alt="" width="52" height="52"><span>New Wine<small>Church · Abidjan</small></span></a>' +
         '<p class="display nf-code" aria-hidden="true">404</p><h1 class="display nf-title">Cette page<br><em class="serif">s\'est égarée.</em></h1><p class="lead">L\'adresse a peut-être changé, ou la page n\'existe plus. Voici où aller :</p>' +
         '<div class="nf-links"><a class="btn btn-ivoire" href="./">Accueil</a><a class="btn btn-ghost" href="messages/">Messages</a><a class="btn btn-ghost" href="evenements/">Agenda</a><a class="btn btn-ghost" href="contact/">Contact</a></div>' +
         '<p class="nf-verse serif">« Le Fils de l\'homme est venu chercher et sauver ce qui était perdu. » <span class="mono">Luc 19:10</span></p></div>';

@@ -22,7 +22,7 @@
     '<div class="toast" id="toast" role="status" aria-live="polite"></div>' +
     '<a class="livebar" id="liveBar" href="live/" hidden><span class="live-dot is-live"></span><b>En direct</b><span>Le culte a commencé · Regarder maintenant</span>' + ARROW + '</a>' +
     '<header class="nav" id="nav">' +
-    '<a class="nav-brand" href="./#top" aria-label="New Wine Church, accueil"><img src="img/logo-nwc.png" alt="" width="46" height="46"><span class="nav-brand-txt">New Wine<small>Church · Abidjan</small></span></a>' +
+    '<a class="nav-brand" href="./#top" aria-label="New Wine Church, accueil"><img src="img/logo-nwc-96.png" alt="" width="46" height="46"><span class="nav-brand-txt">New Wine<small>Church · Abidjan</small></span></a>' +
     '<nav class="nav-links" id="navLinks" aria-label="Navigation principale"><span class="nav-blob" id="navBlob" aria-hidden="true"></span>' +
     '<a href="eglise/" data-nav="eglise">L\'église</a><a href="messages/" data-nav="messages">Messages</a><a href="evenements/" data-nav="agenda">Agenda</a>' +
     '<a href="communaute/" data-nav="servir">Servir</a><a href="galerie/" data-nav="mediatheque">Médiathèque</a><a href="donner/" data-nav="donner">Donner</a></nav>' +
@@ -38,22 +38,22 @@
     [['./#top', 'cta-famille', 'Accueil'], ['eglise/', 'fam-orga', 'L\'église'], ['messages/', 'g-message', 'Messages'], ['evenements/', 't-cy-4', 'Agenda'], ['communaute/', 'fam-arts', 'Servir'], ['galerie/', 't-fg-1', 'Médiathèque'], ['donner/', 't-sv-1', 'Donner']].map(function (l) {
       return '<a href="' + l[0] + '" data-img="img/' + l[1] + '.webp"><span>' + l[2] + '</span></a>';
     }).join('') + '</nav>' +
-    '<nav class="menu-sub" aria-label="Autres pages">' + [['live/', 'En direct'], ['billetterie/', 'Billetterie'], ['blog/', 'Blog · New Wine Mag'], ['./#monts', 'Les 7 Monts'], ['contact/', 'Contact & prière'], ['connexion/', 'Espace membre'], ['rejoindre/', 'Devenir membre']].map(function (l) { return '<a href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</nav></div>' +
+    '<nav class="menu-sub" aria-label="Autres pages">' + [['live/', 'En direct'], ['billetterie/', 'Billetterie'], ['blog/', 'Blog · New Wine Mag'], ['monts/', 'Les 7 Monts'], ['contact/', 'Contact & prière'], ['connexion/', 'Espace membre'], ['rejoindre/', 'Devenir membre']].map(function (l) { return '<a href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</nav></div>' +
     '<div class="menu-preview" aria-hidden="true"><img id="menuPreview" src="img/cta-famille.webp" alt=""></div>' +
     '<div class="menu-foot"><p><span class="label">Culte</span>Dimanche · 13h00 — 15h00</p><p><span class="label">Adresse</span>Cocody-Bonoumin, près d\'Abidjan Mall</p>' +
     '<button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Plan ta visite">Plan ta visite</span><span class="btn-ico" aria-hidden="true">' + ARROW + '</span></button></div></div></div>';
 
   var BOTTOM =
     '<footer class="foot"><div class="wrap"><div class="foot-top">' +
-    '<div class="foot-brand"><img src="img/logo-nwc.png" alt="Logo New Wine Church" width="96" height="96"><p>Une armée de jeunes pour Christ.<br>Sauvé pour sauver.</p>' +
+    '<div class="foot-brand"><img src="img/logo-nwc-96.png" srcset="img/logo-nwc-96.png 1x, img/logo-nwc-240.png 2.5x" alt="Logo New Wine Church" width="96" height="96"><p>Une armée de jeunes pour Christ.<br>Sauvé pour sauver.</p>' +
     '<div class="foot-icons">' + SOC.map(function (s) { return '<a href="' + s[1] + '" target="_blank" rel="noopener" aria-label="' + s[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + s[2] + '</svg></a>'; }).join('') + '</div></div>' +
-    '<nav class="foot-col" aria-label="L\'église"><span class="label">L\'église</span><a href="eglise/">Qui sommes-nous</a><a href="./#monts">Les 7 Monts</a><a href="communaute/">Communauté</a><a href="galerie/">Médiathèque</a><a href="blog/">Blog</a></nav>' +
+    '<nav class="foot-col" aria-label="L\'église"><span class="label">L\'église</span><a href="eglise/">Qui sommes-nous</a><a href="monts/">Les 7 Monts</a><a href="communaute/">Communauté</a><a href="galerie/">Médiathèque</a><a href="blog/">Blog</a></nav>' +
     '<nav class="foot-col" aria-label="Participer"><span class="label">Participer</span><a href="./#visite">Plan ta visite</a><a href="messages/">Messages</a><a href="evenements/">Agenda</a><a href="billetterie/">Billetterie</a><a href="live/">En direct</a><a href="donner/">Donner</a></nav>' +
     '<div class="foot-col"><span class="label">Nous trouver</span><p>Cocody-Bonoumin, près d\'Abidjan Mall<br>Abidjan, Côte d\'Ivoire</p><p>Dimanche · 13h00 — 15h00</p><p class="mono">contact@newinechurch.org<br>+225 07 79 16 98 78</p><a href="contact/">Nous écrire</a><a href="nwc/follow/">Suivez-nous</a></div>' +
     '<form class="foot-news" id="newsForm" novalidate><label class="label" for="newsEmail">La lettre du dimanche</label><p>Le programme de la semaine et le résumé du message. Tu confirmes ton inscription par e-mail.</p>' +
     '<div class="ref-row"><input id="newsEmail" type="email" autocomplete="email" placeholder="ton@email.com"><button class="btn btn-ivoire btn-sm" type="submit">S\'inscrire</button></div></form></div>' +
     '<p class="foot-word display" aria-hidden="true">Sauvé pour <em class="serif">sauver</em></p>' +
-    '<div class="foot-bottom"><span>© <span id="year">2026</span> New Wine Church · Abidjan</span><span class="foot-md"><img src="img/logo-md.png" alt="" width="28" height="30">Maison mère : La Maison de la Destinée</span>' +
+    '<div class="foot-bottom"><span>© <span id="year">2026</span> New Wine Church · Abidjan</span><span class="foot-md"><img src="img/logo-md-64.png" alt="" width="28" height="30">Maison mère : La Maison de la Destinée</span>' +
     '<span class="foot-legal"><a href="cgu/">Conditions</a><a href="confidentialite/">Confidentialité</a><a href="rejoindre/">Devenir membre</a><a href="connexion/">Espace membre</a></span></div></div></footer>' +
     // Barre mobile
     '<nav class="mbar" id="mbar" aria-label="Actions rapides"><button type="button" data-open-visit><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16M5 6h14v14H5z"/></svg>Visite</button>' +

@@ -109,14 +109,15 @@
         '« Comme nous avons plusieurs membres dans un seul corps, et que tous les membres n\'ont pas la même fonction… » Romains 12:4. Trouve l\'équipe où tes talents servent Dieu et les autres.',
         [[D.length, 'départements'], [govs, 'gouverneurs actifs'], ['5', 'familles']]) +
         '<section class="light" style="padding-bottom:clamp(64px,8vw,120px)"><div class="wrap">' +
-        '<div class="fbar fbar-2" role="search"><label class="search">' + P.I.search + '<input id="cq" type="search" placeholder="Chercher : son, accueil, photo…" aria-label="Chercher un département"></label>' +
+        '<div class="fzone"><div class="fbar fbar-2" role="search"><label class="search">' + P.I.search + '<input id="cq" type="search" placeholder="Chercher : son, accueil, photo…" aria-label="Chercher un département"></label>' +
         '<div class="chiprow" id="cfam"><button class="chip" type="button" data-f="" aria-pressed="true">Toutes les familles</button>' + Object.keys(FAMS).map(function (k) { return '<button class="chip" type="button" data-f="' + k + '" aria-pressed="false">' + FAMS[k].n + '</button>'; }).join('') + '</div></div>' +
-        '<div class="results-line"><span id="ccount"></span></div><div id="clist"></div>' +
-        '<div class="band ilot reveal" style="background:var(--bordeaux);margin-top:clamp(56px,7vw,96px)"><span class="band-ico">' + P.I.users + '</span><div><h3 class="h3">Pas sûr de ton choix ?</h3><p>Fais le test « Trouve ta place » en 3 questions, ou écris au pasteur pour en parler.</p></div><div class="row-btns" style="margin:0"><a class="btn btn-ivoire btn-sm" href="./#servir">Faire le test</a><a class="btn btn-ghost btn-sm" href="contact/">Écrire au pasteur</a></div></div>' +
+        '<div class="results-line"><span id="ccount"></span></div><div id="clist"></div></div>' +
+        '<aside class="quiz ilot" id="quiz" aria-labelledby="quizTitle"><div class="quiz-head"><p class="kicker">Pas sûr ?</p><h3 class="h3" id="quizTitle">Trouve ta place en 3 questions</h3><div class="quiz-bar" aria-hidden="true"><span id="quizBar"></span></div><p class="quiz-alt">Tu préfères en parler&nbsp;? <a href="contact/">Écris au pasteur →</a></p></div><div class="quiz-body" id="quizBody"></div></aside>' +
+        '' +
         '</div></section>';
     },
     setup: function (N) {
-      var st = { q: '', f: '' };
+      var st = { q: '', f: (location.search.match(/famille=([a-z]+)/) || [])[1] || '' };
       function run() {
         var q = norm(st.q.trim());
         var list = D.filter(function (d) { return (!st.f || d.f === st.f) && (!q || norm(d.n + ' ' + d.d).indexOf(q) >= 0); });
@@ -140,7 +141,7 @@
       var esc = P.esc, I = P.I;
       var d = D.filter(function (x) { return x.slug === P.slug; })[0] || D[0], fam = FAMS[d.f];
       document.title = d.n + ' · Communauté · New Wine Church';
-      var gal = ACT[d.slug] ? [1, 2, 3, 4, 5, 6].map(function (i) { return ACT[d.slug] + '-' + String(i).padStart(2, '0'); }) : [];
+      var gal = ACT[d.slug] ? [1, 2, 3, 4, 5].map(function (i) { return ACT[d.slug] + '-' + String(i).padStart(2, '0'); }) : [];
       var up = (EVD[d.slug] || []).map(function (s) { return P.EVENTS.filter(function (e) { return e.slug === s; })[0]; }).filter(Boolean);
       var past = (PASTD[d.slug] || []).map(function (i) { return P.PAST[i]; });
       var cells = CELLS[d.slug] || [];

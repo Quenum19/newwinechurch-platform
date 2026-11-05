@@ -169,14 +169,14 @@
       }).join('') + '</div>' +
       // Filtres
       '<div id="liste" style="margin-top:clamp(56px,7vw,96px)"><p class="kicker">Tous les messages</p></div>' +
-      '<div class="fbar" role="search">' +
+      '<div class="fzone"><div class="fbar" role="search">' +
       '<label class="search"><span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Rechercher un message</span>' + I.search + '<input id="fq" type="search" placeholder="Titre, verset, orateur…" autocomplete="off"></label>' +
       '<div class="chiprow" id="fthemes" aria-label="Thèmes">' + THEMES.map(function (t) { return '<button class="chip" type="button" aria-pressed="false" data-theme="' + t.s + '"><i style="width:8px;height:8px;border-radius:50%;background:' + t.c + '"></i>' + t.n + '</button>'; }).join('') + '</div>' +
       '<div class="fbar-end"><select class="select" id="ftype" aria-label="Type"><option value="">Tous les formats</option><option value="video">Vidéo</option><option value="audio">Audio</option><option value="live_replay">Rediffusion du direct</option></select>' +
       '<select class="select" id="fserie" aria-label="Série"><option value="">Toutes les séries</option>' + SERIES.map(function (s) { return '<option value="' + s.slug + '">' + esc(s.t) + '</option>'; }).join('') + '</select>' +
       '<select class="select" id="fyear" aria-label="Année"><option value="">Toutes les années</option>' + years.map(function (y) { return '<option>' + y + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="results-line"><span id="fcount"></span><button class="linkbtn" type="button" id="fclear" hidden>Effacer les filtres</button></div>' +
-      '<div class="mgrid" id="mgrid"></div><div class="more-row"><button class="btn btn-ghost" type="button" id="fmore" hidden>Voir plus de messages</button></div>' +
+      '<div class="mgrid" id="mgrid"></div><div class="more-row"><button class="btn btn-ghost" type="button" id="fmore" hidden>Voir plus de messages</button></div></div>' +
       // Vibecast
       '<div class="band ilot reveal" style="background:var(--bordeaux);margin-top:clamp(56px,7vw,96px)"><span class="band-ico">' + I.head + '</span><div><h3 class="h3">Tu préfères l\'audio ?</h3><p>Tous les messages existent en audio, et le New Wine Vibecast prolonge la discussion chaque semaine.</p></div>' +
       '<a class="btn btn-ivoire btn-sm" href="./#grandir">Découvrir le Vibecast</a></div>' +
@@ -385,6 +385,7 @@
         '<p style="margin:0;color:var(--muted)">' + esc(f.desc) + '</p>' + capBar(f) +
         '<span class="btn btn-ivoire" style="justify-self:start"><span class="btn-txt" data-txt="Voir l\'événement">Voir l\'événement</span><span class="btn-ico" aria-hidden="true">' + I.arrow + '</span></span></div></a>' +
         (rest.length ? '<ul class="elist">' + rest.map(erow).join('') + '</ul>' : '');
+      opt(box);
     }
     function calendar(list) {
       var y = st.month.getUTCFullYear(), mo = st.month.getUTCMonth();
@@ -675,6 +676,23 @@
     window.NWC.toast('Fichier agenda téléchargé : ouvre-le pour ajouter l\'événement.');
   }
 
+  /* ═════════════ Images : version légère quand l'image est affichée petit ═════════════ */
+  // Chaque photo existe en version 720 px (img/s/) et chaque photo de médiathèque en 480 px
+  // (img/g/s/). On choisit la version légère avant que le navigateur ne lance le chargement.
+  function opt(root) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    Array.prototype.forEach.call((root || host).querySelectorAll('img'), function (im) {
+      // Paliers : t/ (320 px, vignettes) → s/ (720 px, ou 480 px pour la galerie) → original
+      var src = im.getAttribute('src') || '', m = src.match(/^img\/(g\/)?(?:s\/)?([a-z0-9-]+)\.webp$/);
+      if (!m || im.hasAttribute('data-hd')) return;
+      var b = im.getBoundingClientRect(), w = b.width || (im.parentNode ? im.parentNode.getBoundingClientRect().width : 0);
+      if (!w) return;
+      // object-fit: cover dans un cadre haut : la largeur utile dépend aussi de la hauteur (photos ~3:2)
+      var need = Math.max(w, (b.height || 0) * 1.5) * dpr, tier = need <= 320 ? 't/' : need <= (m[1] ? 480 : 720) ? 's/' : null;
+      if (tier) im.setAttribute('src', 'img/' + (m[1] || '') + tier + m[2] + '.webp');
+    });
+  }
+
   /* ═════════════ Outils et données partagés avec les vues externes (js/vues/*.js) ═════════════ */
   var P = window.NWCP = {
     esc: esc, d: d, fdate: fdate, ftime: ftime, dur: dur, money: money, num: num, qs: qs, I: I,
@@ -682,7 +700,7 @@
     drawerShell: drawerShell, fieldErr: fieldErr, reName: reName, reMail: reMail, rePhone: rePhone,
     M: M, SERIES: SERIES, THEMES: THEMES, EVENTS: EVENTS, PAST: PAST, MONTS: MONTS, COMMUNES: COMMUNES, OPS: OPS,
     LIEU: LIEU, ADR: ADR, EVTYPES: EVTYPES, evLink: evLink, erow: erow, evTags: evTags, capBar: capBar, thumb: thumb,
-    minPrice: minPrice, remaining: remaining, evStart: evStart, host: host, slug: slug, view: view,
+    minPrice: minPrice, remaining: remaining, evStart: evStart, host: host, slug: slug, view: view, opt: opt,
     // Accordéons (FAQ, confession de foi…) : bouton .faq-q relié à son panneau par aria-controls
     faq: function (N) {
       N.$$('.faq-q').forEach(function (b) {
@@ -701,7 +719,7 @@
   main.className = (EXT && EXT.mainClass) || 'light';
   var R = { messages: renderMessages, message: renderMessage, agenda: renderAgenda, event: renderEvent, ticket: renderTicket };
   var S = { messages: setupMessages, message: setupMessage, agenda: setupAgenda, event: setupEvent, ticket: setupTicket };
-  try { if (EXT) EXT.render(P); else (R[view] || renderMessages)(); } catch (err) { console.warn('[NWC] rendu « ' + view + ' » :', err); }
+  try { if (EXT) EXT.render(P); else (R[view] || renderMessages)(); opt(host); } catch (err) { console.warn('[NWC] rendu « ' + view + ' » :', err); }
   document.addEventListener('DOMContentLoaded', function () {
     var N = window.NWC;
     if (!N || !N.$) return;
