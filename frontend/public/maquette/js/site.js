@@ -101,7 +101,7 @@
 
   /* ───────── Hero ───────── */
   function heroIntro() {
-    if (!hasGsap || reduced) return;
+    if (!hasGsap || reduced || !$('.hero-title')) return;
     var tl = gsap.timeline({ delay: .15 });
     tl.from('.hero-title .line-in', { yPercent: 115, rotate: 3, duration: 1.3, stagger: .09, ease: 'expo.out' })
       .from('.hero-eyebrow, .hero-bottom > *', { y: 26, opacity: 0, duration: 1, stagger: .08, ease: 'expo.out' }, '-=1.05')
@@ -113,7 +113,7 @@
     if (imgs.length > 1 && !reduced) setInterval(function () {
       imgs[k].classList.remove('is-on'); k = (k + 1) % imgs.length; imgs[k].classList.add('is-on');
     }, 1900);
-    if (hasGsap && !reduced) {
+    if (hasGsap && !reduced && $('#hero')) {
       gsap.to('.hero-inner', { yPercent: -10, opacity: .15, ease: 'none', scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true } });
     }
   });
@@ -123,30 +123,34 @@
     var cd = $('#countdown'), next = $('#nextService'), chip = $('#liveChip'), chipTxt = $('#liveChipTxt');
     var live = $('#live'), status = $('#liveStatus'), lc = { d: $('#lcD'), h: $('#lcH'), m: $('#lcM'), s: $('#lcS') };
     var mbarDot = $('.mbar .live-dot'), liveDot = $('#live .live-dot');
+    // Les éléments n'existent pas tous sur chaque page : on n'écrit que dans ceux présents
+    var put = function (el, txt) { if (el) el.textContent = txt; };
+    var weekly = $$('[data-next-service]');
     function tick() {
       var now = Date.now(), s = service(now);
       var diff = Math.max(0, s.start - now);
       var D = Math.floor(diff / 86400e3), H = Math.floor(diff / 3600e3) % 24, M = Math.floor(diff / 60e3) % 60, S = Math.floor(diff / 1e3) % 60;
       var longDate = frDate(s.start, { weekday: 'long', day: 'numeric', month: 'long' });
+      if (chip) chip.classList.toggle('is-live', s.live);
+      if (live) live.classList.toggle('is-live', s.live);
       if (s.live) {
-        next.textContent = 'En direct maintenant';
-        cd.textContent = 'Le culte a commencé à 13h00';
-        chipTxt.textContent = 'En direct'; chip.classList.add('is-live');
-        status.textContent = 'En direct maintenant'; live.classList.add('is-live');
+        put(next, 'En direct maintenant'); put(cd, 'Le culte a commencé à 13h00');
+        put(chipTxt, 'En direct'); put(status, 'En direct maintenant');
+        weekly.forEach(function (w) { w.textContent = 'En direct maintenant'; });
       } else {
-        next.textContent = longDate + ' · 13h00';
-        cd.textContent = 'dans ' + (D ? D + ' j ' : '') + H + ' h ' + pad(M) + ' min';
-        chipTxt.textContent = 'Dim. 13h'; chip.classList.remove('is-live');
-        status.textContent = 'Hors antenne · prochain direct ' + longDate.toLowerCase() + ' à 13h00';
-        live.classList.remove('is-live');
-        lc.d.textContent = D; lc.h.textContent = pad(H); lc.m.textContent = pad(M); lc.s.textContent = pad(S);
+        put(next, longDate + ' · 13h00');
+        put(cd, 'dans ' + (D ? D + ' j ' : '') + H + ' h ' + pad(M) + ' min');
+        put(chipTxt, 'Dim. 13h');
+        put(status, 'Hors antenne · prochain direct ' + longDate.toLowerCase() + ' à 13h00');
+        put(lc.d, D); put(lc.h, pad(H)); put(lc.m, pad(M)); put(lc.s, pad(S));
+        weekly.forEach(function (w) { w.textContent = longDate + ' · dans ' + (D ? D + ' j ' : '') + H + ' h ' + pad(M); });
       }
       [mbarDot, liveDot].forEach(function (d) { if (d) d.classList.toggle('is-live', s.live); });
     }
     tick(); setInterval(tick, 1000);
 
     var remind = $('#remindBtn');
-    remind.addEventListener('click', function () {
+    if (remind) remind.addEventListener('click', function () {
       var on = remind.getAttribute('aria-pressed') !== 'true';
       remind.setAttribute('aria-pressed', on ? 'true' : 'false');
       remind.textContent = on ? 'Rappel activé ✓' : 'M\'envoyer un rappel 15 min avant';
@@ -176,8 +180,15 @@
     }
     links.forEach(function (a) { a.addEventListener('mouseenter', function () { moveBlob(a); }); });
     $('#navLinks').addEventListener('mouseleave', function () { moveBlob(current); });
-    var ids = links.map(function (a) { return a.getAttribute('href').slice(1); });
-    if ('IntersectionObserver' in window) {
+    // Sur les pages intérieures, la pastille repose sur la page courante
+    var pageLink = $('#navLinks a.is-current');
+    if (pageLink) { current = pageLink; requestAnimationFrame(function () { moveBlob(current); }); }
+    // Les polices changent la largeur des liens : on recale la pastille une fois chargées
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { moveBlob(current); });
+    window.addEventListener('resize', function () { moveBlob(current); });
+    // Sur l'accueil, elle suit la section visible (liens « ./#section »)
+    var ids = links.map(function (a) { var h = a.getAttribute('href'); return h.indexOf('./#') === 0 ? h.slice(3) : ''; });
+    if ('IntersectionObserver' in window && $('#hero')) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (en) {
           if (!en.isIntersecting) return;
@@ -207,16 +218,28 @@
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && menuOpen) setMenu(false); });
 
-    // Liens d'ancre : défilement fluide, sans modifier l'adresse
+    // Liens d'ancre : défilement fluide quand la cible est sur la page courante,
+    // navigation normale sinon (ex. « ./#servir » depuis la page Messages)
+    var norm = function (p) { return p.replace(/index\.html$/, ''); };
     document.addEventListener('click', function (e) {
-      var a = e.target.closest('a[href^="#"]');
-      if (!a) return;
-      var id = a.getAttribute('href').slice(1);
+      var a = e.target.closest('a[href]');
+      if (!a || a.target === '_blank' || e.metaKey || e.ctrlKey) return;
+      var url; try { url = new URL(a.href, location.href); } catch (err) { return; }
+      if (url.origin !== location.origin || norm(url.pathname) !== norm(location.pathname) || !url.hash) return;
+      var id = url.hash.slice(1), el = id && id !== 'top' ? document.getElementById(id) : null;
+      if (id && id !== 'top' && !el) return;
       e.preventDefault();
+      var wasOpen = menuOpen;
       NWC.closeMenu();
-      if (!id || id === 'top') { scrollToEl(0); return; }
-      var el = document.getElementById(id);
-      if (el) setTimeout(function () { scrollToEl(el, id === 'moments' ? 0 : -64); }, menuOpen ? 350 : 0);
+      if (!el) { scrollToEl(0); return; }
+      setTimeout(function () { scrollToEl(el, id === 'moments' ? 0 : -64); }, wasOpen ? 350 : 0);
+    });
+    // Boutons de défilement interne des pages intérieures : data-scroll="#cible"
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-scroll]');
+      if (!b) return;
+      var el = $(b.getAttribute('data-scroll'));
+      if (el) { e.preventDefault(); scrollToEl(el, -90); }
     });
   });
 
@@ -355,6 +378,7 @@
   var currentFam = 'arts';
   mod('servir', function () {
     var tabs = $('#famTabs'), list = $('#deptList'), float = $('#deptFloat'), floatImg = $('#deptFloatImg');
+    if (!tabs || !list) return; // section propre à l'accueil
     FAMS.forEach(function (f) {
       var n = DEPTS.filter(function (d) { return d.f === f.id; }).length;
       var b = document.createElement('button');
@@ -440,6 +464,7 @@
     openDrawer($('#deptDrawer'));
   }
   mod('departement', function () {
+    if (!$('#deptJoin')) return;
     $('#deptJoin').addEventListener('click', function () {
       closeDrawer($('#deptDrawer'));
       NWC.toast('Demande envoyée au gouverneur du département « ' + (deptCurrent ? deptCurrent.n : '') + ' ».');
@@ -454,6 +479,7 @@
       { q: 'Cette année, ce qui te ferait vibrer…', o: [['Monter sur la scène du Cypher', 'arts'], ['Lancer un épisode du Vibecast', 'media'], ['Voir un nouveau devenir un ami', 'accueil'], ['Prier pour la nation avec les Sentinelles', 'mission'], ['Faire tourner un culte sans accroc', 'orga']] }
     ];
     var body = $('#quizBody'), bar = $('#quizBar'), step = 0, score = {}, first = null;
+    if (!body) return;
     function render() {
       bar.style.width = (step / QUIZ.length * 100) + '%';
       body.innerHTML = '';
@@ -493,7 +519,7 @@
   /* ───────── 2 · Grandir : lecteur du dernier message (simulation) ───────── */
   mod('lecteur', function () {
     var player = $('#player'), cv = $('#wave'); if (!cv) return;
-    var ctx = cv.getContext('2d'), DUR = 48 * 60 + 12, cur = 0, playing = false, speed = 1, hover = -1;
+    var ctx = cv.getContext('2d'), DUR = +(cv.dataset.dur || 48 * 60 + 12), cur = 0, playing = false, speed = 1, hover = -1;
     var N = 140, bars = [], seed = 7;
     function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
     for (var i = 0; i < N; i++) {
@@ -565,6 +591,7 @@
       { vol: '12.09.2026', t: 'Festi Grill ’26', d: 'Porc braisé, poulet, alloco et attiéké sous les guirlandes : la grande grillade de la rentrée.', c: '77 photos', cap: 'Festi Grill ’26', imgs: [['t-fg-1', 0], ['t-fg-2', 0], ['t-fg-3', 0], ['t-fg-4', 0], ['t-fg-5', 0], ['t-fg-6', 0]] }
     ];
     var section = $('#moments'), world = $('#tunnelWorld'), tunnel = $('#tunnel');
+    if (!section || !world) return;
     var cards = [], PER = 6, GAP = 560;
     MOMENTS.forEach(function (m, ci) {
       m.imgs.forEach(function (im, k) {
@@ -700,6 +727,7 @@
     });
     $$('[data-copy]').forEach(function (b) { b.addEventListener('click', function () { copyText(b); }); });
     var form = $('#refForm'), input = $('#refInput'), err = $('#refErr');
+    if (!form) return;
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (input.value.trim().length < 6) { err.hidden = false; input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
@@ -768,7 +796,7 @@
   mod('curseur', function () {
     if (!fine || reduced) return;
     var c = $('#cursor'), lab = $('#cursorLabel'), x = -100, y = -100, cx = -100, cy = -100;
-    $('#montsStage').dataset.cursor = 'Explorer';
+    if ($('#montsStage')) $('#montsStage').dataset.cursor = 'Explorer';
     window.addEventListener('pointermove', function (e) {
       x = e.clientX; y = e.clientY; c.classList.add('is-visible');
       var t = e.target.closest && e.target.closest('[data-cursor]');
@@ -794,15 +822,21 @@
   /* ───────── Apparitions au défilement (jamais masquées au repos) ───────── */
   mod('apparitions', function () {
     if (!hasGsap || reduced) return;
-    $$('.pillar-head, .bento > *, .give-head, .op, .quiz, .live-left, .live-right, .vstep-cta, .foot-top').forEach(function (el) {
+    $$('.pillar-head, .bento > *, .give-head, .op, .quiz, .live-left, .live-right, .vstep-cta, .foot-top, .reveal').forEach(function (el) {
       gsap.from(el, { y: 70, duration: 1.2, ease: 'expo.out', scrollTrigger: { trigger: el, start: 'top 92%', once: true } });
     });
     $$('.pillar-n').forEach(function (el) {
       gsap.fromTo(el, { yPercent: 30 }, { yPercent: -10, ease: 'none', scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: true } });
     });
-    gsap.fromTo('.join-bg', { yPercent: -8 }, { yPercent: 8, ease: 'none', scrollTrigger: { trigger: '.join', start: 'top bottom', end: 'bottom top', scrub: true } });
+    if ($('.join')) gsap.fromTo('.join-bg', { yPercent: -8 }, { yPercent: 8, ease: 'none', scrollTrigger: { trigger: '.join', start: 'top bottom', end: 'bottom top', scrub: true } });
     gsap.fromTo('.foot-word', { xPercent: 4 }, { xPercent: -6, ease: 'none', scrollTrigger: { trigger: '.foot', start: 'top bottom', end: 'bottom bottom', scrub: true } });
-    gsap.from('.series-name', { yPercent: 30, ease: 'none', scrollTrigger: { trigger: '.b-player', start: 'top bottom', end: 'center center', scrub: true } });
+    if ($('.b-player')) gsap.from('.series-name', { yPercent: 30, ease: 'none', scrollTrigger: { trigger: '.b-player', start: 'top bottom', end: 'center center', scrub: true } });
     window.addEventListener('load', function () { ScrollTrigger.refresh(); });
   });
+
+  /* ───────── Outils partagés avec les pages intérieures (pages.js) ───────── */
+  NWC.$ = $; NWC.$$ = $$; NWC.pad = pad; NWC.clamp = clamp; NWC.service = service; NWC.frDate = frDate;
+  NWC.scrollTo = scrollToEl; NWC.openDrawer = openDrawer; NWC.closeDrawer = closeDrawer; NWC.copy = copyText;
+  NWC.lightbox = function (items, i) { LB.length = 0; items.forEach(function (it) { LB.push(it); }); openLB(i || 0); };
+  NWC.reduced = reduced; NWC.hasGsap = hasGsap; NWC.fine = fine;
 })();

@@ -206,9 +206,9 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
   transform: translate(-50%, 140%); max-width: min(560px, calc(100% - 32px));
   background: var(--bordeaux); color: var(--ivoire); border-radius: 18px; padding: .95rem 1.25rem;
   font-weight: 500; box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
-  transition: transform .6s var(--ease);
+  visibility: hidden; transition: transform .6s var(--ease), visibility 0s linear .6s;
 }
-.toast.is-on { transform: translate(-50%, 0); }
+.toast.is-on { transform: translate(-50%, 0); visibility: visible; transition: transform .6s var(--ease), visibility 0s; }
 
 /* ─── Navigation ────────────────────────────────────────────────── */
 .nav {
@@ -226,13 +226,13 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
 }
 .nav.is-scrolled::before { opacity: 0; }
 .nav.is-hidden { transform: translateY(-120%); }
-.nav-brand { display: flex; align-items: center; gap: .65rem; flex: none; padding: .28rem 1rem .28rem .28rem; border-radius: 999px; background: rgba(22, 6, 9, .78); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.nav-brand { display: flex; align-items: center; gap: .65rem; flex: none; padding: .28rem 1rem .28rem .28rem; border-radius: 999px; background: rgba(28, 9, 14, .9); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .nav-brand img { width: 40px; height: 40px; }
 .nav-brand-txt { font: 700 1.05rem/1 var(--f-display); font-stretch: 85%; font-variation-settings: "wdth" 85; text-transform: uppercase; letter-spacing: -.01em; display: grid; gap: 3px; }
 .nav-brand-txt small { font: 500 .62rem/1 var(--f-mono); letter-spacing: .14em; color: var(--faint); }
 .nav-links {
   position: relative; display: flex; gap: .15rem; padding: .35rem;
-  border-radius: 999px; background: rgba(22, 6, 9, .78); border: 1px solid var(--line);
+  border-radius: 999px; background: rgba(28, 9, 14, .9); border: 1px solid var(--line);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .nav-links a { position: relative; z-index: 1; padding: .62rem 1rem; border-radius: 999px; font-size: .92rem; font-weight: 500; color: var(--muted); transition: color .3s; }
@@ -246,13 +246,16 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
 .live-chip {
   display: inline-flex; align-items: center; gap: .55rem; height: 2.75rem; padding: 0 1rem;
   border-radius: 999px; border: 1px solid var(--line); font: 500 .8rem/1 var(--f-mono); letter-spacing: .04em; color: var(--muted);
-  background: rgba(22, 6, 9, .6);
+  background: rgba(28, 9, 14, .9);
 }
 .live-chip.is-live { color: var(--ivoire); border-color: var(--rubis); }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
 .is-live .live-dot, .live-dot.is-live { background: var(--rubis); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(227, 41, 78, .7); } 100% { box-shadow: 0 0 0 10px rgba(227, 41, 78, 0); } }
-.nav-burger { display: none; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid var(--line); position: relative; background: rgba(22, 6, 9, .6); }
+.nav-burger { display: none; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid var(--line); position: relative; background: rgba(28, 9, 14, .9); }
+/* Bouton de l'en-tête : rouge vif, lisible sur fond clair comme sur fond bordeaux */
+.nav-cta { --bg: var(--rubis); --fg: var(--ivoire); }
+.nav-cta:hover { --bg: #c81f40; }
 .nav-burger span { position: absolute; left: 50%; width: 16px; height: 1.5px; margin-left: -8px; background: var(--ivoire); transition: transform .45s var(--ease); }
 .nav-burger span:first-child { top: 18px; }
 .nav-burger span:last-child { top: 24px; }
@@ -799,6 +802,7 @@ html.reduced .moments-hud { position: relative; left: auto; top: auto; transform
   .foot { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 560px) {
+  .live-chip { display: none; } /* le direct reste accessible par la barre du bas */
   .hero-ctas { width: 100%; }
   .hero-ctas .btn { width: 100%; justify-content: space-between; }
   .hero-ctas .btn-ghost { justify-content: center; }
