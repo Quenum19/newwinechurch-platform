@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════
    Mise en page commune de la maquette : bandeau « En direct », en-tête,
-   menu plein écran, pied de page, barre mobile, tiroir « Plan ta visite »,
+   menu plein écran, pied de page, barre mobile, tiroir de visite « Viens ce dimanche »,
    visionneuse. Injectée de façon synchrone (avant pages.js et site.js)
    pour que toutes les pages partagent exactement la même navigation.
    Reprend tous les liens du site actuel (Navbar + Footer).
@@ -25,40 +25,39 @@
     '<a class="nav-brand" href="./#top" aria-label="New Wine Church, accueil"><img src="img/logo-nwc-96.png" alt="" width="46" height="46"><span class="nav-brand-txt">New Wine<small>Church · Abidjan</small></span></a>' +
     '<nav class="nav-links" id="navLinks" aria-label="Navigation principale"><span class="nav-blob" id="navBlob" aria-hidden="true"></span>' +
     '<a href="eglise/" data-nav="eglise">L\'église</a><a href="messages/" data-nav="messages">Messages</a><a href="evenements/" data-nav="agenda">Agenda</a>' +
-    '<a href="communaute/" data-nav="servir">Servir</a><a href="galerie/" data-nav="mediatheque">Médiathèque</a><a href="donner/" data-nav="donner">Donner</a></nav>' +
+    '<a href="communaute/" data-nav="servir">Servir</a><a href="galerie/" data-nav="mediatheque">Médiathèque</a><a href="blog/" data-nav="blog">Blog</a><a href="donner/" data-nav="donner">Donner</a></nav>' +
     '<div class="nav-right">' +
     '<a class="live-chip" href="live/" id="liveChip"><span class="live-dot"></span><span id="liveChipTxt">Dim. 13h</span></a>' +
     '<button class="nav-icon nav-lang" type="button" id="navLang" aria-label="Changer de langue">FR</button>' +
-    '<a class="nav-icon" href="connexion/" aria-label="Espace membre" data-nav-acc><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></a>' +
-    '<button class="btn btn-ivoire btn-sm nav-cta" type="button" data-open-visit>Plan ta visite</button>' +
+        '<button class="btn btn-ivoire btn-sm nav-cta" type="button" data-open-visit>Viens ce dimanche</button>' +
     '<button class="nav-burger" id="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Ouvrir le menu"><span></span><span></span></button></div></header>' +
     // Menu plein écran
     '<div class="menu" id="menu" hidden><div class="menu-inner"><div>' +
     '<nav class="menu-links" aria-label="Menu">' +
-    [['./#top', 'cta-famille', 'Accueil'], ['eglise/', 'fam-orga', 'L\'église'], ['messages/', 'g-message', 'Messages'], ['evenements/', 't-cy-4', 'Agenda'], ['communaute/', 'fam-arts', 'Servir'], ['galerie/', 't-fg-1', 'Médiathèque'], ['donner/', 't-sv-1', 'Donner']].map(function (l) {
+    [['./#top', 'cta-famille', 'Accueil'], ['eglise/', 'fam-orga', 'L\'église'], ['messages/', 'g-message', 'Messages'], ['evenements/', 't-cy-4', 'Agenda'], ['communaute/', 'fam-arts', 'Servir'], ['galerie/', 't-fg-1', 'Médiathèque'], ['blog/', 'g-mag', 'Blog'], ['donner/', 't-sv-1', 'Donner']].map(function (l) {
       return '<a href="' + l[0] + '" data-img="img/' + l[1] + '.webp"><span>' + l[2] + '</span></a>';
     }).join('') + '</nav>' +
-    '<nav class="menu-sub" aria-label="Autres pages">' + [['live/', 'En direct'], ['billetterie/', 'Billetterie'], ['blog/', 'Blog · New Wine Mag'], ['monts/', 'Les 7 Monts'], ['contact/', 'Contact & prière'], ['connexion/', 'Espace membre'], ['rejoindre/', 'Devenir membre']].map(function (l) { return '<a href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</nav></div>' +
+    '<nav class="menu-sub" aria-label="Autres pages">' + [['live/', 'En direct'], ['billetterie/', 'Billetterie'], ['monts/', 'Les 7 Monts'], ['contact/', 'Contact & prière'], ['rejoindre/', 'Devenir membre']].map(function (l) { return '<a href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</nav></div>' +
     '<div class="menu-preview" aria-hidden="true"><img id="menuPreview" src="img/cta-famille.webp" alt=""></div>' +
     '<div class="menu-foot"><p><span class="label">Culte</span>Dimanche · 13h00 — 15h00</p><p><span class="label">Adresse</span>Cocody-Bonoumin, près d\'Abidjan Mall</p>' +
-    '<button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Plan ta visite">Plan ta visite</span><span class="btn-ico" aria-hidden="true">' + ARROW + '</span></button></div></div></div>';
+    '<button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Viens ce dimanche">Viens ce dimanche</span><span class="btn-ico" aria-hidden="true">' + ARROW + '</span></button></div></div></div>';
 
   var BOTTOM =
     '<footer class="foot"><div class="wrap"><div class="foot-top">' +
     '<div class="foot-brand"><img src="img/logo-nwc-96.png" srcset="img/logo-nwc-96.png 1x, img/logo-nwc-240.png 2.5x" alt="Logo New Wine Church" width="96" height="96"><p>Une armée de jeunes pour Christ.<br>Sauvé pour sauver.</p>' +
     '<div class="foot-icons">' + SOC.map(function (s) { return '<a href="' + s[1] + '" target="_blank" rel="noopener" aria-label="' + s[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + s[2] + '</svg></a>'; }).join('') + '</div></div>' +
     '<nav class="foot-col" aria-label="L\'église"><span class="label">L\'église</span><a href="eglise/">Qui sommes-nous</a><a href="monts/">Les 7 Monts</a><a href="communaute/">Communauté</a><a href="galerie/">Médiathèque</a><a href="blog/">Blog</a></nav>' +
-    '<nav class="foot-col" aria-label="Participer"><span class="label">Participer</span><a href="./#visite">Plan ta visite</a><a href="messages/">Messages</a><a href="evenements/">Agenda</a><a href="billetterie/">Billetterie</a><a href="live/">En direct</a><a href="donner/">Donner</a></nav>' +
+    '<nav class="foot-col" aria-label="Participer"><span class="label">Participer</span><a href="./#visite">Venir dimanche</a><a href="messages/">Messages</a><a href="evenements/">Agenda</a><a href="billetterie/">Billetterie</a><a href="live/">En direct</a><a href="donner/">Donner</a></nav>' +
     '<div class="foot-col"><span class="label">Nous trouver</span><p>Cocody-Bonoumin, près d\'Abidjan Mall<br>Abidjan, Côte d\'Ivoire</p><p>Dimanche · 13h00 — 15h00</p><p class="mono">contact@newinechurch.org<br>+225 07 79 16 98 78</p><a href="contact/">Nous écrire</a><a href="nwc/follow/">Suivez-nous</a></div>' +
     '<form class="foot-news" id="newsForm" novalidate><label class="label" for="newsEmail">La lettre du dimanche</label><p>Le programme de la semaine et le résumé du message. Tu confirmes ton inscription par e-mail.</p>' +
     '<div class="ref-row"><input id="newsEmail" type="email" autocomplete="email" placeholder="ton@email.com"><button class="btn btn-ivoire btn-sm" type="submit">S\'inscrire</button></div></form></div>' +
     '<p class="foot-word display" aria-hidden="true">Sauvé pour <em class="serif">sauver</em></p>' +
     '<div class="foot-bottom"><span>© <span id="year">2026</span> New Wine Church · Abidjan</span><span class="foot-md"><img src="img/logo-md-64.png" alt="" width="28" height="30">Maison mère : La Maison de la Destinée</span>' +
-    '<span class="foot-legal"><a href="cgu/">Conditions</a><a href="confidentialite/">Confidentialité</a><a href="rejoindre/">Devenir membre</a><a href="connexion/">Espace membre</a></span></div></div></footer>' +
+    '<span class="foot-legal"><a href="cgu/">Conditions</a><a href="confidentialite/">Confidentialité</a><a href="rejoindre/">Devenir membre</a></span></div></div></footer>' +
     // Barre mobile
-    '<nav class="mbar" id="mbar" aria-label="Actions rapides"><button type="button" data-open-visit><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16M5 6h14v14H5z"/></svg>Visite</button>' +
+    '<nav class="mbar" id="mbar" aria-label="Actions rapides"><button type="button" data-open-visit><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16M5 6h14v14H5z"/></svg>Venir</button>' +
     '<a href="live/"><span class="live-dot"></span>Live</a><a href="donner/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.5-8-11a5 5 0 0 1 8-3.9A5 5 0 0 1 20 10c0 5.5-8 11-8 11z"/></svg>Donner</a></nav>' +
-    // Tiroir « Plan ta visite » (palette ivoire des modales NWC)
+    // Tiroir de visite « Viens ce dimanche » (palette ivoire des modales NWC)
     '<div class="drawer" id="visitDrawer" role="dialog" aria-modal="true" aria-labelledby="visitTitle" hidden><div class="drawer-scrim" data-close></div><div class="drawer-panel">' +
     '<button class="drawer-close" type="button" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
     '<div class="drawer-body" id="visitStepForm"><p class="kicker kicker-dark">Ta première visite</p><h2 class="drawer-title" id="visitTitle">On te garde une place.</h2>' +
@@ -71,7 +70,7 @@
     '<button class="btn btn-bordeaux btn-block" type="submit">Je réserve ma place</button><p class="drawer-hint">Tes infos servent uniquement à t\'accueillir. Pas de spam, promis.</p></form></div>' +
     '<div class="drawer-body drawer-done" id="visitStepDone" hidden><div class="done-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>' +
     '<h2 class="drawer-title" id="doneTitle">C\'est noté !</h2><p class="drawer-lead" id="doneText"></p>' +
-    '<ul class="done-list"><li><span class="label">Heure</span>13h00 — arrive vers 12h45</li><li><span class="label">Lieu</span>Cocody-Bonoumin, près d\'Abidjan Mall</li><li><span class="label">Tenue</span>Viens comme tu es</li></ul>' +
+    '<ul class="done-list"><li><span class="label">Heure</span>Accueil dès 12h00 · culte à 13h00</li><li><span class="label">Lieu</span>Cocody-Bonoumin, près d\'Abidjan Mall</li><li><span class="label">Tenue</span>Viens comme tu es</li></ul>' +
     '<a class="btn btn-bordeaux btn-block" href="https://www.google.com/maps/search/?api=1&amp;query=Abidjan+Mall+Bonoumin+Cocody" target="_blank" rel="noopener">Ouvrir l\'itinéraire</a><button class="btn-text" type="button" data-close>Fermer</button></div></div></div>' +
     // Visionneuse
     '<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo" hidden>' +

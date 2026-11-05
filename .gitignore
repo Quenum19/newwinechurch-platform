@@ -77,3 +77,6 @@ docs/_prive/
 
 # === Docs : outillage local (génération des cadres photo, etc.) ===
 docs/**/node_modules/
+
+# === Maquette : espace connexion à adresse secrète (dépôt public → jamais commité, déposé à la main) ===
+frontend/public/maquette/espace-*/

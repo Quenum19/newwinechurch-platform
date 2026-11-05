@@ -88,7 +88,7 @@
       types: [{ n: 'Standard', p: 2000, cap: 300, sold: 112, max: 3, c: '#8B1A2F', d: 'Accès à la soirée.' }, { n: 'VIP', p: 5000, cap: 60, sold: 41, max: 2, c: '#C99A45', d: 'Places réservées devant la scène et une boisson offerte.' }, { n: 'Pack groupe · 5 places', p: 8000, cap: 20, sold: 17, max: 1, c: '#2F7A4B', d: 'Cinq entrées Standard pour venir à plusieurs.' }],
       prog: [['16h00', 'Ouverture des portes', 'Accueil et DJ set pour lancer l\'ambiance.'], ['16h45', 'Open mic', 'Les jeunes MC inscrits passent au micro.'], ['18h00', 'Le Cypher', 'Les MC enchaînent leurs couplets sur le même beat.'], ['19h30', 'Louange urbaine', 'Avec le département Rap et Musique Urbaine.'], ['20h30', 'Message et prière', 'Un mot court et direct pour finir ensemble.']],
       infos: [['Tenue', 'Streetwear bienvenu, viens comme tu es.'], ['Accès', 'Parking sur place, guidé par l\'équipe Parking & Sécurité.'], ['Public', 'Ouvert à tous, pensé pour les 15-35 ans.'], ['Une question ?', '+225 07 79 16 98 78 (WhatsApp)']],
-      gallery: ['t-cy-1', 't-cy-2', 't-cy-3', 't-cy-5', 't-cy-6'], galleryT: 'Revivre le Vol. 1', media: 48 },
+      gallery: ['t-cy-1', 't-cy-2', 't-cy-3', 't-cy-5', 't-cy-6'], galleryT: 'Revivre le Vol. 1', galleryEv: 'babi-giant-cypher-for-christ-vol-1', media: 48 },
     { slug: 'culte-de-noel', t: 'Culte de Noël', type: 'culte', start: '2026-12-20T13:00', end: '2026-12-20T15:30', art: 'v-or v-ring', mode: 'libre',
       desc: 'Un culte de Noël pensé pour inviter : louange, chorale, un message clair sur la venue de Jésus et un moment convivial après le culte. Amène un ami qui ne vient jamais à l\'église.',
       prog: [['13h00', 'Louange de Noël', 'Chant, Dancing Star et invités.'], ['13h50', 'Message', 'Pourquoi Jésus est venu.'], ['15h00', 'Moment ensemble', 'Photos et rafraîchissements.']],
@@ -106,13 +106,13 @@
       types: [{ n: 'Entrée visiteur', p: 0, cap: 250, sold: 96, max: 3, c: '#2F7A4B', d: 'Dégustation et vote du public.' }],
       prog: [['15h00', 'Lancement', 'Présentation des équipes.'], ['16h30', 'Dégustation', 'Le jury et le public goûtent.'], ['18h00', 'Résultats', 'Remise des diplômes.']],
       infos: [['Entrée', 'Gratuite sur réservation.'], ['Équipes', 'Inscriptions auprès du département Restauration.'], ['Accès', 'Parking sur place.'], ['Une question ?', '+225 07 79 16 98 78']],
-      gallery: ['t-sv-1', 't-sv-3', 't-sv-4', 't-sv-5', 't-sv-6'], galleryT: 'Revivre le Vol. 1', media: 33 },
+      gallery: ['t-sv-1', 't-sv-3', 't-sv-4', 't-sv-5', 't-sv-6'], galleryT: 'Revivre le Vol. 1', galleryEv: 'saveurs-sunday-vol-1', media: 33 },
     { slug: 'dark-night-in-elegance-2027', t: 'A Dark Night in Elegance', vol: '2027', type: 'autre', start: '2027-02-13T19:00', end: '2027-02-13T23:30', img: 't-dn-2', mode: 'billet', maxEmail: 2, selfie: true, waitlist: true,
       desc: 'Le gala de la famille NWC : tapis rouge, tenue de soirée, dîner et une nuit pour célébrer l\'amitié et l\'élégance. Le selfie est demandé à la réservation pour le contrôle à l\'entrée.',
       types: [{ n: 'Solo', p: 10000, cap: 150, sold: 118, max: 2, c: '#8B1A2F', d: 'Une entrée, dîner compris.' }, { n: 'Duo', p: 18000, cap: 50, sold: 50, max: 1, c: '#C99A45', d: 'Deux entrées, dîner compris.' }],
       prog: [['19h00', 'Tapis rouge', 'Photos et accueil.'], ['20h00', 'Dîner', 'Service à table.'], ['21h30', 'Soirée', 'Animations et remise des prix.']],
       infos: [['Tenue', 'Tenue de soirée exigée.'], ['Selfie', 'Demandé à la réservation, vérifié à l\'entrée.'], ['Accès', 'Parking sur place.'], ['Une question ?', '+225 07 79 16 98 78']],
-      gallery: ['t-dn-1', 't-dn-3', 't-dn-4', 't-dn-5', 't-dn-6'], galleryT: 'Revivre l\'édition précédente', media: 333 }
+      gallery: ['t-dn-1', 't-dn-3', 't-dn-4', 't-dn-5', 't-dn-6'], galleryT: 'Revivre l\'édition précédente', galleryEv: 'a-dark-night-in-elegance', media: 333 }
   ];
   var EVTYPES = { culte: 'Culte', priere: 'Prière', evangelisation: 'Évangélisation', concert: 'Concert', formation: 'Formation', autre: 'Événement' };
   var PAST = [
@@ -169,12 +169,12 @@
       }).join('') + '</div>' +
       // Filtres
       '<div id="liste" style="margin-top:clamp(56px,7vw,96px)"><p class="kicker">Tous les messages</p></div>' +
-      '<div class="fzone"><div class="fbar" role="search">' +
+      '<div class="fzone"><div class="fbar fbar-msg" role="search">' +
       '<label class="search"><span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Rechercher un message</span>' + I.search + '<input id="fq" type="search" placeholder="Titre, verset, orateur…" autocomplete="off"></label>' +
       '<div class="chiprow" id="fthemes" aria-label="Thèmes">' + THEMES.map(function (t) { return '<button class="chip" type="button" aria-pressed="false" data-theme="' + t.s + '"><i style="width:8px;height:8px;border-radius:50%;background:' + t.c + '"></i>' + t.n + '</button>'; }).join('') + '</div>' +
-      '<div class="fbar-end"><select class="select" id="ftype" aria-label="Type"><option value="">Tous les formats</option><option value="video">Vidéo</option><option value="audio">Audio</option><option value="live_replay">Rediffusion du direct</option></select>' +
-      '<select class="select" id="fserie" aria-label="Série"><option value="">Toutes les séries</option>' + SERIES.map(function (s) { return '<option value="' + s.slug + '">' + esc(s.t) + '</option>'; }).join('') + '</select>' +
-      '<select class="select" id="fyear" aria-label="Année"><option value="">Toutes les années</option>' + years.map(function (y) { return '<option>' + y + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="fbar-end"><select class="select" id="ftype" aria-label="Type"><option value="">Format</option><option value="video">Vidéo</option><option value="audio">Audio</option><option value="live_replay">Rediffusion du direct</option></select>' +
+      '<select class="select" id="fserie" aria-label="Série"><option value="">Série</option>' + SERIES.map(function (s) { return '<option value="' + s.slug + '">' + esc(s.t) + '</option>'; }).join('') + '</select>' +
+      '<select class="select" id="fyear" aria-label="Année"><option value="">Année</option>' + years.map(function (y) { return '<option>' + y + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="results-line"><span id="fcount"></span><button class="linkbtn" type="button" id="fclear" hidden>Effacer les filtres</button></div>' +
       '<div class="mgrid" id="mgrid"></div><div class="more-row"><button class="btn btn-ghost" type="button" id="fmore" hidden>Voir plus de messages</button></div></div>' +
       // Vibecast
@@ -453,8 +453,13 @@
       '<div class="esec reveal"><p class="kicker">Programme</p><h2>Le déroulé</h2><ol class="prog">' + e.prog.map(function (p) { return '<li><time>' + p[0] + '</time><div><b>' + esc(p[1]) + '</b><span>' + esc(p[2]) + '</span></div></li>'; }).join('') + '</ol></div>' +
       '<div class="esec reveal"><p class="kicker">Infos pratiques</p><h2>Avant de venir</h2><div class="infos">' + e.infos.map(function (x) { return '<div class="info"><span class="label">' + esc(x[0]) + '</span><p><b>' + esc(x[1]) + '</b></p></div>'; }).join('') +
       '<div class="info" style="grid-column:1/-1"><span class="label">Lieu</span><p><b>' + LIEU + '</b><br>' + ADR + '</p><a class="link-arrow" href="https://www.google.com/maps/search/?api=1&amp;query=Abidjan+Mall+Bonoumin+Cocody" target="_blank" rel="noopener">Ouvrir l\'itinéraire ↗</a></div></div></div>' +
-      (e.gallery ? '<div class="esec reveal"><p class="kicker">Médiathèque · ' + e.media + ' médias</p><h2>' + esc(e.galleryT) + '</h2><div class="strip">' + e.gallery.map(function (g, i) { return '<button type="button" data-g="' + i + '" aria-label="Agrandir la photo ' + (i + 1) + '"><img src="img/' + g + '.webp" alt="" loading="lazy"></button>'; }).join('') + '</div></div>' : '') +
       '</div><aside>' + side + '</aside></div></section>' +
+      (e.gallery ? '<section class="sable erevive"><div class="wrap"><div class="rail-head"><div><p class="kicker">Médiathèque · ' + e.media + ' médias</p><h2 class="h2 display">' + esc(e.galleryT) + '</h2></div><a class="link-arrow" href="galerie/?event=' + e.galleryEv + '">Ouvrir dans la médiathèque →</a></div>' +
+        '<div class="emosaic">' + e.gallery.map(function (g, i) {
+          // Dernière tuile : renvoi vers la médiathèque complète
+          if (i === e.gallery.length - 1) return '<a class="emosaic-more" href="galerie/?event=' + e.galleryEv + '"><img src="img/' + g + '.webp" alt="" loading="lazy"><span><b>+' + (e.media - e.gallery.length + 1) + '</b>médias à revoir</span></a>';
+          return '<button type="button" data-g="' + i + '" aria-label="Agrandir la photo ' + (i + 1) + '"><img src="img/' + g + '.webp" alt="" loading="lazy"></button>';
+        }).join('') + '</div></div></section>' : '') +
       (e.mode !== 'libre' ? '<div class="buybar" id="buybar"><div><small>' + (e.mode === 'billet' ? (minPrice(e) === 0 ? 'Entrée gratuite' : 'À partir de') : 'Inscription gratuite') + '</small><b>' + (e.mode === 'billet' ? money(minPrice(e)) : (e.cap - e.taken) + ' places') + '</b></div><button class="btn btn-bordeaux btn-sm" type="button" ' + (e.mode === 'billet' ? 'data-open-buy>Obtenir mon ticket' : 'data-open-reg>Je m\'inscris') + '</button></div>' : '');
     if (e.mode !== 'libre') body.classList.add('has-buybar');
     // Tiroirs propres à la page (branchés par site.js : fermeture, Échap, focus)

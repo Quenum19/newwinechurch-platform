@@ -68,7 +68,7 @@
       '<div class="rdv-card"><span class="mono">Chaque dimanche</span><b>Culte · 13h00 — 15h00</b><span data-next-service>—</span></div>' +
       '<div class="rdv-card"><span class="mono">En semaine</span><b>Cellules de maison</b><span>Dans ta commune, en petit groupe.</span></div>' +
       '<div class="rdv-card"><span class="mono">En ligne</span><b>Direct sur YouTube</b><span>@NewWineChurchMD</span></div></div>' +
-      '<div class="more-row" style="gap:12px;flex-wrap:wrap"><button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Plan ta première visite">Plan ta première visite</span><span class="btn-ico" aria-hidden="true">' + I.arrow + '</span></button>' +
+      '<div class="more-row" style="gap:12px;flex-wrap:wrap"><button class="btn btn-ivoire" type="button" data-open-visit><span class="btn-txt" data-txt="Viens ce dimanche">Viens ce dimanche</span><span class="btn-ico" aria-hidden="true">' + I.arrow + '</span></button>' +
       '<a class="btn btn-ghost" href="contact/">Nous contacter</a></div></div></section>';
   },
   setup: function (N, P) { P.faq(N); }

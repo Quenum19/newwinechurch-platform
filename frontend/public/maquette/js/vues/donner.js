@@ -29,15 +29,14 @@
       '<div class="field"><label for="dRef">Référence de la transaction</label><input id="dRef" class="mono" maxlength="80" placeholder="Ex. CI241105.1432.A12345" autocomplete="off"><p class="field-err" hidden>Colle la référence reçue par SMS (80 caractères maximum).</p></div>' +
       '<div class="dguest"><div class="field"><label for="dName">Ton nom</label><input id="dName" autocomplete="name"><p class="field-err" hidden>Indique ton nom pour le reçu.</p></div>' +
       '<div class="field"><label for="dPhone">Ton téléphone</label><input id="dPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="07 00 00 00 00"><p class="field-err" hidden>Entre un numéro valide.</p></div></div>' +
-      '<p class="note" style="margin:0">Tu as un compte ? <a class="linkbtn" href="connexion/">Connecte-toi</a> : ton don apparaîtra dans « Mes dons » et tu n\'auras pas à saisir ton nom.</p>' +
-      '<div class="field"><label for="dNote">Un mot pour le pasteur <small>(facultatif, 500 caractères)</small></label><textarea id="dNote" rows="3" maxlength="500"></textarea></div>' +
+            '<div class="field"><label for="dNote">Un mot pour le pasteur <small>(facultatif, 500 caractères)</small></label><textarea id="dNote" rows="3" maxlength="500"></textarea></div>' +
       '<button class="btn btn-bordeaux" type="submit">Déclarer mon don</button></form>' +
       '<div class="dok" id="dOk" hidden></div></div></div>' +
       '</div>' +
       // Colonne : verset + transparence
       '<aside class="give2-side"><blockquote class="give-verse" style="border:0;padding:0;margin:0"><p class="serif">« Que chacun donne comme il l\'a résolu en son cœur, sans tristesse ni contrainte ; car Dieu aime celui qui donne avec joie. »</p><cite class="mono">2 Corinthiens 9:7</cite></blockquote>' +
       '<div class="box"><p class="kicker">À quoi servent tes dons</p><ul class="uses"><li><b>Les cultes</b><span>Son, lumière, accueil chaque dimanche.</span></li><li><b>L\'évangélisation</b><span>Campus, quartiers, événements comme le Cypher.</span></li><li><b>Le social</b><span>Soutien concret aux membres en difficulté.</span></li></ul></div>' +
-      '<div class="box"><p class="kicker">Transparence</p><p style="margin:0;color:var(--muted)">Chaque déclaration est vérifiée par le département Finance avec la référence de transaction. Les membres retrouvent l\'historique de leurs dons dans leur espace.</p><a class="link-arrow" href="connexion/">Voir mes dons →</a></div></aside>' +
+      '<div class="box"><p class="kicker">Transparence</p><p style="margin:0;color:var(--muted)">Chaque déclaration est vérifiée par le département Finance avec la référence de transaction.</p></div></aside>' +
       '</div></section>';
   },
   setup: function (N, P) {
@@ -69,7 +68,7 @@
       var ok = $('#dOk'); ok.hidden = false;
       ok.innerHTML = '<span class="status s-wait">En attente de vérification</span><h3 class="display" style="font-size:clamp(2rem,4vw,3rem);margin:8px 0">Merci, ' + P.esc($('#dName').value.trim().split(' ')[0]) + ' !</h3>' +
         '<p class="lead">Ton don de <b>' + amount.toLocaleString('fr-FR') + ' FCFA</b> (' + P.esc(type) + ') est bien déclaré. La Finance le vérifie avec ta référence <b class="mono">' + P.esc($('#dRef').value.trim()) + '</b>.</p>' +
-        '<div class="row-btns"><button class="btn btn-ghost btn-sm" type="button" id="dAgain">Faire un autre don</button><a class="btn btn-bordeaux btn-sm" href="connexion/">Suivre mes dons</a></div>';
+        '<div class="row-btns"><button class="btn btn-ghost btn-sm" type="button" id="dAgain">Faire un autre don</button></div>';
       $('#dAgain').addEventListener('click', function () { $('#dForm').reset(); $('#dFree').hidden = true; $('#dForm').hidden = false; ok.hidden = true; });
       N.scrollTo(ok, -120);
     });

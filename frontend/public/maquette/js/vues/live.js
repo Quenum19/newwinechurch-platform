@@ -42,7 +42,7 @@
           '<p>Chaque dimanche dès 13h00, heure d\'Abidjan.</p></div>';
         $('#lvSide').innerHTML = '<div class="box"><p class="kicker">Prochain direct</p><h3>Culte du dimanche</h3><p style="margin:0;color:var(--muted)">' + N.frDate(d, { weekday: 'long', day: 'numeric', month: 'long' }) + ' · 13h00 — 15h00</p>' +
           '<button class="btn btn-bordeaux btn-block" type="button" id="lvRemind" aria-pressed="' + remind + '">' + (remind ? 'Rappel activé ✓' : 'M\'envoyer un rappel 15 min avant') + '</button></div>' +
-          '<div class="box"><p class="kicker">Sur place</p><p style="margin:0;color:var(--muted)">Cocody-Bonoumin, près d\'Abidjan Mall.</p><button class="btn btn-ghost btn-block" type="button" data-open-visit style="--fg:var(--ink)">Plan ta visite</button></div>';
+          '<div class="box"><p class="kicker">Sur place</p><p style="margin:0;color:var(--muted)">Cocody-Bonoumin, près d\'Abidjan Mall.</p><button class="btn btn-ghost btn-block" type="button" data-open-visit style="--fg:var(--ink)">Viens ce dimanche</button></div>';
         $('#lvRemind').addEventListener('click', function () { remind = !remind; draw(); N.toast(remind ? 'Rappel activé : on te prévient 15 minutes avant le direct.' : 'Rappel désactivé.'); });
         var tick = function () { var diff = Math.max(0, d - Date.now()); $('#lvD').textContent = Math.floor(diff / 86400e3); $('#lvH').textContent = N.pad(Math.floor(diff / 3600e3) % 24); $('#lvM').textContent = N.pad(Math.floor(diff / 60e3) % 60); $('#lvS').textContent = N.pad(Math.floor(diff / 1e3) % 60); };
         tick(); tmr = setInterval(tick, 1000);

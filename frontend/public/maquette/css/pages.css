@@ -401,3 +401,18 @@ body:has(.nav:not(.is-hidden)) .fbar { top: calc(var(--nav-h) + env(safe-area-in
   .ecount div { min-width: 60px; }
   .prog li { grid-template-columns: 72px minmax(0, 1fr); }
 }
+
+/* Page événement : « Revivre » en mosaïque pleine largeur (1 grande photo + 4, la dernière ouvre la médiathèque) */
+.erevive { padding-block: clamp(56px, 7vw, 100px); }
+.emosaic { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: clamp(150px, 15vw, 230px); gap: 10px; }
+.emosaic > * { position: relative; border-radius: 20px; overflow: hidden; }
+.emosaic > :first-child { grid-column: span 2; grid-row: span 2; }
+.emosaic button { cursor: zoom-in; }
+.emosaic img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+.emosaic > :hover img { transform: scale(1.05); }
+.emosaic-more span { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; background: rgba(58, 12, 24, .62); color: var(--ivoire); font-weight: 600; font-size: .92rem; transition: background-color .4s; }
+.emosaic-more b { font: 800 clamp(2rem, 3.4vw, 3rem)/1 var(--f-display); font-stretch: 78%; font-variation-settings: "wdth" 78; }
+.emosaic-more:hover span { background: rgba(139, 26, 47, .72); }
+@media (max-width: 700px) {
+  .emosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 140px; }
+}

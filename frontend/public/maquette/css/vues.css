@@ -456,3 +456,29 @@ p, li, blockquote, figcaption { text-wrap: pretty; }
 .cgrid > *, .pgrid2 > * { min-width: 0; }
 /* Lien « Tout voir » des en-têtes de rubrique : jamais coupé avant la flèche */
 .rail-head > .link-arrow { white-space: nowrap; flex: none; }
+@media (max-width: 600px) {
+  /* En-tête de rubrique avec lien « Tout voir » : le lien passe sous le titre */
+  .rail-head:has(> .link-arrow) { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+/* Messages : recherche et listes sur une ligne, tous les thèmes visibles en dessous (plus de puce coupée) */
+.fbar.fbar-msg { grid-template-columns: minmax(0, 1fr) auto; }
+.fbar-msg .chiprow { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; overflow: visible; }
+@media (max-width: 900px) {
+  .fbar.fbar-msg { grid-template-columns: minmax(0, 1fr); }
+  .fbar-msg .chiprow { grid-row: auto; flex-wrap: nowrap; overflow-x: auto; }
+  .fbar-msg .fbar-end { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .fbar-msg .select { width: 100%; min-width: 0; font-size: .82rem; padding-left: .7rem; }
+}
+@media (max-width: 900px) {
+  /* Puces défilantes : fondu au bord droit pour signaler qu'il y en a d'autres */
+  .chiprow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); padding-right: 36px; }
+  .fbar-msg .chiprow { flex-wrap: nowrap; }
+}
+/* Suivez-nous : le logo (cercle bordeaux + signature or) posé dans un médaillon sombre cerclé d'or,
+   pour qu'il ne se confonde pas avec le fond bordeaux */
+.follow-logo { position: relative; display: grid; place-items: center; width: 140px; height: 140px; border-radius: 50%; margin-bottom: 18px;
+  background: radial-gradient(circle at 50% 30%, #3A0C18 0%, #1C090E 72%);
+  box-shadow: 0 0 0 1.5px rgba(226, 193, 123, .75), 0 0 0 9px rgba(28, 9, 14, .28), 0 26px 60px rgba(20, 4, 10, .55); }
+.follow-logo::after { content: ""; position: absolute; inset: -18px; border-radius: 50%; border: 1px dashed rgba(226, 193, 123, .35); animation: spin 60s linear infinite; }
+.follow-logo img { width: 112px; height: 112px; }
+@media (prefers-reduced-motion: reduce) { .follow-logo::after { animation: none; } }

@@ -14,7 +14,7 @@
     mainClass: 'follow-main',
     render: function (P) {
       var SOC = [['Instagram', '@new_wine_church1', 'https://www.instagram.com/new_wine_church1', '#E1306C'], ['TikTok', '@newwinechurch2', 'https://www.tiktok.com/@newwinechurch2', '#111111'], ['YouTube', '@NewWineChurchMD', 'https://www.youtube.com/@NewWineChurchMD', '#FF0000'], ['Facebook', 'New Wine Church', 'https://www.facebook.com/profile.php?id=61574286441065', '#1877F2'], ['WhatsApp', '+225 07 79 16 98 78', 'https://wa.me/2250779169878', '#25D366']];
-      P.host.innerHTML = '<div class="follow"><div class="follow-card"><img src="img/logo-nwc-240.png" alt="New Wine Church" width="120" height="120">' +
+      P.host.innerHTML = '<div class="follow"><div class="follow-card"><span class="follow-logo"><img src="img/logo-nwc-240.png" alt="New Wine Church" width="112" height="112"></span>' +
         '<p class="kicker" style="color:var(--or)">Une armée de jeunes pour Christ</p><h1 class="display follow-title">Suivez-<br><em class="serif">nous.</em></h1>' +
         '<a class="btn btn-ivoire btn-block" href="./"><span class="btn-txt" data-txt="Découvrir notre site">Découvrir notre site</span><span class="btn-ico" aria-hidden="true">' + P.I.arrow + '</span></a>' +
         '<button class="follow-toggle" type="button" id="fToggle" aria-expanded="true" aria-controls="fSoc">Réseaux sociaux <span class="mono">' + SOC.length + '</span><i aria-hidden="true"></i></button>' +

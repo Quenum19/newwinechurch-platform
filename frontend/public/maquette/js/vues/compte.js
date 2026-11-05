@@ -1,10 +1,13 @@
 /* ════════════════════════════════════════════════════════════════════
    Vues du compte (mise en page dédiée, sans menu, comme AuthLayout) :
-   /connexion, /rejoindre (demande d'adhésion → validée par la RH),
-   /mot-de-passe-oublie, /reinitialiser-mot-de-passe.
+   espace connexion (adresse secrète), /rejoindre (demande d'adhésion → validée par la RH),
+   mot de passe oublié et réinitialisation (sous la même adresse secrète).
    Champs et règles repris de la plateforme actuelle.
    ════════════════════════════════════════════════════════════════════ */
 (function () {
+  // Espace connexion : adresse non devinable, jamais liée depuis les pages publiques ni écrite dans ce fichier
+  // (chargé aussi par la page publique Rejoindre) : on la déduit de l'adresse de la page de connexion elle-même.
+  var AUTH = ((location.pathname.match(/\/maquette\/([^/]+)\//) || [])[1] || '') + '/';
   var V = window.NWCV = window.NWCV || {};
   var VERSETS = [
     ['img/v-arrive.webp', 'Car je connais les projets que j\'ai formés sur vous… projets de paix et non de malheur, afin de vous donner un avenir et de l\'espérance.', 'Jérémie 29:11'],
@@ -29,7 +32,7 @@
     render: function (P) {
       P.host.innerHTML = shell(P, '<p class="kicker">Espace membre</p><h1 class="display auth-title">Bon retour<br><em class="serif">parmi nous.</em></h1>' +
         '<form id="lForm" novalidate class="auth-form"><div class="field"><label for="lMail">E-mail</label><input id="lMail" type="email" autocomplete="email"><p class="field-err" hidden></p></div>' + pwdField('lPwd', 'Mot de passe') +
-        '<div class="auth-row"><label class="check"><input type="checkbox" id="lRem" checked> Se souvenir de moi</label><a class="linkbtn" href="mot-de-passe-oublie/">Mot de passe oublié ?</a></div>' +
+        '<div class="auth-row"><label class="check"><input type="checkbox" id="lRem" checked> Se souvenir de moi</label><a class="linkbtn" href="' + AUTH + 'mot-de-passe-oublie/">Mot de passe oublié ?</a></div>' +
         '<button class="btn btn-bordeaux btn-block" type="submit">Se connecter</button></form>' +
         '<p class="auth-alt">Pas encore membre ? <a class="linkbtn" href="rejoindre/">Rejoindre New Wine Church</a></p>' +
         '<p class="note">Maquette : pour te connecter dès maintenant, utilise la <a class="linkbtn" href="/connexion">connexion actuelle</a>.</p>');
@@ -64,7 +67,7 @@
         '<label class="check"><input type="checkbox" id="rgCgu"><span>J\'accepte les <a class="linkbtn" href="cgu/" target="_blank">conditions d\'utilisation</a> et la <a class="linkbtn" href="confidentialite/" target="_blank">politique de confidentialité</a>.</span></label><p class="field-err" id="rgCguErr" hidden>Coche cette case pour envoyer ta demande.</p>' +
         '<input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">' +
         '<button class="btn btn-bordeaux btn-block" type="submit">Envoyer ma demande</button></form>' +
-        '<p class="auth-alt">Déjà membre ? <a class="linkbtn" href="connexion/">Se connecter</a></p>');
+        '');
     },
     setup: function (N, P) {
       var x = N.$('[data-unpre]'); if (x) x.addEventListener('click', function () { x.parentNode.remove(); });
@@ -90,7 +93,7 @@
     render: function (P) {
       P.host.innerHTML = shell(P, '<p class="kicker">Mot de passe oublié</p><h1 class="display auth-title">Pas de<br><em class="serif">panique.</em></h1><p class="lead">Entre l\'e-mail de ton compte : on t\'envoie un lien pour choisir un nouveau mot de passe.</p>' +
         '<form id="fpForm" novalidate class="auth-form"><div class="field"><label for="fpMail">E-mail</label><input id="fpMail" type="email" autocomplete="email"><p class="field-err" hidden></p></div><button class="btn btn-bordeaux btn-block" type="submit">Envoyer le lien</button></form>' +
-        '<p class="auth-alt"><a class="linkbtn" href="connexion/">← Retour à la connexion</a></p>');
+        '<p class="auth-alt"><a class="linkbtn" href="' + AUTH + '">← Retour à la connexion</a></p>');
     },
     setup: function (N, P) {
       N.$('#fpForm').addEventListener('submit', function (e) {
@@ -108,7 +111,7 @@
         (tok ? '' : '<div class="note" style="margin:0 0 14px;background:#FFF1D6;color:#6B4600">Ce lien est incomplet ou a expiré. Demande un nouveau lien depuis « Mot de passe oublié ».</div>') +
         '<form id="rpForm" novalidate class="auth-form"><div class="field"><label for="rpMail">E-mail</label><input id="rpMail" type="email" value="' + P.esc(mail || '') + '" readonly></div>' + pwdField('rpPwd', 'Nouveau mot de passe') +
         '<ul class="pwrules" id="rpRules"><li data-r="len">8 caractères minimum</li><li data-r="up">Une majuscule</li><li data-r="low">Une minuscule</li><li data-r="num">Un chiffre</li><li data-r="sym">Un symbole</li></ul>' + pwdField('rpPwd2', 'Confirme le mot de passe') +
-        '<button class="btn btn-bordeaux btn-block" type="submit"' + (tok ? '' : ' disabled') + '>Enregistrer</button></form><p class="auth-alt"><a class="linkbtn" href="mot-de-passe-oublie/">Demander un nouveau lien</a></p>');
+        '<button class="btn btn-bordeaux btn-block" type="submit"' + (tok ? '' : ' disabled') + '>Enregistrer</button></form><p class="auth-alt"><a class="linkbtn" href="' + AUTH + 'mot-de-passe-oublie/">Demander un nouveau lien</a></p>');
     },
     setup: function (N) {
       eyes(N);
@@ -120,7 +123,7 @@
         var bad = err(p, ok ? '' : 'Le mot de passe ne respecte pas encore toutes les règles.');
         bad = err(p2, p2.value === p.value ? '' : 'Les deux mots de passe ne sont pas identiques.') || bad;
         if (bad) return;
-        N.$('.auth-card').innerHTML = '<div class="done-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h1 class="display auth-title">C\'est<br><em class="serif">fait.</em></h1><p class="lead">Ton mot de passe est modifié. Tu peux te connecter.</p><a class="btn btn-bordeaux btn-block" href="connexion/">Se connecter</a>';
+        N.$('.auth-card').innerHTML = '<div class="done-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h1 class="display auth-title">C\'est<br><em class="serif">fait.</em></h1><p class="lead">Ton mot de passe est modifié. Tu peux te connecter.</p><a class="btn btn-bordeaux btn-block" href="' + AUTH + '">Se connecter</a>';
       });
     }
   };

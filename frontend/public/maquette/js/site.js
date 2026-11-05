@@ -45,7 +45,10 @@
   var lenis = null, hasGsap = !!(window.gsap && window.ScrollTrigger);
   mod('defilement', function () {
     if (!reduced && window.Lenis) {
-      lenis = new window.Lenis({ lerp: .1, smoothWheel: true, wheelMultiplier: 1 });
+      // Les panneaux superposés (tiroirs, menu, visionneuses) gardent leur défilement natif :
+      // sinon Lenis, mis en pause pendant leur ouverture, bloque la molette à l'intérieur.
+      lenis = new window.Lenis({ lerp: .1, smoothWheel: true, wheelMultiplier: 1,
+        prevent: function (node) { return !!(node.closest && node.closest('.drawer, .menu, .gview, .lightbox, [role="dialog"]')); } });
       NWC.lenis = lenis;
     }
     if (hasGsap) {
@@ -279,7 +282,7 @@
   /* ───────── Ta première visite : image collante qui change ───────── */
   mod('visite', function () {
     var steps = $$('.vstep'), frames = $$('#visitFrame img'), tag = $('#visitTag');
-    var labels = ['12h45 · Arrivée', '13h00 · Louange', '13h45 · La Parole', '15h00 · Après le culte'];
+    var labels = ['12h00 · Arrivée', '12h25 · Montagne', '13h00 · Culte', '15h00 · Communion fraternelle'];
     function setStep(i) {
       steps.forEach(function (s, k) { s.classList.toggle('is-active', k === i); });
       frames.forEach(function (f) { f.classList.toggle('is-on', +f.dataset.step === i); });
@@ -600,7 +603,7 @@
     ];
     var section = $('#moments'), world = $('#tunnelWorld'), tunnel = $('#tunnel');
     if (!section || !world) return;
-    var cards = [], PER = 6, GAP = 560;
+    var cards = [], PER = 6, GAP = 560, HD = (window.devicePixelRatio || 1) > 1.4 && window.innerWidth > 900;
     MOMENTS.forEach(function (m, ci) {
       m.imgs.forEach(function (im, k) {
         var j = ci * PER + k;
@@ -608,10 +611,11 @@
         fig.className = 't-card'; fig.dataset.cursor = 'Voir';
         fig.tabIndex = 0; fig.setAttribute('role', 'button'); fig.setAttribute('aria-label', 'Agrandir la photo : ' + m.cap);
         fig.innerHTML = '<img alt="" loading="lazy" decoding="async"><figcaption></figcaption>';
-        var img = fig.querySelector('img'); img.src = 'img/' + im[0] + '.webp'; img.alt = m.cap + ', photo ' + (k + 1);
+        // 720 px suffisent dans le tunnel, sauf grand écran haute densité ; la visionneuse ouvre l'original
+        var img = fig.querySelector('img'); img.src = 'img/' + (HD ? '' : 's/') + im[0] + '.webp'; img.alt = m.cap + ', photo ' + (k + 1);
         fig.querySelector('figcaption').textContent = m.cap;
         fig.style.setProperty('--w', im[1] ? 'clamp(220px, 27vw, 430px)' : 'clamp(170px, 19vw, 300px)');
-        var idx = LB.length; LB.push({ src: img.src, cap: m.cap + ' · ' + m.c });
+        var idx = LB.length; LB.push({ src: 'img/' + im[0] + '.webp', cap: m.cap + ' · ' + m.c });
         fig.addEventListener('click', function () { openLB(idx); });
         fig.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLB(idx); } });
         world.appendChild(fig);
@@ -843,15 +847,6 @@
     gsap.fromTo('.foot-word', { xPercent: 4 }, { xPercent: -6, ease: 'none', scrollTrigger: { trigger: '.foot', start: 'top bottom', end: 'bottom bottom', scrub: true } });
     if ($('.b-player')) gsap.from('.series-name', { yPercent: 30, ease: 'none', scrollTrigger: { trigger: '.b-player', start: 'top bottom', end: 'center center', scrub: true } });
     window.addEventListener('load', function () { ScrollTrigger.refresh(); });
-  });
-
-  /* ───────── Photos qui défilent (accueil) : contenu doublé pour une boucle sans saut ───────── */
-  mod('photos-defilantes', function () {
-    $$('.mo-track').forEach(function (t) {
-      var n = t.children.length;
-      t.insertAdjacentHTML('beforeend', t.innerHTML);
-      Array.prototype.slice.call(t.children, n).forEach(function (a) { a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1; });
-    });
   });
 
   /* ───────── Typographie française : espaces insécables fines avant : ; ? ! et dans « » ───────── */
