@@ -68,7 +68,7 @@
   }
   function lockScroll(on) { if (lenis) { on ? lenis.stop() : lenis.start(); } document.body.style.overflow = on ? 'hidden' : ''; }
 
-  /* ───────── Intro : le vin remplit l'écran ───────── */
+  /* ───────── Intro : logo + compteur, puis le rideau se lève ───────── */
   var readyFired = false;
   function fireReady() {
     if (readyFired) return; readyFired = true;
@@ -88,7 +88,7 @@
     var fill = $('#loaderFill'), count = $('#loaderCount'), t0 = performance.now(), dur = 1350;
     (function step(now) {
       var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
-      fill.style.height = (e * 100).toFixed(1) + '%';
+      fill.style.width = (e * 100).toFixed(1) + '%';
       count.textContent = pad(Math.round(e * 100));
       if (p < 1) { requestAnimationFrame(step); return; }
       loader.classList.add('is-done');
@@ -503,6 +503,10 @@
     for (var s = 1; s < N - 1; s++) bars[s] = (bars[s - 1] + bars[s] * 2 + bars[s + 1]) / 4;
     var cs = getComputedStyle(root);
     var cOn = cs.getPropertyValue('--rubis').trim() || '#E3294E';
+    // Couleurs des barres lues dans le CSS : elles s'adaptent au fond (clair ou sombre)
+    var pcs = getComputedStyle(player);
+    var cOff = pcs.getPropertyValue('--wave-off').trim() || 'rgba(245,237,225,.2)';
+    var cHov = pcs.getPropertyValue('--wave-hover').trim() || 'rgba(245,237,225,.5)';
     function draw() {
       var dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
       if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
@@ -512,7 +516,7 @@
       for (var i = 0; i < N; i++) {
         var bh = Math.max(3, bars[i] * h * .92), x = i * bw + bw * .18, y = (h - bh) / 2, ww = Math.max(1.5, bw * .64);
         var done = (i + .5) / N <= prog, hov = hover >= 0 && (i + .5) / N <= hover;
-        ctx.fillStyle = done ? cOn : hov ? 'rgba(245,237,225,.5)' : 'rgba(245,237,225,.2)';
+        ctx.fillStyle = done ? cOn : hov ? cHov : cOff;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x, y, ww, bh, ww / 2); else ctx.rect(x, y, ww, bh);
         ctx.fill();

@@ -1,256 +1,210 @@
 /* ════════════════════════════════════════════════════════════════════
-   HERO — Sculpture liquide « vin nouveau » (WebGL, raymarching)
-   Une goutte de vin rubis qui respire, traversée par la lumière
-   (réfraction + absorption Beer-Lambert), entourée de l'anneau d'or
-   du logo. Une petite goutte suit le curseur et s'en détache.
-   Aucune librairie : un seul shader plein écran.
-   Qualité adaptative : la résolution interne baisse si le GPU peine,
-   et le rendu s'arrête dès que le hero sort de l'écran.
+   HERO — « L'armée de lumière » (Three.js)
+   Des milliers de points lumineux, un par jeune : ils arrivent de partout,
+   se rassemblent en formations successives — la croix (rassemblés autour
+   de Christ), le cercle du logo (une seule famille), le globe (envoyés
+   dans le monde) — puis se dispersent quand on fait défiler la page :
+   sauvés pour sauver. Le curseur écarte la foule sur son passage.
+   Rendu arrêté dès que le hero sort de l'écran.
    ════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
   var canvas = document.getElementById('heroGl');
-  if (!canvas) return;
   var hero = document.getElementById('hero');
+  if (!canvas || !hero) return;
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine = window.matchMedia('(pointer: fine)').matches;
 
-  var gl = null;
+  function fallback() { document.documentElement.classList.add('no-webgl'); }
+  if (!window.THREE) { fallback(); return; }
+  var renderer;
   try {
-    gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
-  } catch (e) { gl = null; }
-  if (!gl) { document.documentElement.classList.add('no-webgl'); return; }
-
-  var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
-
-  var FS = [
-    'precision highp float;',
-    'uniform vec2 uRes;uniform float uTime;uniform vec2 uMouse;uniform float uScroll;',
-    'uniform vec2 uShift;uniform float uFocal;uniform float uIntro;',
-    'mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}',
-    'float smin(float a,float b,float k){float h=clamp(.5+.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}',
-
-    // Le liquide : plusieurs gouttes qui fusionnent en douceur
-    'float liquid(vec3 p){',
-    '  float s=mix(.18,1.,uIntro);',
-    '  p/=s;',
-    '  float t=uTime*.33;',
-    '  vec3 c1=vec3(sin(t*1.3)*.62,cos(t*1.1)*.40,sin(t*.7)*.34);',
-    '  vec3 c2=vec3(-cos(t*.9)*.70,sin(t*1.7)*.36+.16,cos(t*1.2)*.30);',
-    '  vec3 c3=vec3(sin(t*.6)*.28,-.60+sin(t*1.9)*.12,cos(t)*.28);',
-    '  vec3 c4=vec3(cos(t*1.4)*.34,.60+cos(t*.8)*.10,sin(t*1.6)*.30);',
-    '  float d=length(p)-.80;',
-    '  d=smin(d,length(p-c1)-.42,.42);',
-    '  d=smin(d,length(p-c2)-.36,.40);',
-    '  d=smin(d,length(p-c3)-.30,.34);',
-    '  d=smin(d,length(p-c4)-.26,.32);',
-    '  vec3 m=vec3(uMouse.x*1.45,uMouse.y*.95,.42);',
-    '  d=smin(d,length(p-m)-.16,.52);',
-    '  d+=.016*sin(p.x*7.+uTime*1.1)*sin(p.y*6.-uTime*.9)*sin(p.z*7.+uTime*.7);',
-    '  return d*s;',
-    '}',
-
-    // L'anneau d'or (le cercle du logo)
-    'float ring(vec3 p){',
-    '  p.yz*=rot(1.12);',
-    '  p.xy*=rot(.36+sin(uTime*.25)*.08);',
-    '  p.xz*=rot(uTime*.12);',
-    '  float r=mix(.6,1.44,uIntro);',
-    '  vec2 q=vec2(length(p.xz)-r,p.y);',
-    '  return length(q)-.017;',
-    '}',
-
-    'vec3 nrmL(vec3 p){vec2 e=vec2(.0016,0.);return normalize(vec3(liquid(p+e.xyy)-liquid(p-e.xyy),liquid(p+e.yxy)-liquid(p-e.yxy),liquid(p+e.yyx)-liquid(p-e.yyx)));}',
-    'vec3 nrmR(vec3 p){vec2 e=vec2(.0012,0.);return normalize(vec3(ring(p+e.xyy)-ring(p-e.xyy),ring(p+e.yxy)-ring(p-e.yxy),ring(p+e.yyx)-ring(p-e.yyx)));}',
-
-    // Studio virtuel : plafond lumineux chaud, bande latérale, contre-jour rubis
-    'vec3 env(vec3 d){',
-    '  vec3 c=mix(vec3(.02,.004,.008),vec3(.15,.025,.05),smoothstep(-.8,.9,d.y));',
-    '  c+=vec3(1.,.84,.64)*smoothstep(.80,.97,d.y)*2.3;',
-    '  c+=vec3(1.,.78,.5)*smoothstep(.55,.92,d.x)*smoothstep(.7,0.,abs(d.y-.12))*1.7;',
-    '  c+=vec3(.95,.22,.33)*smoothstep(.55,.95,-d.x)*smoothstep(.75,.1,abs(d.y))*1.1;',
-    '  c+=vec3(1.,.9,.76)*pow(max(dot(d,normalize(vec3(.42,.62,.66))),0.),70.)*7.;',
-    '  return c;',
-    '}',
-
-    'void main(){',
-    '  vec2 fc=gl_FragCoord.xy;',
-    '  vec2 uv=(fc-.5*uRes)/uRes.y;',
-    '  vec2 u=uv-uShift;',
-    '  u.y+=uScroll*.55;',
-    '  vec3 ro=vec3(0.,0.,4.);',
-    '  vec3 rd=normalize(vec3(u,-uFocal));',
-    '  rd.xz*=rot(uMouse.x*.05);rd.yz*=rot(-uMouse.y*.04);',
-    // Fond : nuit grenat, vignette, lueur rouge projetée par le vin
-    '  float vg=smoothstep(1.35,.15,length(uv*vec2(.75,1.)));',
-    '  vec3 col=vec3(.05,.012,.02)*(.35+.65*vg);',
-    '  col+=vec3(.42,.04,.10)*exp(-2.6*dot(u,u)*uFocal)*.55*uIntro;',
-    '  float b=dot(ro,rd);float cc=dot(ro,ro)-3.61;float h=b*b-cc;',
-    '  if(h>0.){',
-    '    float sh=sqrt(h);float t=max(-b-sh,0.);float tmax=-b+sh;',
-    '    float id=0.;bool hit=false;',
-    '    for(int i=0;i<84;i++){',
-    '      vec3 p=ro+rd*t;',
-    '      float a=liquid(p);float r=ring(p);',
-    '      float d=min(a,r);',
-    '      if(d<.0012){hit=true;id=a<r?1.:2.;break;}',
-    '      t+=d*.9;',
-    '      if(t>tmax)break;',
-    '    }',
-    '    if(hit){',
-    '      vec3 p=ro+rd*t;',
-    '      if(id<1.5){',
-    '        vec3 n=nrmL(p);',
-    '        float fr=.04+.96*pow(1.-max(dot(-rd,n),0.),4.);',
-    '        vec3 rf=env(reflect(rd,n));',
-    // Traversée de la goutte : on mesure l'épaisseur de vin
-    '        vec3 rr=refract(rd,n,1./1.34);',
-    '        vec3 q=p-n*.004;float th=0.;',
-    '        for(int j=0;j<30;j++){',
-    '          float d=-liquid(q);',
-    '          if(d<.002)break;',
-    '          float s=max(d,.02);q+=rr*s;th+=s;',
-    '        }',
-    '        vec3 n2=-nrmL(q);',
-    '        vec3 rr2=refract(rr,n2,1.34);',
-    '        if(dot(rr2,rr2)<.01)rr2=reflect(rr,n2);',
-    '        vec3 tr=env(rr2);',
-    '        vec3 ab=exp(-th*vec3(.85,5.6,4.3));',
-    '        vec3 body=tr*ab+vec3(.32,.02,.06)*(1.-exp(-th*1.6))*.55;',
-    '        col=mix(body,rf,fr);',
-    '        vec3 L=normalize(vec3(.5,.8,.6));',
-    '        col+=vec3(1.,.93,.82)*pow(max(dot(reflect(rd,n),L),0.),110.)*1.8;',
-    // Bulles d'effervescence : le vin nouveau fermente
-    '        vec2 bq=vec2(fc.x*.045,fc.y*.045-uTime*1.4);',
-    '        vec2 bi=floor(bq);vec2 bf=fract(bq)-.5;',
-    '        float rnd=fract(sin(dot(bi,vec2(127.1,311.7)))*43758.5453);',
-    '        float bub=smoothstep(.09,.0,length(bf-vec2(rnd-.5,0.)*.6))*step(.93,rnd);',
-    '        col+=vec3(1.,.75,.7)*bub*.35*smoothstep(.2,.9,th);',
-    '      }else{',
-    '        vec3 n=nrmR(p);',
-    '        float fr=pow(1.-max(dot(-rd,n),0.),3.);',
-    '        vec3 gold=vec3(1.,.77,.42);',
-    '        col=env(reflect(rd,n))*gold*(.6+.9*fr)+gold*.07;',
-    '      }',
-    '    }',
-    '  }',
-    // Tonemapping doux + grain filmique
-    '  col=col/(1.+col*.5);',
-    '  col=pow(col,vec3(.93));',
-    '  float g=fract(sin(dot(fc+fract(uTime)*91.,vec2(12.9898,78.233)))*43758.5453);',
-    '  col+=(g-.5)*.03;',
-    '  gl_FragColor=vec4(col,1.);',
-    '}'
-  ].join('\n');
-
-  function compile(type, src) {
-    var s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.warn('[hero] shader :', gl.getShaderInfoLog(s));
-      return null;
-    }
-    return s;
-  }
-  var vs = compile(gl.VERTEX_SHADER, VS), fs = compile(gl.FRAGMENT_SHADER, FS);
-  if (!vs || !fs) { document.documentElement.classList.add('no-webgl'); return; }
-  var prog = gl.createProgram();
-  gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { document.documentElement.classList.add('no-webgl'); return; }
-  gl.useProgram(prog);
-
-  // Triangle plein écran
-  var buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  var loc = gl.getAttribLocation(prog, 'p');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-
-  var U = {};
-  ['uRes', 'uTime', 'uMouse', 'uScroll', 'uShift', 'uFocal', 'uIntro'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
-
-  // ── État ──
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
+  } catch (e) { fallback(); return; }
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var quality = window.innerWidth > 1700 ? .62 : window.innerWidth > 900 ? .78 : .9;
-  var cssW = 0, cssH = 0;
-  var mouse = { x: .25, y: .1, tx: .25, ty: .1 };
-  var hasPointer = window.matchMedia('(pointer: fine)').matches;
-  var intro = 0, introTarget = 0;
-  var visible = true, running = true;
-  var t0 = performance.now(), last = t0, frames = 0, acc = 0;
+  renderer.setPixelRatio(dpr);
+  renderer.setClearColor(0x000000, 0);
 
-  function layout() {
-    var r = hero.getBoundingClientRect();
-    cssW = r.width; cssH = r.height;
-    var w = Math.max(2, Math.round(cssW * dpr * quality));
-    var h = Math.max(2, Math.round(cssH * dpr * quality));
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
-    gl.viewport(0, 0, w, h);
-    var aspect = cssW / cssH;
-    // Position et taille de la sculpture selon l'écran
-    var shiftX = aspect > 1.15 ? Math.min(.42, aspect * .23) : 0;
-    var shiftY = aspect > 1.15 ? .04 : .2;
-    var focal = aspect > 1.15 ? 1.7 : Math.max(.95, Math.min(1.7, 2.05 * aspect));
-    gl.uniform2f(U.uRes, w, h);
-    gl.uniform2f(U.uShift, shiftX, shiftY);
-    gl.uniform1f(U.uFocal, focal);
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(38, 1, .1, 60);
+  camera.position.set(0, 0, 6.2);
+  var group = new THREE.Group();
+  scene.add(group);
+
+  // ── Les formations (une position par point et par formation) ──
+  var N = window.innerWidth < 760 ? 2800 : 6800;
+  var A = new Float32Array(N * 3), B = new Float32Array(N * 3), C = new Float32Array(N * 3), S = new Float32Array(N * 3), R = new Float32Array(N * 4);
+  var GOLD = Math.PI * (3 - Math.sqrt(5));
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  for (var i = 0; i < N; i++) {
+    var k = i * 3;
+
+    // Formation 1 — la croix (volume plein, une moitié des points plaquée sur les faces pour des arêtes nettes)
+    var vert = Math.random() < .6, x, y, z, hw = .17;
+    if (vert) { x = rnd(-hw, hw); y = rnd(-1.75, 1.55); z = rnd(-hw, hw); }
+    else { x = rnd(-1.05, 1.05); y = rnd(.52, .86); z = rnd(-hw, hw); }
+    if (Math.random() < .55) {
+      var ax = Math.floor(Math.random() * 2);
+      if (ax === 0) z = Math.random() < .5 ? -hw : hw;
+      else if (vert) x = Math.random() < .5 ? -hw : hw;
+      else y = Math.random() < .5 ? .52 : .86;
+    }
+    A[k] = x; A[k + 1] = y; A[k + 2] = z;
+
+    // Formation 2 — le cercle du logo (anneau légèrement incliné + halo)
+    var th = Math.random() * Math.PI * 2, halo = Math.random() < .18;
+    var tub = halo ? rnd(.12, .38) : .09 * Math.sqrt(Math.random()), ta = Math.random() * Math.PI * 2;
+    var rr = 1.5 + tub * Math.cos(ta);
+    var rx = rr * Math.cos(th), ry = rr * Math.sin(th), rz = tub * Math.sin(ta);
+    var tilt = .32, c1 = Math.cos(tilt), s1 = Math.sin(tilt);
+    B[k] = rx; B[k + 1] = ry * c1 - rz * s1; B[k + 2] = ry * s1 + rz * c1;
+
+    // Formation 3 — le globe (répartition de Fibonacci, quelques points à l'intérieur)
+    var fy = 1 - (i / (N - 1)) * 2, fr = Math.sqrt(1 - fy * fy), fp = i * GOLD;
+    var rad = Math.random() < .12 ? rnd(.6, 1.4) : 1.48;
+    C[k] = Math.cos(fp) * fr * rad; C[k + 1] = fy * rad; C[k + 2] = Math.sin(fp) * fr * rad;
+
+    // Position dispersée (avant l'arrivée, après l'envoi)
+    var u = Math.random() * 2 - 1, phi = Math.random() * Math.PI * 2, d = rnd(3.6, 9), su = Math.sqrt(1 - u * u);
+    S[k] = Math.cos(phi) * su * d; S[k + 1] = u * d; S[k + 2] = Math.sin(phi) * su * d - 1.5;
+
+    // Taille (peu de gros points), phase, teinte, vitesse
+    R[i * 4] = Math.pow(Math.random(), 3); R[i * 4 + 1] = Math.random(); R[i * 4 + 2] = Math.random(); R[i * 4 + 3] = Math.random();
   }
 
-  window.addEventListener('resize', layout, { passive: true });
-  if (hasPointer) {
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(A.slice(), 3)); // requis par Three, non utilisé
+  geo.setAttribute('aA', new THREE.BufferAttribute(A, 3));
+  geo.setAttribute('aB', new THREE.BufferAttribute(B, 3));
+  geo.setAttribute('aC', new THREE.BufferAttribute(C, 3));
+  geo.setAttribute('aS', new THREE.BufferAttribute(S, 3));
+  geo.setAttribute('aR', new THREE.BufferAttribute(R, 4));
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 12);
+
+  var uniforms = {
+    uTime: { value: 0 }, uIntro: { value: reduced ? 1 : 0 }, uScroll: { value: 0 },
+    uW: { value: new THREE.Vector3(1, 0, 0) }, uMouse: { value: new THREE.Vector3(99, 99, 99) },
+    uSize: { value: 30 }, uPix: { value: dpr }
+  };
+  var mat = new THREE.ShaderMaterial({
+    uniforms: uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: [
+      'uniform float uTime;uniform float uIntro;uniform float uScroll;uniform vec3 uW;uniform vec3 uMouse;uniform float uSize;uniform float uPix;',
+      'attribute vec3 aA;attribute vec3 aB;attribute vec3 aC;attribute vec3 aS;attribute vec4 aR;',
+      'varying float vTint;varying float vAlpha;',
+      'void main(){',
+      '  vec3 form=aA*uW.x+aB*uW.y+aC*uW.z;',
+      '  float t=uTime*.7+aR.y*6.2831;',
+      '  form+=vec3(sin(t),cos(t*1.3),sin(t*.8))*.022*(.6+aR.x*2.);',
+      // Chaque point arrive à son rythme, puis repart quand on défile
+      '  float g=clamp(uIntro*1.25-aR.w*.25,0.,1.);',
+      '  g=g*g*(3.-2.*g);',
+      '  float send=clamp(uScroll*1.5-aR.w*.35,0.,1.);',
+      '  vec3 p=mix(aS,form,g*(1.-send*send));',
+      '  vec3 d=p-uMouse;float dist=length(d);',
+      '  p+=normalize(d+1e-4)*.55*smoothstep(.95,0.,dist)*g;',
+      '  vec4 mv=modelViewMatrix*vec4(p,1.);',
+      '  gl_Position=projectionMatrix*mv;',
+      '  gl_PointSize=uSize*(.45+aR.x*1.6)*uPix/-mv.z;',
+      '  vTint=aR.z;',
+      '  vAlpha=(.55+.45*sin(t*2.3))*(.35+.65*g);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'varying float vTint;varying float vAlpha;',
+      'void main(){',
+      '  float d=length(gl_PointCoord-.5);',
+      '  float a=smoothstep(.5,0.,d);a*=a;',
+      '  vec3 ivoire=vec3(1.,.96,.89);vec3 dore=vec3(.98,.80,.46);vec3 rouge=vec3(1.,.42,.5);',
+      '  vec3 col=vTint<.6?ivoire:(vTint<.9?dore:rouge);',
+      '  gl_FragColor=vec4(col,a*vAlpha);',
+      '}'
+    ].join('\n')
+  });
+  group.add(new THREE.Points(geo, mat));
+
+  // ── Mise en place selon l'écran ──
+  var aspect = 1;
+  function resize() {
+    var r = hero.getBoundingClientRect();
+    var w = Math.max(2, r.width), h = Math.max(2, r.height);
+    renderer.setSize(w, h, false);
+    aspect = w / h;
+    camera.aspect = aspect; camera.updateProjectionMatrix();
+    var visH = 2 * camera.position.z * Math.tan(camera.fov * Math.PI / 360), visW = visH * aspect;
+    if (aspect > 1.15) { group.position.set(visW * .2, .1, 0); group.scale.setScalar(1); }
+    else { var s = Math.min(1, visW / 3.6); group.scale.setScalar(s); group.position.set(0, visH * .17, 0); }
+    uniforms.uSize.value = aspect > 1.15 ? 30 : 26;
+  }
+  resize();
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(hero); else window.addEventListener('resize', resize);
+
+  // ── Curseur : on projette la souris sur le plan de la formation ──
+  var ndc = new THREE.Vector2(9, 9), hasMouse = false, ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), hit = new THREE.Vector3();
+  var tilt = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (fine) {
     window.addEventListener('pointermove', function (e) {
-      if (!visible) return;
-      mouse.tx = (e.clientX / window.innerWidth) * 2 - 1 - .3;
-      mouse.ty = -((e.clientY / window.innerHeight) * 2 - 1);
+      ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+      tilt.tx = ndc.x; tilt.ty = ndc.y; hasMouse = true;
     }, { passive: true });
   }
 
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(function (entries) {
-      visible = entries[0].isIntersecting;
-      if (visible && !running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
-    }, { threshold: 0 }).observe(hero);
+  // ── Cycle des formations + légende ──
+  var FORMS = ['Rassemblés autour de Christ', 'Une seule famille', 'Envoyés dans le monde'];
+  var cur = 0, nxt = 0, mix = 1, holdUntil = 0;
+  var caption = document.getElementById('heroCaptionTxt');
+  function setCaption(txt) {
+    if (!caption) return;
+    caption.classList.add('is-out');
+    setTimeout(function () { caption.textContent = txt; caption.classList.remove('is-out'); }, 450);
+  }
+  function weights(a, b, m) {
+    var e = m < .5 ? 4 * m * m * m : 1 - Math.pow(-2 * m + 2, 3) / 2; // easeInOutCubic
+    var w = [0, 0, 0]; w[a] += 1 - e; w[b] += e;
+    uniforms.uW.value.set(w[0], w[1], w[2]);
   }
 
-  // L'intro « fait pousser » la goutte quand la page est prête
+  // ── Intro et visibilité ──
+  var introTarget = reduced ? 1 : 0;
   window.addEventListener('nwc:ready', function () { introTarget = 1; });
-  setTimeout(function () { introTarget = 1; }, 2600); // filet de sécurité
+  setTimeout(function () { introTarget = 1; }, 2600);
+  var visible = true, running = false, t0 = performance.now(), last = t0;
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (en) { visible = en[0].isIntersecting; start(); }, { threshold: 0 }).observe(hero);
+  }
 
   function frame(now) {
     if (!visible) { running = false; return; }
-    var dt = Math.min(64, now - last); last = now;
-    var time = reduced ? 8 : (now - t0) / 1000;
+    var dt = Math.min(.05, (now - last) / 1000); last = now;
+    var t = (now - t0) / 1000;
+    uniforms.uTime.value = reduced ? 0 : t;
+    uniforms.uIntro.value += (introTarget - uniforms.uIntro.value) * (reduced ? 1 : .022);
+    uniforms.uScroll.value = Math.min(1, Math.max(0, window.scrollY / Math.max(1, hero.offsetHeight)));
 
-    if (!hasPointer) {
-      // Sur mobile, la petite goutte se promène toute seule
-      mouse.tx = Math.sin(time * .45) * .55;
-      mouse.ty = Math.cos(time * .32) * .45;
+    // Formations : on tient 5 s, puis on se transforme en 2,2 s
+    if (!reduced && uniforms.uIntro.value > .9) {
+      if (mix >= 1 && t > holdUntil) {
+        if (holdUntil > 0) { cur = nxt; nxt = (cur + 1) % 3; mix = 0; setCaption(FORMS[nxt]); }
+        holdUntil = t + 5 + 2.2;
+      }
+      if (mix < 1) { mix = Math.min(1, mix + dt / 2.2); weights(cur, nxt, mix); if (mix >= 1) cur = nxt; }
     }
-    mouse.x += (mouse.tx - mouse.x) * .06;
-    mouse.y += (mouse.ty - mouse.y) * .06;
-    intro += (introTarget - intro) * (reduced ? 1 : .035);
 
-    var sc = Math.min(1, Math.max(0, window.scrollY / Math.max(1, cssH)));
-    gl.uniform1f(U.uTime, time);
-    gl.uniform2f(U.uMouse, mouse.x, mouse.y);
-    gl.uniform1f(U.uScroll, sc);
-    gl.uniform1f(U.uIntro, intro);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    // Balancement doux (la croix reste lisible) + inclinaison vers la souris
+    tilt.x += (tilt.tx - tilt.x) * .04; tilt.y += (tilt.ty - tilt.y) * .04;
+    group.rotation.y = (reduced ? 0 : Math.sin(t * .28) * .38) + tilt.x * .3;
+    group.rotation.x = -tilt.y * .18;
 
-    // Qualité adaptative toutes les 40 images
-    frames++; acc += dt;
-    if (frames >= 40) {
-      var avg = acc / frames; frames = 0; acc = 0;
-      var q = quality;
-      if (avg > 24 && quality > .4) q = quality * .82;
-      else if (avg < 15 && quality < 1) q = Math.min(1, quality * 1.1);
-      if (Math.abs(q - quality) > .02) { quality = q; layout(); }
+    if (hasMouse) {
+      ray.setFromCamera(ndc, camera);
+      if (ray.ray.intersectPlane(plane, hit)) { group.updateMatrixWorld(); uniforms.uMouse.value.copy(group.worldToLocal(hit)); }
     }
-    if (reduced && intro > .999) { running = false; return; }
+
+    renderer.render(scene, camera);
+    if (reduced && Math.abs(uniforms.uIntro.value - 1) < .001) { running = false; return; }
     requestAnimationFrame(frame);
   }
-
-  layout();
-  requestAnimationFrame(frame);
+  function start() { if (visible && !running) { running = true; last = performance.now(); requestAnimationFrame(frame); } }
+  start();
 })();

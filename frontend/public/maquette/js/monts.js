@@ -114,7 +114,7 @@
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   } catch (e) { labelsEl.hidden = true; watch(); return; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(0x0D0406, 1);
+  renderer.setClearColor(0x3A0C18, 1);
 
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(36, 1, .1, 80);
@@ -145,7 +145,7 @@
     uActive: { value: new THREE.Vector2(MONTS[active].x, MONTS[active].z) },
     uAmt: { value: 0 },
     uTime: { value: 0 },
-    uFog: { value: new THREE.Color(0x0D0406) }
+    uFog: { value: new THREE.Color(0x3A0C18) }
   };
   var mat = new THREE.ShaderMaterial({
     uniforms: uniforms,
@@ -169,7 +169,7 @@
       '  vec2 g=vPos.xz*1.25;vec2 gw=fwidth(g);vec2 gd=abs(fract(g-.5)-.5)/gw;',
       '  float grid=(1.-min(min(gd.x,gd.y),1.))*.12*smoothstep(1.2,-.4,h);',
       '  vec3 L=normalize(vec3(-.45,.85,.45));float diff=clamp(dot(normalize(vN),L),0.,1.);',
-      '  vec3 base=mix(vec3(.035,.008,.014),vec3(.24,.045,.08),smoothstep(-.4,3.,h))*(.32+.95*diff);',
+      '  vec3 base=mix(vec3(.12,.028,.048),vec3(.42,.085,.13),smoothstep(-.4,3.,h))*(.45+.8*diff);',
       '  vec3 gold=vec3(.89,.76,.48);vec3 rub=vec3(1.,.2,.33);',
       '  float dA=length(vPos.xz-uActive);',
       '  float act=uAmt*(1.-smoothstep(.15,1.8,dA));',

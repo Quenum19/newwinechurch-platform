@@ -16,10 +16,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="css/site.css?v=1">
+<link rel="stylesheet" href="css/site.css?v=2">
 </head>
 <body>
-<!-- ═══════════ Intro : le vin qui remplit l'écran ═══════════ -->
+<!-- ═══════════ Intro : logo + compteur ═══════════ -->
 <div class="loader" id="loader" aria-hidden="true">
   <div class="loader-fill" id="loaderFill"></div>
   <div class="loader-inner">
@@ -77,11 +77,12 @@
 
 <main id="top">
 
-<!-- ═══════════ HERO : la sculpture liquide ═══════════ -->
+<!-- ═══════════ HERO : l'armée de lumière (3D) ═══════════ -->
 <section class="hero" id="hero">
   <canvas class="hero-gl" id="heroGl" aria-hidden="true"></canvas>
   <div class="hero-fallback" aria-hidden="true"></div>
   <div class="hero-shade" aria-hidden="true"></div>
+  <p class="hero-caption" aria-hidden="true"><span class="mono">Formation</span><strong id="heroCaptionTxt">Rassemblés autour de Christ</strong></p>
 
   <div class="hero-inner wrap">
     <p class="eyebrow hero-eyebrow"><span class="eyebrow-dot"></span>Église de jeunes adultes · Cocody-Bonoumin, Abidjan</p>
@@ -126,15 +127,15 @@
 <!-- ═══════════ Bandeaux croisés ═══════════ -->
 <section class="ticker" aria-label="Nos mots d'ordre et nos événements">
   <div class="ticker-band ticker-a"><div class="ticker-track" data-speed="0.6">
-    <span>Sauvé pour sauver</span><i class="drop" aria-hidden="true"></i><span>Servir</span><i class="drop" aria-hidden="true"></i><span>Grandir</span><i class="drop" aria-hidden="true"></i><span>Impacter</span><i class="drop" aria-hidden="true"></i><span>Une armée de jeunes pour Christ</span><i class="drop" aria-hidden="true"></i>
+    <span>Sauvé pour sauver</span><i class="sep" aria-hidden="true"></i><span>Servir</span><i class="sep" aria-hidden="true"></i><span>Grandir</span><i class="sep" aria-hidden="true"></i><span>Impacter</span><i class="sep" aria-hidden="true"></i><span>Une armée de jeunes pour Christ</span><i class="sep" aria-hidden="true"></i>
   </div></div>
   <div class="ticker-band ticker-b"><div class="ticker-track" data-speed="-0.45">
-    <span>Babi Giant Cypher</span><i class="drop" aria-hidden="true"></i><span>A Dark Night in Elegance</span><i class="drop" aria-hidden="true"></i><span>Festi Grill '26</span><i class="drop" aria-hidden="true"></i><span>Saveurs Sunday</span><i class="drop" aria-hidden="true"></i><span>New Wine Vibecast</span><i class="drop" aria-hidden="true"></i>
+    <span>Babi Giant Cypher</span><i class="sep" aria-hidden="true"></i><span>A Dark Night in Elegance</span><i class="sep" aria-hidden="true"></i><span>Festi Grill '26</span><i class="sep" aria-hidden="true"></i><span>Saveurs Sunday</span><i class="sep" aria-hidden="true"></i><span>New Wine Vibecast</span><i class="sep" aria-hidden="true"></i>
   </div></div>
 </section>
 
 <!-- ═══════════ Ta première visite ═══════════ -->
-<section class="visit section" id="visite">
+<section class="visit section light" id="visite">
   <div class="wrap visit-grid">
     <div class="visit-side">
       <p class="kicker">Ta première visite</p>
@@ -185,21 +186,21 @@
   </div>
 </section>
 
-<!-- ═══════════ Manifeste (Luc 5:38) ═══════════ -->
-<section class="manifesto light" id="manifeste">
+<!-- ═══════════ Manifeste (Marc 2:22) ═══════════ -->
+<section class="manifesto" id="manifeste">
   <div class="wrap">
-    <p class="kicker kicker-dark">Pourquoi « New Wine » ?</p>
-    <p class="manifesto-text" id="manifestoText">On ne met pas du <mark>vin nouveau</mark> dans de vieilles outres. Nous sommes une génération qui refuse une foi tiède. Une église de jeunes adultes qui croit qu'un jeune <mark>sauvé</mark> peut <mark>sauver</mark> sa ville. On adore fort. On étudie sérieusement. On sert avec nos talents, du micro au parking. Et on n'avance jamais seul.</p>
+    <p class="kicker">Pourquoi « New Wine » ?</p>
+    <p class="manifesto-text" id="manifestoText">New Wine, c'est une <mark>nouvelle génération</mark> de jeunes à qui l'on transmet un <mark>enseignement nouveau</mark>. Des cœurs neufs, prêts à recevoir la Parole et à la vivre pour de vrai. On apprend sérieusement. On adore fort. On sert avec nos talents, du micro au parking. Et on repart envoyés : <mark>sauvés pour sauver</mark>.</p>
     <div class="manifesto-foot">
-      <span class="mono">Luc 5:38</span>
-      <span>L'image biblique qui nous a donné notre nom.</span>
+      <span class="mono">Marc 2:22</span>
+      <span>Le verset d'où vient notre nom : un enseignement nouveau pour des cœurs neufs.</span>
       <span class="manifesto-sign">Église fille de La Maison de la Destinée<br>Pasteur Georges Amoako-Prempeh</span>
     </div>
   </div>
 </section>
 
 <!-- ═══════════ 1 · SERVIR ═══════════ -->
-<section class="serve section" id="servir">
+<section class="serve section light" id="servir">
   <div class="wrap">
     <header class="pillar-head">
       <span class="pillar-n" aria-hidden="true">1</span>
@@ -215,7 +216,7 @@
       <ul class="dept-list" id="deptList" aria-live="polite"></ul>
     </div>
 
-    <aside class="quiz" id="quiz" aria-labelledby="quizTitle">
+    <aside class="quiz ilot" id="quiz" aria-labelledby="quizTitle">
       <div class="quiz-head">
         <p class="kicker">Pas sûr ?</p>
         <h3 class="h3" id="quizTitle">Trouve ta place en 3 questions</h3>
@@ -228,7 +229,7 @@
 </section>
 
 <!-- ═══════════ 2 · GRANDIR ═══════════ -->
-<section class="grow section" id="grandir">
+<section class="grow section sable" id="grandir">
   <div class="wrap">
     <header class="pillar-head">
       <span class="pillar-n" aria-hidden="true">2</span>
@@ -245,12 +246,12 @@
         <div class="series-art" aria-hidden="true">
           <span class="series-ring"></span>
           <span class="series-kicker mono">Série · Novembre 2026</span>
-          <span class="series-name display">Vin<br>nouveau</span>
-          <span class="series-ref serif">Luc 5:36-39</span>
+          <span class="series-name display">Cœurs<br>neufs</span>
+          <span class="series-ref serif">Marc 2:18-22</span>
         </div>
         <div class="player-main">
           <p class="kicker">Dernier message</p>
-          <h3 class="player-title">Des outres neuves</h3>
+          <h3 class="player-title">Un enseignement nouveau</h3>
           <p class="player-meta">Pasteur Georges Amoako-Prempeh · Dim. 1er nov. 2026</p>
           <canvas class="wave" id="wave" height="90" aria-label="Barre de lecture, cliquer pour avancer"></canvas>
           <div class="player-time mono"><span id="tCur">00:00</span><span id="tDur">48:12</span></div>
@@ -262,7 +263,7 @@
           </div>
           <ol class="chapters" id="chapters">
             <li><button type="button" data-t="0"><span class="mono">00:00</span>Accueil et prière</button></li>
-            <li><button type="button" data-t="390"><span class="mono">06:30</span>Le vin et les outres</button></li>
+            <li><button type="button" data-t="390"><span class="mono">06:30</span>Ce que Jésus enseigne de nouveau</button></li>
             <li><button type="button" data-t="1185"><span class="mono">19:45</span>Ce qui doit changer en moi</button></li>
             <li><button type="button" data-t="2050"><span class="mono">34:10</span>Sauvé pour sauver</button></li>
             <li><button type="button" data-t="2640"><span class="mono">44:00</span>Appel et bénédiction</button></li>
@@ -307,7 +308,7 @@
       </article>
 
       <!-- Cellules -->
-      <article class="b-card b-cells">
+      <article class="b-card b-cells ilot">
         <div class="b-card-body">
           <span class="tag mono">En semaine</span>
           <h3 class="h3">Une cellule près de chez toi</h3>
@@ -336,7 +337,7 @@
         <div><span class="mono" id="lcS">00</span><small>secondes</small></div>
       </div>
       <div class="live-ctas">
-        <a class="btn btn-rubis" href="https://www.youtube.com/@NewWineChurchMD" target="_blank" rel="noopener"><span class="btn-txt" data-txt="Ouvrir la chaîne YouTube">Ouvrir la chaîne YouTube</span><span class="btn-ico btn-ico-dark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg></span></a>
+        <a class="btn btn-ivoire" href="https://www.youtube.com/@NewWineChurchMD" target="_blank" rel="noopener"><span class="btn-txt" data-txt="Ouvrir la chaîne YouTube">Ouvrir la chaîne YouTube</span><span class="btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg></span></a>
         <button class="btn btn-ghost" type="button" id="remindBtn" aria-pressed="false">M'envoyer un rappel 15 min avant</button>
       </div>
     </div>
@@ -379,7 +380,7 @@
 </section>
 
 <!-- ═══════════ Moments forts : tunnel 3D ═══════════ -->
-<section class="moments" id="moments" aria-label="Moments forts">
+<section class="moments light" id="moments" aria-label="Moments forts">
   <div class="moments-pin">
     <div class="tunnel" id="tunnel"><div class="tunnel-world" id="tunnelWorld"></div></div>
     <div class="moments-hud">
@@ -398,7 +399,7 @@
 </section>
 
 <!-- ═══════════ Donner ═══════════ -->
-<section class="give light section" id="donner">
+<section class="give sable section" id="donner">
   <div class="wrap give-grid">
     <header class="give-head">
       <p class="kicker kicker-dark">Donner</p>
@@ -619,9 +620,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/hero.js?v=1"></script>
-<script src="js/monts.js?v=1"></script>
-<script src="js/site.js?v=1"></script>
+<script src="js/hero.js?v=2"></script>
+<script src="js/monts.js?v=2"></script>
+<script src="js/site.js?v=2"></script>
 
 </body>
 </html>
