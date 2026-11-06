@@ -482,3 +482,7 @@ p, li, blockquote, figcaption { text-wrap: pretty; }
 .follow-logo::after { content: ""; position: absolute; inset: -18px; border-radius: 50%; border: 1px dashed rgba(226, 193, 123, .35); animation: spin 60s linear infinite; }
 .follow-logo img { width: 112px; height: 112px; }
 @media (prefers-reduced-motion: reduce) { .follow-logo::after { animation: none; } }
+/* QR « Scanne pour rejoindre » : inutile sur téléphone, où l'on ne peut pas scanner son propre écran (portrait et paysage) */
+@media (max-width: 700px), (hover: none) and (pointer: coarse) and (max-height: 500px) {
+  .dqr { display: none; }
+}

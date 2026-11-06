@@ -146,8 +146,9 @@
       var past = (PASTD[d.slug] || []).map(function (i) { return P.PAST[i]; });
       var cells = CELLS[d.slug] || [];
       var others = D.filter(function (x) { return x !== d && x.f === d.f; }).slice(0, 4);
-      var url = 'https://newinechurch.org/maquette/communaute/' + d.slug + '/';
-      V.departement._ctx = { d: d, gal: gal, url: url };
+      // Le QR ouvre le formulaire d'inscription, avec ce département déjà choisi (comme sur le site actuel)
+      var joinUrl = location.origin + '/maquette/rejoindre/?dept=' + encodeURIComponent(d.slug);
+      V.departement._ctx = { d: d, gal: gal, joinUrl: joinUrl };
       P.host.innerHTML =
         '<section class="dhero" style="--dc:' + d.c + '"><img class="dhero-bg" src="img/' + d.img + '.webp" alt=""><div class="wrap dhero-in">' + P.crumbs([['Communauté', 'communaute/'], [fam.n, 'communaute/'], [d.n]]) +
         '<span class="dmedal">' + icon(d.ic) + '</span><span class="etag" style="background:rgba(245,237,225,.16);color:var(--ivoire);justify-self:start">' + esc(fam.n) + '</span>' +
@@ -165,7 +166,7 @@
         '</div><aside><div class="tbox"><div class="tbox-head"><span>Responsable</span><b>' + (d.gov ? esc(d.gov) : 'À pourvoir') + '</b><span>Gouverneur du département</span></div><div class="tbox-body">' +
         '<a class="btn btn-bordeaux btn-block" href="rejoindre/?dept=' + d.slug + '">Je veux rejoindre</a>' +
         '<a class="btn btn-ghost btn-block" href="mailto:contact@newinechurch.org?subject=' + encodeURIComponent('Je veux rejoindre — ' + d.n) + '">Contacter par e-mail</a>' +
-        '<div class="dqr"><div class="qr" id="dqr" role="img" aria-label="QR code de la page du département"></div><span>Scanne pour partager ce département</span></div></div></div></aside></div>' +
+        '<div class="dqr"><div class="qr" id="dqr" role="img" aria-label="QR code pour rejoindre ce département"></div><span>Scanne pour rejoindre ce département</span></div></div></div></aside></div>' +
         '<div class="wrap" style="margin-top:clamp(48px,6vw,80px)"><div class="rail-head"><div><p class="kicker">Dans la même famille</p><h2 class="h3 sec-title">D\'autres équipes</h2></div><a class="link-arrow" href="communaute/">Les 35 départements →</a></div><div class="dgrid">' + others.map(card).join('') + '</div></div></section>';
     },
     setup: function (N, P) {
@@ -173,7 +174,7 @@
       N.$$('[data-share]').forEach(function (b) { b.addEventListener('click', function () { P.share(c.d.n + ' · New Wine Church', location.href); }); });
       var items = c.gal.map(function (g) { return { src: 'img/g/' + g + '.webp', cap: c.d.n }; });
       N.$$('[data-dg]').forEach(function (b) { b.addEventListener('click', function () { N.lightbox(items, +b.dataset.dg); }); });
-      try { var q = window.qrcode(0, 'M'); q.addData(c.url); q.make(); N.$('#dqr').innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); } catch (e) { /* QR facultatif */ }
+      try { var q = window.qrcode(0, 'M'); q.addData(c.joinUrl); q.make(); N.$('#dqr').innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); } catch (e) { /* QR facultatif */ }
     }
   };
 })();
